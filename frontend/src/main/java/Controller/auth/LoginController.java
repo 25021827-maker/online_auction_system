@@ -1,5 +1,6 @@
-package Controller;
+package Controller.auth;
 
+import Service.UserService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -10,19 +11,17 @@ import javafx.stage.Stage;
 public class LoginController {
     @FXML private TextField txtUser;
     @FXML private PasswordField txtPass;
+    private UserService service = new UserService();
 
     @FXML
     private void handleLogin() throws Exception {
         String user = txtUser.getText();
         String pass = txtPass.getText();
 
-        if (user.equals("admin") && pass.equals("123")) {
-            switchScene("/ui/AdminView.fxml", "Hệ thống Quản trị");
-        } else if (!user.isEmpty()) {
-            switchScene("/ui/AuctionMain.fxml", "Sàn Đấu Giá");
+        if (service.login(user, pass)) {
+            switchScene("/ui/product/AuctionMain.fxml", "Sàn đấu giá");
         } else {
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Sai tài khoản hoặc mật khẩu!");
-            alert.show();
+            System.out.println("Sai tài khoản hoặc mật khẩu");
         }
     }
 
@@ -33,5 +32,8 @@ public class LoginController {
         stage.setTitle(title);
     }
 
-    @FXML private void handleRegister() { System.out.println("Chuyển sang màn hình đăng ký..."); }
+    @FXML private void handleRegister() throws Exception
+    {
+        switchScene("/ui/auth/Register.fxml", "Đăng ký");
+    }
 }

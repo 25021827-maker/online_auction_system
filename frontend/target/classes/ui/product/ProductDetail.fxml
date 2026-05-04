@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+<VBox alignment="TOP_CENTER" spacing="20"
+      prefWidth="900" prefHeight="600"
+      style="-fx-background-color: #f5f5f5;"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="Controller.product.ProductController">
+
+    <padding>
+        <Insets top="20" left="20" right="20" bottom="20"/>
+    </padding>
+
+    <Label text="CHI TIẾT SẢN PHẨM" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+    <VBox spacing="15" alignment="CENTER"
+          style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-border-color: #dddddd;"
+          maxWidth="400">
+
+        <ImageView fx:id="imageView"
+                   fitWidth="300"
+                   fitHeight="200"
+                   preserveRatio="true"/>
+
+        <Label fx:id="nameLabel" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+        <Label fx:id="priceLabel" style="-fx-font-size: 16px;"/>
+        <TextField fx:id="txtBid" promptText="Nhập giá muốn đấu"/>
+        <Button text="Đặt giá" onAction="#handleBid"/>
+        <Label fx:id="lblMessage"/>
+
+        <Button text="Quay lại"
+                onAction="#goBack"
+                style="-fx-background-color: #1976d2; -fx-text-fill: white;"/>
+    </VBox>
+
+</VBox>
