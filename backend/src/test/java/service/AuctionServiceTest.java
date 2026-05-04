@@ -18,14 +18,13 @@ public class AuctionServiceTest {
 
     @BeforeEach
     public void setUp() {
-        // Tạo một sản phẩm bằng Factory Pattern
+
         Item item = ItemFactory.createItem("ELECTRONICS", "ITEM1", "Laptop Dell", "Core i7", 1000.0, 12);
 
-        // Tạo một phiên đấu giá đang chạy (từ 10 phút trước đến 10 phút sau)
+
         auction = new Auction("AUC1", item, "SELLER1", LocalDateTime.now().minusMinutes(10), LocalDateTime.now().plusMinutes(10));
         auction.setStatus(Auction.Status.RUNNING);
 
-        // Truyền vào Service
         auctionService = new AuctionService(auction);
     }
 
@@ -66,7 +65,6 @@ public class AuctionServiceTest {
         auction.setStatus(Auction.Status.FINISHED);
 
         BidTransaction lateBid = new BidTransaction("BID1", "BIDDER1", 2000.0);
-
 
         assertThrows(AuctionClosedException.class, () -> {
             auctionService.placeBid(lateBid);
