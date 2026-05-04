@@ -1,18 +1,15 @@
 package Model;
 
 public class User {
-    private String username;
-    private String email;
-    private String role; // "ADMIN" hoặc "USER"
+    public String username;
+    public String password;
 
-    public User(String username, String email, String role) {
-        this.username = username;
-        this.email = email;
-        this.role = role;
+    public User(String u, String p) {
+        this.username = u;
+        this.password = p;
     }
 
     // Getter và Setter (Bắt buộc phải có để TableView hiển thị được)
     public String getUsername() { return username; }
-    public String getEmail() { return email; }
-    public String getRole() { return role; }
+    public String getPassword() { return password;}
 }

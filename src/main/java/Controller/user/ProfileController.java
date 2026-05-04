@@ -1,4 +1,4 @@
-package Controller;
+package Controller.user;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,7 +14,7 @@ public class ProfileController {
     private void goHome(ActionEvent event) {
         try {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Parent root = FXMLLoader.load(getClass().getResource("/ui/AuctionMain.fxml"));
+            Parent root = FXMLLoader.load(getClass().getResource("/ui/product/AuctionMain.fxml"));
             stage.setScene(new Scene(root));
         } catch (Exception e) {
             e.printStackTrace();

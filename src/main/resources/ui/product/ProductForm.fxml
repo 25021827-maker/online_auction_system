@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox spacing="15" prefHeight="500.0" prefWidth="400.0" style="-fx-padding: 30;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.product.ProductFormController">
+    <Label text="ĐĂNG TIN ĐẤU GIÁ">
+        <font><Font name="System Bold" size="20.0" /></font>
+    </Label>
+    <TextField fx:id="txtName" promptText="Tên sản phẩm"/>
+    <TextArea fx:id="txtDesc" promptText="Mô tả sản phẩm" prefHeight="100"/>
+    <TextField fx:id="txtPrice" promptText="Giá khởi điểm (VNĐ)"/>
+    <Button text="Chọn ảnh sản phẩm" onAction="#chooseImage"/>
+    <Button text="Đăng sản phẩm" maxWidth="Infinity" onAction="#saveProduct" style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+    <Button text="Hủy" maxWidth="Infinity" onAction="#goBack"/>
+</VBox>
