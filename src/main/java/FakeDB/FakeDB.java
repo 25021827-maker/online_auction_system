@@ -28,6 +28,32 @@ public class FakeDB {
         }
         return false;
     }
+    public static User getUser(String u, String p) {
+
+        for (User user : users) {
+
+            if (user.username.equals(u)
+                    && user.password.equals(p)) {
+
+                return user;
+            }
+        }
+
+        return null;
+    }
+    public static User getUserByUsername(String username) {
+
+        for (User user : users) {
+
+            if (user.getUsername().equals(username)) {
+
+                return user;
+
+            }
+        }
+
+        return null;
+    }
 
     public static boolean exists(String u) {
         for (User user : users) {

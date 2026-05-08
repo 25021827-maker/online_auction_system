@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
 
-<VBox alignment="CENTER" prefHeight="400.0" prefWidth="600.0" spacing="20.0"
+<VBox alignment="CENTER" prefHeight="550.0" prefWidth="600.0" spacing="20.0"
       style="-fx-background-color: #f0f2f5;"
       xmlns="http://javafx.com/javafx/17"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -16,15 +16,45 @@
         </font>
     </Label>
 
-    <VBox maxWidth="300" spacing="10">
+    <VBox maxWidth="320" spacing="10">
+
+        <!-- ===== LOGIN INFO ===== -->
         <TextField fx:id="txtUser" prefHeight="35" promptText="Tên đăng nhập"/>
-        <PasswordField fx:id="txtPass" prefHeight="35" promptText="Mật khẩu"/>
-        <PasswordField fx:id="txtConfirm" prefHeight="35" promptText="Nhập lại mật khẩu"/>
+        <HBox spacing="5">
+            <StackPane>
+                <PasswordField fx:id="txtPass" promptText="Mật khẩu"/>
+                <TextField fx:id="txtPassVisible" promptText="Mật khẩu" visible="false"/>
+            </StackPane>
+            <Button text="👁" onAction="#togglePassword"/>
+        </HBox>
+        <!-- CONFIRM -->
+        <HBox spacing="5">
+            <StackPane>
+                <PasswordField fx:id="txtConfirm" promptText="Nhập lại mật khẩu"/>
+                <TextField fx:id="txtConfirmVisible" promptText="Nhập lại mật khẩu" visible="false"/>
+            </StackPane>
+            <Button text="👁" onAction="#toggleConfirm"/>
+        </HBox>
 
-        <Button text="Đăng ký" onAction="#handleRegister" maxWidth="Infinity"/>
-        <Button text="Quay lại" onAction="#goToLogin" maxWidth="Infinity"/>
+        <!-- ===== THÔNG TIN BỔ SUNG ===== -->
+        <TextField fx:id="txtEmail" prefHeight="35" promptText="Email"/>
+        <TextField fx:id="txtPhone" prefHeight="35" promptText="Số điện thoại"/>
+        <ComboBox fx:id="cbNation" prefHeight="35" promptText="Quốc tịch"/>
+        <ComboBox fx:id="cbAddress" prefHeight="35" promptText="Địa chỉ"/>
 
-        <Label fx:id="lblMessage"/>
+        <!-- ===== BUTTON ===== -->
+        <Button text="Đăng ký"
+                onAction="#handleRegister"
+                maxWidth="Infinity"
+                style="-fx-background-color: #2ecc71; -fx-text-fill: white;"/>
+
+        <Button text="Quay lại"
+                onAction="#goToLogin"
+                maxWidth="Infinity"/>
+
+        <!-- ===== MESSAGE ===== -->
+        <Label fx:id="lblMessage" textFill="red"/>
+
     </VBox>
 
 </VBox>

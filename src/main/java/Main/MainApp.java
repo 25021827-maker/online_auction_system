@@ -11,7 +11,7 @@ public class MainApp extends Application {
         // Sửa dòng này để app luôn bật màn hình đăng nhập đầu tiên
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/auth/Login.fxml"));
         Scene scene = new Scene(loader.load());
-
+        stage.setFullScreen(true);
         stage.setTitle("Hệ thống Đấu giá");
         stage.getIcons().add(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/icon đấu giá.png")));
         stage.setScene(scene);

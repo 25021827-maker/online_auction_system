@@ -2,6 +2,8 @@ package Controller.product;
 
 import Model.Product;
 import FakeDB.FakeDB;
+import Session.Session;
+
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextArea;
@@ -15,50 +17,94 @@ import java.io.File;
 
 public class ProductFormController {
 
-    @FXML private TextField txtName;
-    @FXML private TextArea txtDesc;
-    @FXML private TextField txtPrice;
-    @FXML private String imagePath = "";
+    @FXML
+    private TextField txtName;
+
+    @FXML
+    private TextArea txtDesc;
+
+    @FXML
+    private TextField txtPrice;
+
+    @FXML
+    private String imagePath = "";
 
     @FXML
     private void saveProduct() {
+
         try {
+
             String name = txtName.getText();
+
             double price = Double.parseDouble(txtPrice.getText());
 
-            Product p = new Product(name, price,"Đang đấu", imagePath);
+            // user hiện tại
+            String seller = Session.currentUser.getUsername();;
+
+            Product p = new Product(
+                    name,
+                    price,
+                    "Đang đấu",
+                    imagePath,
+                    "OPEN",
+                    seller
+            );
+
             FakeDB.addProduct(p);
+
+            System.out.println("Seller: " + seller);
 
             goBack();
 
         } catch (Exception e) {
+
             e.printStackTrace();
+
         }
     }
+
     @FXML
     private void chooseImage() {
+
         FileChooser fileChooser = new FileChooser();
+
         fileChooser.setTitle("Chọn ảnh");
 
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+                new FileChooser.ExtensionFilter(
+                        "Image Files",
+                        "*.png",
+                        "*.jpg",
+                        "*.jpeg"
+                )
         );
 
         File file = fileChooser.showOpenDialog(null);
 
         if (file != null) {
-            imagePath = file.toURI().toString(); // ❗ quan trọng
+
+            imagePath = file.toURI().toString();
+
         }
     }
 
     @FXML
     private void goBack() {
+
         try {
+
             Stage stage = (Stage) txtName.getScene().getWindow();
-            Parent root = FXMLLoader.load(getClass().getResource("/ui/product/AuctionMain.fxml"));
+
+            Parent root = FXMLLoader.load(
+                    getClass().getResource("/ui/product/AuctionMain.fxml")
+            );
+
             stage.setScene(new Scene(root));
+
         } catch (Exception e) {
+
             e.printStackTrace();
+
         }
     }
 }

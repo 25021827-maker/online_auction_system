@@ -1,6 +1,8 @@
 module demo {
     requires javafx.controls;
     requires javafx.fxml;
+    requires com.google.gson;
+
 
     opens Main to javafx.graphics, javafx.fxml;
     opens Model to javafx.base;
