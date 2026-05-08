@@ -1,0 +1,6 @@
+Model\Product.class
+Controller\AuctionController.class
+module-info.class
+View\AuctionCard.class
+Controller\FilterController.class
+Main\MainApp.class
