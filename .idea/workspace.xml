@@ -5,7 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d2ba7b10-6c60-40a5-8bbc-13b13ac67040" name="Changes" comment="Chỉnh sửa tiếp GUI">
-      <change beforePath="$PROJECT_DIR$/frontend/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/dao/DatabaseConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/dao/DatabaseConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/resources/ui/auth/Login.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main/resources/ui/auth/Login.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/target/classes/ui/auth/Login.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/target/classes/ui/auth/Login.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/target/classes/ui/user/AdminView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/target/classes/ui/user/AdminView.fxml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,6 +68,8 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.MainApp.executor": "Run",
+    "Application.ServerMain.executor": "Run",
+    "Application.SocketClient.executor": "Run",
     "Maven.demo [org.openjfx:javafx-maven-plugin:0.0.8:run].executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -139,6 +148,23 @@
       <workItem from="1774855145327" duration="11000" />
       <workItem from="1775435152543" duration="11000" />
     </task>
+    <task id="LOCAL-00001" summary="Chỉnh sửa tiếp GUI">
+      <option name="closed" value="true" />
+      <created>1778467247687</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1778467247687</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Chỉnh sửa tiếp GUI">
+      <option name="closed" value="true" />
+      <created>1778467369187</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1778467369187</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

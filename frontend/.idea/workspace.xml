@@ -5,7 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3c574530-f7d2-4493-a1ed-98fdfa2cd21b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../backend/src/main/java/dao/DatabaseConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/../backend/src/main/java/dao/DatabaseConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/ui/auth/Login.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/ui/auth/Login.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/ui/auth/Login.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/ui/auth/Login.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/ui/user/AdminView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/ui/user/AdminView.fxml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,6 +30,8 @@
 }]]></component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Application.MainApp.executor": "Run",
+    "Application.SocketClient.executor": "Run",
     "git-widget-placeholder": "feature__Thanh"
   }
 }]]></component>

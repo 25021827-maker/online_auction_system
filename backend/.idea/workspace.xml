@@ -5,8 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="46cb7f2f-c470-4663-b3d8-3965f6fdcca5" name="Changes" comment="update">
-      <change beforePath="$PROJECT_DIR$/src/main/java/network/ServerMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/ServerMain.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/dao/DatabaseConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/DatabaseConnection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/user/AdminView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/user/AdminView.fxml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,12 +30,12 @@
     &quot;assignee&quot;: &quot;Hanshi402&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/25021827-maker/online_auction_system.git&quot;,
-    &quot;accountId&quot;: &quot;8399469d-a519-4442-b7e8-952a05b0843e&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/25021827-maker/online_auction_system",
+    "accountId": "16af7451-10f5-47f1-b104-5a7310b942af"
   }
-}</component>
+}]]></component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -54,14 +55,14 @@
     "Application.ServerMain.executor": "Run",
     "JUnit.AuctionServiceTest.executor": "Run",
     "JUnit.AuctionServiceTest.testPlaceValidBid_Success.executor": "Run",
-    "Maven.backend.executor": "Debug",
+    "Maven.backend.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "feature__Son",
+    "git-widget-placeholder": "feature__Thanh",
     "kotlin-language-version-configured": "true",
     "project.structure.last.edited": "Problems",
     "project.structure.proportion": "0.15",
