@@ -20,6 +20,7 @@ public class ProductController {
     @FXML private TextField txtBid;
     @FXML private Label lblMessage;
 
+    // nhận dữ liệu từ màn trước
     public void setData(Product p) {
         this.currentProduct = p;
 
