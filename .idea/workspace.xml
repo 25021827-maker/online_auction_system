@@ -5,43 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d2ba7b10-6c60-40a5-8bbc-13b13ac67040" name="Changes" comment="Chỉnh sửa tiếp GUI">
-      <change afterPath="$PROJECT_DIR$/src/main/resources/data/countries.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/images/icon vip.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/images/myqr.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Controller/auth/LoginController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Controller/auth/LoginController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Controller/auth/RegisterController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Controller/auth/RegisterController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Controller/product/AuctionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Controller/product/AuctionController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Controller/product/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Controller/product/ProductController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Controller/product/ProductFormController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Controller/product/ProductFormController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Controller/user/ProfileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Controller/user/ProfileController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/FakeDB/FakeDB.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/FakeDB/FakeDB.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Main/MainApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Main/MainApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Model/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Model/Product.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Model/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Service/UserService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/module-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/ui/auth/Register.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/ui/auth/Register.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/ui/product/AuctionMain.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/ui/product/AuctionMain.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/ui/product/ProductDetail.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/ui/product/ProductDetail.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/ui/user/Profile.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/ui/user/Profile.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Controller/auth/LoginController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Controller/auth/LoginController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Controller/auth/RegisterController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Controller/auth/RegisterController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Controller/product/AuctionController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Controller/product/AuctionController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Controller/product/ProductController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Controller/product/ProductController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Controller/product/ProductFormController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Controller/product/ProductFormController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Controller/user/ProfileController.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Controller/user/ProfileController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/FakeDB/FakeDB.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/FakeDB/FakeDB.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Main/MainApp.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Main/MainApp.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Model/Product.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Model/Product.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Model/User.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Model/User.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Service/UserService.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Service/UserService.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/module-info.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/module-info.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ui/auth/Register.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/ui/auth/Register.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ui/product/AuctionMain.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/ui/product/AuctionMain.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ui/product/ProductDetail.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/ui/product/ProductDetail.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/ui/user/Profile.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/ui/user/Profile.fxml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/.gitkeep" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -65,11 +29,17 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="main" />
+        <entry key="$PROJECT_DIR$" value="feature_Thanh" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/25021827-maker/online_auction_system",
+    "accountId": "16af7451-10f5-47f1-b104-5a7310b942af"
+  }
+}]]></component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -103,9 +73,9 @@
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/ADMIN/IdeaProjects/GUI/src/main/resources/images",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
     "settings.editor.selected.configurable": "preferences.JavaFX",
     "vue.rearranger.settings.migration": "true"
   }
