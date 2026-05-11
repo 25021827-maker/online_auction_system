@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+
+<VBox alignment="TOP_CENTER"
+      spacing="20"
+      prefWidth="500"
+      prefHeight="650"
+      style="-fx-background-color: #f5f5f5;"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="Controller.product.ProductController">
+
+    <padding>
+        <Insets top="20"
+                left="20"
+                right="20"
+                bottom="20"/>
+    </padding>
+
+    <!-- TITLE -->
+    <Label text="CHI TIẾT SẢN PHẨM"
+           style="-fx-font-size: 24px;
+                  -fx-font-weight: bold;"/>
+
+    <!-- CARD -->
+    <VBox spacing="15"
+          alignment="CENTER"
+          maxWidth="950"
+          style="-fx-background-color: white;
+                 -fx-padding: 25;
+                 -fx-background-radius: 12;
+                 -fx-border-color: #dddddd;">
+
+        <!-- IMAGE -->
+        <ImageView fx:id="imageView"
+                   fitWidth="320"
+                   fitHeight="220"
+                   preserveRatio="true"/>
+
+        <!-- PRODUCT NAME -->
+        <Label fx:id="nameLabel"
+               style="-fx-font-size: 20px;
+                      -fx-font-weight: bold;"/>
+
+        <!-- CURRENT PRICE -->
+        <Label fx:id="priceLabel"
+               style="-fx-font-size: 16px;"/>
+
+        <!-- SELLER -->
+        <Label fx:id="sellerLabel"
+               style="-fx-font-size: 14px;"/>
+
+        <!-- HIGHEST BIDDER -->
+        <Label fx:id="highestBidderLabel"
+               style="-fx-font-size: 14px;"/>
+
+        <!-- USER BALANCE -->
+        <Label fx:id="balanceLabel"
+               style="-fx-font-size: 14px;
+                      -fx-text-fill: green;"/>
+
+        <Separator/>
+
+        <!-- BID INPUT -->
+        <TextField fx:id="txtBid"
+                   promptText="Nhập giá muốn đấu"/>
+
+        <!-- BID BUTTON -->
+        <Button fx:id = "bidButton"
+                text="Đặt giá"
+                onAction="#handleBid"
+                prefWidth="150"
+                style="-fx-background-color: #2ecc71;
+                       -fx-text-fill: white;
+                       -fx-background-radius: 8;"/>
+
+        <!-- MESSAGE -->
+        <Label fx:id="lblMessage"
+               style="-fx-text-fill: red;"/>
+
+        <!-- BACK -->
+        <Button text="Quay lại"
+                onAction="#goBack"
+                prefWidth="150"
+                style="-fx-background-color: #1976d2;
+                       -fx-text-fill: white;
+                       -fx-background-radius: 8;"/>
+
+    </VBox>
+
+</VBox>

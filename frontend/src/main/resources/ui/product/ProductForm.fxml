@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<VBox spacing="15"
+      prefHeight="700.0"
+      prefWidth="450.0"
+      style="-fx-padding: 30;"
+      xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="Controller.product.ProductFormController">
+
+    <!-- TITLE -->
+    <Label text="ĐĂNG TIN ĐẤU GIÁ">
+
+        <font>
+            <Font name="System Bold" size="20.0"/>
+        </font>
+
+    </Label>
+
+    <!-- PRODUCT NAME -->
+    <TextField fx:id="txtName"
+               promptText="Tên sản phẩm"/>
+
+    <!-- DESCRIPTION -->
+    <TextArea fx:id="txtDesc"
+              promptText="Mô tả sản phẩm"
+              prefHeight="100"/>
+
+    <!-- START PRICE -->
+    <TextField fx:id="txtPrice"
+               promptText="Giá khởi điểm (VNĐ)"/>
+
+    <!-- ========================= -->
+    <!-- START TIME -->
+    <!-- ========================= -->
+
+    <Label text="Ngày bắt đầu"/>
+
+    <DatePicker fx:id="startDatePicker"/>
+
+    <HBox spacing="10">
+
+        <TextField fx:id="startHourField"
+                   promptText="Giờ"
+                   prefWidth="80"/>
+
+        <TextField fx:id="startMinuteField"
+                   promptText="Phút"
+                   prefWidth="80"/>
+
+    </HBox>
+
+    <!-- ========================= -->
+    <!-- END TIME -->
+    <!-- ========================= -->
+
+    <Label text="Ngày kết thúc"/>
+
+    <DatePicker fx:id="endDatePicker"/>
+
+    <HBox spacing="10">
+
+        <TextField fx:id="endHourField"
+                   promptText="Giờ"
+                   prefWidth="80"/>
+
+        <TextField fx:id="endMinuteField"
+                   promptText="Phút"
+                   prefWidth="80"/>
+
+    </HBox>
+
+    <!-- IMAGE -->
+    <Button text="Chọn ảnh sản phẩm"
+            onAction="#chooseImage"/>
+
+    <!-- SUBMIT -->
+    <Button text="Đăng sản phẩm"
+            maxWidth="Infinity"
+            onAction="#saveProduct"
+            style="-fx-background-color: #2ecc71;
+                   -fx-text-fill: white;"/>
+
+    <!-- CANCEL -->
+    <Button text="Hủy"
+            maxWidth="Infinity"
+            onAction="#goBack"/>
+
+</VBox>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<?import javafx.scene.image.ImageView?>
+<ScrollPane fitToWidth="true"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controller.user.ProfileController">
+
+    <VBox alignment="TOP_CENTER"
+          spacing="20"
+          prefWidth="800.0"
+          style="-fx-padding: 30;
+             -fx-background-color: #f5f5f5;"
+          >
+
+    <!-- TITLE -->
+    <Label text="HỒ SƠ CÁ NHÂN">
+
+        <font>
+            <Font name="System Bold" size="28.0"/>
+        </font>
+
+    </Label>
+
+    <!-- USER INFO -->
+    <VBox spacing="15"
+          prefWidth="500"
+          style="-fx-background-color: white;
+                 -fx-padding: 20;
+                 -fx-background-radius: 12;">
+
+        <Label text="Thông tin tài khoản">
+
+            <font>
+                <Font name="System Bold" size="18"/>
+            </font>
+
+        </Label>
+
+        <Separator/>
+
+        <!-- USERNAME -->
+        <HBox spacing="10">
+
+            <Label text="Username:">
+
+                <font>
+                    <Font name="System Bold" size="14"/>
+                </font>
+
+            </Label>
+
+            <Label fx:id="lblUsername"/>
+
+        </HBox>
+
+        <!-- BALANCE -->
+        <HBox spacing="10">
+
+            <Label text="Số dư:">
+
+                <font>
+                    <Font name="System Bold" size="14"/>
+                </font>
+
+            </Label>
+
+            <Label fx:id="lblBalance"/>
+
+        </HBox>
+
+        <!-- ADD MONEY BUTTON -->
+        <Button text="Nạp tiền"
+                onAction="#handleAddMoney"
+                prefWidth="150"
+                style="-fx-background-color: #2ecc71;
+                       -fx-text-fill: white;
+                       -fx-background-radius: 8;"/>
+    </VBox>
+    <!-- QR TITLE -->
+    <Label text="QR Chuyển Khoản">
+
+        <font>
+            <Font name="System Bold" size="16"/>
+        </font>
+
+    </Label>
+
+    <!-- QR IMAGE -->
+    <ImageView fx:id="qrImageView"
+               fitWidth="220"
+               fitHeight="220"
+               preserveRatio="true"/>
+
+    <!-- UPLOAD PROOF -->
+    <Button text="Tải ảnh xác minh"
+            onAction="#chooseProofImage"
+            prefWidth="180"/>
+
+    <!-- PROOF STATUS -->
+    <Label fx:id="proofLabel"
+           text="Chưa tải ảnh xác minh"/>
+
+    <!-- CONFIRM -->
+    <Button text="Xác nhận đã chuyển tiền"
+            onAction="#handleFakePayment"
+            prefWidth="220"
+            style="-fx-background-color: orange;
+               -fx-text-fill: white;
+               -fx-background-radius: 8;"/>
+
+    <!-- PRODUCTS -->
+    <VBox spacing="10"
+          prefWidth="500"
+          style="-fx-background-color: white;
+                 -fx-padding: 20;
+                 -fx-background-radius: 12;">
+
+        <Label text="Sản phẩm đã đăng">
+
+            <font>
+                <Font name="System Bold" size="18"/>
+            </font>
+
+        </Label>
+
+        <Separator/>
+
+        <VBox fx:id="myProductsBox" spacing="10"/>
+
+    </VBox>
+
+    <!-- BACK BUTTON -->
+    <Button text="Quay lại trang chủ"
+            onAction="#goHome"
+            prefWidth="200"
+            style="-fx-background-color: #1976d2;
+                   -fx-text-fill: white;
+                   -fx-font-size: 14;
+                   -fx-background-radius: 10;"/>
+
+    </VBox>
+</ScrollPane>
