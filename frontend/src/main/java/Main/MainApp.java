@@ -8,7 +8,6 @@ import javafx.stage.Stage;
 public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
-        // Sửa dòng này để app luôn bật màn hình đăng nhập đầu tiên
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/auth/Login.fxml"));
         Scene scene = new Scene(loader.load());
 

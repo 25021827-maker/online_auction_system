@@ -4,8 +4,11 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-
-<VBox prefHeight="600.0" prefWidth="900.0" spacing="0.0"
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
+<VBox prefHeight="600.0"
+      prefWidth="900.0"
+      spacing="20.0"
       xmlns="http://javafx.com/javafx/17.0.12"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="Controller.product.AuctionController">
@@ -13,78 +16,178 @@
     <children>
 
         <!-- ===== HEADER ===== -->
-        <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="20.0"
-              style="-fx-background-color: white; -fx-border-color: #eeeeee; -fx-border-width: 0 0 1 0;">
+        <HBox alignment="CENTER_LEFT"
+              prefHeight="70.0"
+              spacing="30.0"
+              style="-fx-background-color: white;
+                     -fx-border-color: #eeeeee;
+                     -fx-border-width: 0 0 1 0;">
+
             <padding>
-                <Insets left="20.0" right="20.0" />
+                <Insets left="20.0" right="20.0"/>
             </padding>
 
             <children>
-                <Label text="BID_AUCTION" textFill="#1976d2">
+
+                <!-- LOGO -->
+                <Label text="8XBET"
+                       textFill="#0E0E42">
+
                     <font>
-                        <Font name="System Bold" size="22.0" />
+                        <Font name="System Bold"
+                              size="18.0"/>
                     </font>
+
                 </Label>
 
-                <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
+                <!-- SEARCH + FILTER -->
+                <HBox alignment="CENTER_LEFT"
+                      spacing="10.0"
+                      HBox.hgrow="ALWAYS">
+
                     <children>
+
+                        <!-- SEARCH -->
                         <TextField fx:id="searchField"
                                    prefHeight="35.0"
-                                   prefWidth="400.0"
-                                   promptText="Tìm kiếm sản phẩm đấu giá..."
+                                   prefWidth="220.0"
+                                   promptText="Tìm kiếm sản phẩm..."
                                    style="-fx-background-radius: 20;" />
 
-                        <Button text="⚙ Lọc"
-                                onAction="#openFilter"
-                                prefHeight="35.0"
-                                style="-fx-background-radius: 20; -fx-background-color: #f0f0f0; -fx-cursor: hand;"/>
+                        <!-- SORT -->
+                        <ComboBox fx:id="sortBox"
+                                  prefWidth="100"
+                                  promptText="Sắp xếp">
+
+                            <items>
+
+                                <FXCollections fx:factory="observableArrayList">
+
+                                    <String fx:value="Giá thấp → cao"/>
+                                    <String fx:value="Giá cao → thấp"/>
+
+                                </FXCollections>
+
+                            </items>
+
+                        </ComboBox>
+
+                        <!-- PRICE FILTER -->
+                        <ComboBox fx:id="priceFilterBox"
+                                  prefWidth="100"
+                                  promptText="Khoảng giá">
+
+                            <items>
+
+                                <FXCollections fx:factory="observableArrayList">
+
+                                    <String fx:value="Tất cả"/>
+                                    <String fx:value="Dưới 500"/>
+                                    <String fx:value="500 - 1000"/>
+                                    <String fx:value="Trên 1000"/>
+
+                                </FXCollections>
+
+                            </items>
+
+                        </ComboBox>
+
                     </children>
 
                     <HBox.margin>
-                        <Insets left="30.0" />
+                        <Insets left="30.0"/>
                     </HBox.margin>
+
                 </HBox>
 
-                <Button text="Đăng sản phẩm"
+                <!-- POST -->
+                <Button text="Post product"
                         onAction="#handlePostProduct"
                         prefHeight="35.0"
-                        style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-cursor: hand;"/>
+                        style="-fx-background-color: #E3E342;
+                               -fx-text-fill: white;
+                               -fx-cursor: hand;"/>
+
+                <!-- PROFILE -->
+                <Button text="Profile"
+                        onAction="#handleViewProfile"
+                        prefHeight="35.0"
+                        style="-fx-background-color: #E3E342;
+                               -fx-text-fill: white;
+                               -fx-cursor: hand;"/>
+
+                <!-- LOGOUT -->
+                <Button text="Log out"
+                        onAction="#handleLogout"
+                        prefHeight="35.0"
+                        style="-fx-background-color: #E3E342;
+                               -fx-text-fill: white;
+                               -fx-cursor: hand;"/>
+
             </children>
+
         </HBox>
-        <!-- ===== FILTER TAB (THÊM MỚI) ===== -->
-        <HBox spacing="10" style="-fx-padding: 10 20;">
-            <Button text="Tất cả" onAction="#showAll"
-                    style="-fx-background-color: #eeeeee; -fx-cursor: hand;"/>
-            <Button text="Đang đấu" onAction="#showOpen"
-                    style="-fx-background-color: #ffe0b2; -fx-cursor: hand;"/>
-            <Button text="Đã bán" onAction="#showSold"
-                    style="-fx-background-color: #c8e6c9; -fx-cursor: hand;"/>
+
+        <!-- ===== STATUS FILTER ===== -->
+        <HBox spacing="10"
+              style="-fx-padding: 10 20;">
+
+            <Button text="Tất cả"
+                    onAction="#showAll"
+                    style="-fx-background-color: #eeeeee;
+                           -fx-cursor: hand;"/>
+
+            <Button text="Đang đấu"
+                    onAction="#showOpen"
+                    style="-fx-background-color: #ffe0b2;
+                           -fx-cursor: hand;"/>
+
+            <Button text="Đã bán"
+                    onAction="#showSold"
+                    style="-fx-background-color: #c8e6c9;
+                           -fx-cursor: hand;"/>
+
         </HBox>
 
         <!-- ===== PRODUCT LIST ===== -->
         <ScrollPane fitToWidth="true"
                     style="-fx-background-color: transparent;"
                     VBox.vgrow="ALWAYS">
+
             <content>
+
                 <VBox spacing="15.0">
+
                     <padding>
-                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                        <Insets bottom="20.0"
+                                left="20.0"
+                                right="20.0"
+                                top="20.0"/>
                     </padding>
 
                     <children>
+
                         <Label text="Sản phẩm đấu giá">
+
                             <font>
-                                <Font name="System Bold" size="18.0" />
+                                <Font name="System Bold"
+                                      size="18.0"/>
                             </font>
+
                         </Label>
 
                         <FlowPane fx:id="productsContainer"
                                   hgap="20.0"
                                   vgap="20.0"/>
+
                     </children>
+
                 </VBox>
+
             </content>
+
         </ScrollPane>
 
     </children>
+
 </VBox>

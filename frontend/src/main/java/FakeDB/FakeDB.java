@@ -9,56 +9,141 @@ import java.util.stream.Collectors;
 
 public class FakeDB {
 
-    // ===== USER =====
-    public static List<User> users = new ArrayList<>();
+    // =========================
+    // USER
+    // =========================
+    public static List<User> users =
+            new ArrayList<>();
 
     static {
-        users.add(new User("admin", "123"));
+
+        users.add(
+                new User("admin", "123")
+        );
     }
 
-    public static void addUser(String u, String p) {
-        users.add(new User(u, p));
+    public static void addUser(
+            String u,
+            String p
+    ) {
+
+        users.add(
+                new User(u, p)
+        );
     }
 
-    public static boolean checkLogin(String u, String p) {
+    public static boolean checkLogin(
+            String u,
+            String p
+    ) {
+
         for (User user : users) {
-            if (user.username.equals(u) && user.password.equals(p)) {
+
+            if (
+                    user.username.equals(u)
+                            &&
+                            user.password.equals(p)
+            ) {
+
                 return true;
             }
         }
+
         return false;
     }
 
-    public static boolean exists(String u) {
+    public static User getUser(
+            String u,
+            String p
+    ) {
+
         for (User user : users) {
-            if (user.username.equals(u)) return true;
+
+            if (
+                    user.username.equals(u)
+                            &&
+                            user.password.equals(p)
+            ) {
+
+                return user;
+            }
         }
+
+        return null;
+    }
+
+    public static User getUserByUsername(
+            String username
+    ) {
+
+        for (User user : users) {
+
+            if (
+                    user.getUsername()
+                            .equals(username)
+            ) {
+
+                return user;
+            }
+        }
+
+        return null;
+    }
+
+    public static boolean exists(
+            String u
+    ) {
+
+        for (User user : users) {
+
+            if (
+                    user.username.equals(u)
+            ) {
+
+                return true;
+            }
+        }
+
         return false;
     }
 
-    // ===== PRODUCT =====
-    public static List<Product> products = new ArrayList<>();
+    // =========================
+    // PRODUCT
+    // =========================
+    public static List<Product> products =
+            new ArrayList<>();
 
-    // 👉 dữ liệu mẫu (rất quan trọng để test UI)
-    static {
-        products.add(new Product("iPhone 13", 1000, "10 phút", "", "OPEN", "admin"));
-        products.add(new Product("Laptop Dell", 1500, "20 phút", "", "OPEN", "admin"));
-        products.add(new Product("Tai nghe Sony", 200, "5 phút", "", "SOLD", "admin"));
-    }
+    public static void addProduct(
+            Product p
+    ) {
 
-    public static void addProduct(Product p) {
         products.add(p);
     }
 
-    // 👉 trả về bản copy (tránh sửa trực tiếp list)
+    // =========================
+    // GET ALL PRODUCTS
+    // =========================
     public static List<Product> getProducts() {
+
         return new ArrayList<>(products);
     }
 
-    // 👉 filter theo status (phục vụ tab)
-    public static List<Product> getByStatus(String status) {
+    // =========================
+    // FILTER STATUS
+    // =========================
+    public static List<Product> getByStatus(
+            String status
+    ) {
+
         return products.stream()
-                .filter(p -> p.getStatus().equals(status))
+
+                .filter(p ->
+
+                        p.getStatus()
+                                .equals(status)
+
+                )
+
                 .collect(Collectors.toList());
     }
 }
