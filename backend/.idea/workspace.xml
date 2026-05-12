@@ -5,63 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="46cb7f2f-c470-4663-b3d8-3965f6fdcca5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/encodings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/dao/DatabaseConnection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/dao/DatabaseConnection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/network/ServerMain.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/ServerMain.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/.idea/copilot.data.migration.ask2agent.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/.idea/copilot.data.migration.ask2agent.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Controller/auth/LoginController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Controller/auth/LoginController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Controller/auth/RegisterController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Controller/auth/RegisterController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/AuctionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/AuctionController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/FilterController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/FilterController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/ProductController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/ProductFormController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Controller/product/ProductFormController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Controller/user/ProfileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Controller/user/ProfileController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/FakeDB/FakeDB.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/FakeDB/FakeDB.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Main/MainApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Main/MainApp.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Model/Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Model/Product.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Model/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/Service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/Service/UserService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/java/module-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/images/icon đấu giá.png" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/images/icon đấu giá.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/style/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/style/main.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/ui/auth/Login.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/ui/auth/Login.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/ui/auth/Register.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/ui/auth/Register.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/AuctionMain.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/AuctionMain.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/FilterView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/FilterView.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/ProductDetail.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/ProductDetail.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/ProductForm.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/ui/product/ProductForm.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/src/main/resources/ui/user/Profile.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/src/main/resources/ui/user/Profile.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Controller/auth/LoginController.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Controller/auth/LoginController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Controller/auth/RegisterController.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Controller/auth/RegisterController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Controller/product/AuctionController.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Controller/product/AuctionController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Controller/product/FilterController.class" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Controller/product/ProductController.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Controller/product/ProductController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Controller/product/ProductFormController.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Controller/product/ProductFormController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Controller/user/ProfileController.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Controller/user/ProfileController.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/FakeDB/FakeDB.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/FakeDB/FakeDB.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Main/MainApp.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Main/MainApp.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Model/Product.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Model/Product.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Model/User.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Model/User.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/Service/UserService.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/Service/UserService.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/images/icon đấu giá.png" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/images/icon đấu giá.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/module-info.class" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/module-info.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/style/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/style/main.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/auth/Login.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/auth/Login.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/auth/Register.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/auth/Register.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/product/AuctionMain.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/product/AuctionMain.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/product/FilterView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/product/FilterView.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/product/ProductDetail.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/product/ProductDetail.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/product/ProductForm.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/product/ProductForm.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/classes/ui/user/Profile.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/../frontend/target/classes/ui/user/Profile.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../frontend/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/network/ClientHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/network/ClientHandler.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,17 +54,15 @@
     "Application.ServerMain.executor": "Run",
     "JUnit.AuctionServiceTest.executor": "Run",
     "JUnit.AuctionServiceTest.testPlaceValidBid_Success.executor": "Run",
-    "Maven.backend [clean].executor": "Run",
-    "Maven.backend.executor": "Run",
+    "Maven.backend.executor": "Debug",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "feature__Son",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Admin/IdeaProjects/online_auction_system/backend",
     "project.structure.last.edited": "Problems",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",

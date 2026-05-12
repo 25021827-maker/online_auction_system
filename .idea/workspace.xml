@@ -4,7 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d2ba7b10-6c60-40a5-8bbc-13b13ac67040" name="Changes" comment="" />
+    <list default="true" id="d2ba7b10-6c60-40a5-8bbc-13b13ac67040" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/frontend/src/main/java/Session/Session.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/Controller/auth/LoginController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/Controller/product/ProductController.java" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main/java/Controller/product/ProductController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/Controller/user/AdminController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/Controller/user/ProfileController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/Main/MainApp.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/Model/Product.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/Model/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/java/module-info.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/resources/style/main.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/resources/ui/product/ProductForm.fxml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/resources/ui/user/AdminView.fxml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/main/resources/ui/user/Profile.fxml" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -12,6 +29,8 @@
   </component>
   <component name="CopilotPersistence">
     <persistenceIdMap>
+      <entry key="_C:/Users/ADMIN/Documents/online_auction_system" value="3DEnUpUsr2U1kWsCfWjpJZon0O6" />
+      <entry key="_C:/Users/ADMIN/Documents/online_auction_system/frontend" value="3DEwJSJsT1GmgVCKvVoVCFP9ZIF" />
       <entry key="_C:/Users/ADMIN/IdeaProjects/GUI" value="3CDME57l718NHCHFPekKJMhKSzx" />
       <entry key="_C:/Users/ADMIN/IdeaProjects/demo" value="3BegqfVmHgxvIjHJc8CMWyA4E9V" />
     </persistenceIdMap>
@@ -25,25 +44,35 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_BRANCH_BY_REPOSITORY">
-      <map>
-        <entry key="$PROJECT_DIR$" value="feature_Son" />
-      </map>
-    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+<<<<<<< HEAD
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
     &quot;state&quot;: &quot;OPEN&quot;,
-    &quot;assignee&quot;: &quot;Hanshi402&quot;
+    &quot;assignee&quot;: &quot;25022013-oss&quot;
   }
 }</component>
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/25021827-maker/online_auction_system.git&quot;,
-    &quot;accountId&quot;: &quot;8399469d-a519-4442-b7e8-952a05b0843e&quot;
+    &quot;url&quot;: &quot;https://github.com/25021827-maker/online_auction_system&quot;,
+    &quot;accountId&quot;: &quot;16af7451-10f5-47f1-b104-5a7310b942af&quot;
   }
 }</component>
+=======
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "Hanshi402"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/25021827-maker/online_auction_system.git",
+    "accountId": "8399469d-a519-4442-b7e8-952a05b0843e"
+  }
+}]]></component>
+>>>>>>> 16594869362b8ef1250d477b3a3e0314c3501c9e
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -59,12 +88,42 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
+<<<<<<< HEAD
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.MainApp.executor&quot;: &quot;Run&quot;,
+    &quot;Maven.demo [org.openjfx:javafx-maven-plugin:0.0.8:run].executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ADMIN/Documents/online_auction_system/frontend&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.JavaFX&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\ADMIN\Documents\online_auction_system\frontend" />
+      <recent name="C:\Users\ADMIN\Documents\online_auction_system\frontend\src\main" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ADMIN\Documents\online_auction_system\frontend" />
+    </key>
+  </component>
+=======
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.MainApp.executor": "Run",
-    "Application.ServerMain.executor": "Run",
-    "Application.SocketClient.executor": "Run",
-    "Maven.demo [clean].executor": "Run",
     "Maven.demo [org.openjfx:javafx-maven-plugin:0.0.8:run].executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -72,7 +131,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "feature__Son",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/Admin/IdeaProjects/online_auction_system",
@@ -84,8 +143,9 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+>>>>>>> 16594869362b8ef1250d477b3a3e0314c3501c9e
   <component name="RunManager">
-    <configuration name="MainApp" type="Application" factoryName="Application" nameIsGenerated="true">
+    <configuration name="MainApp" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="Main.MainApp" />
       <module name="demo" />
       <extension name="coverage">
@@ -109,6 +169,11 @@
       <option name="filePath" />
       <method v="2" />
     </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.MainApp" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
