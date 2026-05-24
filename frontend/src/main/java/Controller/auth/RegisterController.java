@@ -130,12 +130,19 @@ public class RegisterController {
         FakeDB.addUser(user, pass);
     }
 
-
     @FXML
     private void goToLogin() throws Exception {
         Stage stage = (Stage) txtUser.getScene().getWindow();
         Parent root = FXMLLoader.load(getClass().getResource("/ui/auth/Login.fxml"));
         stage.setScene(new Scene(root));
         stage.setTitle("Đăng nhập");
+
+        // Kích thước nhỏ gọn cho màn Auth
+        stage.setWidth(450);
+        stage.setHeight(600);
+        stage.setResizable(false);
+        stage.centerOnScreen();
     }
+
+
 }

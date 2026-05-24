@@ -10,17 +10,21 @@ public class User {
     private String nationality;
     private String address;
 
+    // ===== AVATAR PATH (MỚI BỔ SUNG) =====
+    private String avatarPath; // Lưu đường dẫn file ảnh cá nhân của người dùng
+
     // ===== WALLET =====
     private double balance;
 
-    // ===== CONSTRUCTOR CŨ (GIỮ LẠI) =====
+    // ===== CONSTRUCTOR CŨ (ĐÃ CẬP NHẬT AVATAR) =====
     public User(String u, String p) {
         this.username = u;
         this.password = p;
         this.balance = 0;
+        this.avatarPath = ""; // Mặc định trống để dùng ảnh default
     }
 
-    // ===== CONSTRUCTOR ĐẦY ĐỦ =====
+    // ===== CONSTRUCTOR ĐẦY ĐỦ (ĐÃ CẬP NHẬT AVATAR) =====
     public User(String username, String password,
                 String email, String phone,
                 String nationality, String address) {
@@ -32,6 +36,17 @@ public class User {
         this.nationality = nationality;
         this.address = address;
         this.balance = 0;
+        this.avatarPath = ""; // Mặc định trống để dùng ảnh default
+    }
+
+    // ===== GETTER & SETTER CHO AVATAR (MỚI BỔ SUNG) =====
+    public String getAvatarPath() {
+        return avatarPath;
+    }
+
+    public void setAvatarPath(String avatarPath) {
+        // Khi user upload ảnh mới ở trang Profile, ta sẽ gọi hàm này để cập nhật đường dẫn
+        this.avatarPath = avatarPath;
     }
 
     // ===== GETTER =====
