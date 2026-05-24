@@ -1,0 +1,16 @@
+Controller\user\ProfileController.class
+Controller\auth\RegisterController.class
+Controller\product\AuctionController.class
+Controller\auth\RegisterController$1.class
+Service\UserService.class
+module-info.class
+network\SocketClient.class
+Model\Product.class
+Session\Session.class
+Controller\product\ProductController.class
+Main\MainApp.class
+Controller\auth\LoginController.class
+Controller\user\AdminController.class
+Model\User.class
+FakeDB\FakeDB.class
+Controller\product\ProductFormController.class

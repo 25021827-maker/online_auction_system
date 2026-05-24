@@ -1,7 +1,9 @@
 package Controller.product;
 
 import Model.Product;
+
 import FakeDB.FakeDB;
+
 import Session.Session;
 
 import javafx.fxml.FXML;
@@ -10,9 +12,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.DatePicker;
+
+import javafx.collections.FXCollections;
 
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -24,6 +29,10 @@ import java.time.LocalDateTime;
 
 public class ProductFormController {
 
+// =====================================================
+// FXML
+// =====================================================
+
     @FXML
     private TextField txtName;
 
@@ -33,9 +42,15 @@ public class ProductFormController {
     @FXML
     private TextField txtPrice;
 
-    // =========================
+    // CATEGORY
+    @FXML
+    private ComboBox<String> categoryBox;
+
+    // CONDITION
+    @FXML
+    private ComboBox<String> conditionBox;
+
     // START TIME
-    // =========================
     @FXML
     private DatePicker startDatePicker;
 
@@ -45,9 +60,7 @@ public class ProductFormController {
     @FXML
     private TextField startMinuteField;
 
-    // =========================
     // END TIME
-    // =========================
     @FXML
     private DatePicker endDatePicker;
 
@@ -57,21 +70,72 @@ public class ProductFormController {
     @FXML
     private TextField endMinuteField;
 
-    // =========================
-    // IMAGE
-    // =========================
+// =====================================================
+// IMAGE
+// =====================================================
+
     private String imagePath = "";
 
-    // =========================
-    // SAVE PRODUCT
-    // =========================
+// =====================================================
+// INITIALIZE
+// =====================================================
+
+    @FXML
+    public void initialize() {
+
+        categoryBox.setItems(
+
+                FXCollections.observableArrayList(
+
+                        "Electronics",
+
+                        "Fashion",
+
+                        "Book",
+
+                        "Furniture",
+
+                        "Gaming",
+
+                        "Vehicle",
+
+                        "Other"
+                )
+        );
+
+        conditionBox.setItems(
+
+                FXCollections.observableArrayList(
+
+                        "New",
+
+                        "Like New",
+
+                        "Used",
+
+                        "Damaged"
+                )
+        );
+    }
+
+// =====================================================
+// SAVE PRODUCT
+// =====================================================
+
     @FXML
     private void saveProduct() {
 
         try {
 
+            // =========================
+            // BASIC DATA
+            // =========================
+
             String name =
                     txtName.getText();
+
+            String description =
+                    txtDesc.getText();
 
             double price =
                     Double.parseDouble(
@@ -81,9 +145,47 @@ public class ProductFormController {
             String seller =
                     Session.currentUser.getUsername();
 
+            String category =
+                    categoryBox.getValue();
+
+            String condition =
+                    conditionBox.getValue();
+
+            // =========================
+            // VALIDATION
+            // =========================
+
+            if (name.isEmpty()) {
+
+                System.out.println(
+                        "Name không được để trống"
+                );
+
+                return;
+            }
+
+            if (description.isEmpty()) {
+
+                System.out.println(
+                        "Description không được để trống"
+                );
+
+                return;
+            }
+
+            if (price <= 0) {
+
+                System.out.println(
+                        "Price phải lớn hơn 0"
+                );
+
+                return;
+            }
+
             // =========================
             // START TIME
             // =========================
+
             LocalDate startDate =
                     startDatePicker.getValue();
 
@@ -106,6 +208,7 @@ public class ProductFormController {
             // =========================
             // END TIME
             // =========================
+
             LocalDate endDate =
                     endDatePicker.getValue();
 
@@ -126,10 +229,9 @@ public class ProductFormController {
                     );
 
             // =========================
-            // VALIDATION
+            // TIME VALIDATION
             // =========================
 
-            // END > START
             if (endTime.isBefore(startTime)) {
 
                 System.out.println(
@@ -139,7 +241,6 @@ public class ProductFormController {
                 return;
             }
 
-            // START >= NOW
             if (startTime.isBefore(
                     LocalDateTime.now()
             )) {
@@ -154,17 +255,31 @@ public class ProductFormController {
             // =========================
             // CREATE PRODUCT
             // =========================
+
             Product p = new Product(
 
                     name,
-                    price,
-                    imagePath,
-                    seller,
-                    startTime,
-                    endTime
 
+                    price,
+
+                    imagePath,
+
+                    seller,
+
+                    startTime,
+
+                    endTime,
+
+                    description
             );
 
+            // CATEGORY
+            p.setCategory(category);
+
+            // CONDITION
+            p.setCondition(condition);
+
+            // SAVE
             FakeDB.addProduct(p);
 
             System.out.println(
@@ -176,13 +291,13 @@ public class ProductFormController {
         } catch (Exception e) {
 
             e.printStackTrace();
-
         }
     }
 
-    // =========================
-    // CHOOSE IMAGE
-    // =========================
+// =====================================================
+// CHOOSE IMAGE
+// =====================================================
+
     @FXML
     private void chooseImage() {
 
@@ -198,10 +313,12 @@ public class ProductFormController {
                 new FileChooser.ExtensionFilter(
 
                         "Image Files",
-                        "*.png",
-                        "*.jpg",
-                        "*.jpeg"
 
+                        "*.png",
+
+                        "*.jpg",
+
+                        "*.jpeg"
                 )
         );
 
@@ -215,35 +332,38 @@ public class ProductFormController {
         }
     }
 
-    // =========================
-    // GO BACK
-    // =========================
+// =====================================================
+// GO BACK
+// =====================================================
+
+    // =====================================================
+// GO BACK
+// =====================================================
     @FXML
     private void goBack() {
-
         try {
-
-            Stage stage =
-                    (Stage) txtName
-                            .getScene()
-                            .getWindow();
+            Stage stage = (Stage) txtName.getScene().getWindow();
 
             Parent root = FXMLLoader.load(
-
-                    getClass().getResource(
-                            "/ui/product/AuctionMain.fxml"
-                    )
-
+                    getClass().getResource("/ui/product/AuctionMain.fxml")
             );
 
-            stage.setScene(
-                    new Scene(root)
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(
+                    getClass().getResource("/style/pages/auction-main.css").toExternalForm()
             );
+
+            stage.setScene(scene);
+
+            // Phóng to lại kích thước chính khi quay về trang chủ và khóa resizable
+            stage.setWidth(1280);
+            stage.setHeight(750);
+            stage.setResizable(false);
+            stage.centerOnScreen();
 
         } catch (Exception e) {
-
             e.printStackTrace();
-
         }
     }
+
 }

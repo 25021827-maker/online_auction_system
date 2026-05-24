@@ -2,7 +2,7 @@ package FakeDB;
 
 import Model.User;
 import Model.Product;
-
+import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -146,4 +146,35 @@ public class FakeDB {
 
                 .collect(Collectors.toList());
     }
+
+    // =========================
+// GET PRODUCTS BY SELLER
+// =========================
+    public static List<Product> getProductsBySeller(
+            String seller
+    ) {
+
+        return products.stream()
+
+                .filter(p ->
+
+                        p.getSeller()
+                                .equals(seller)
+
+                )
+
+                .collect(Collectors.toList());
+    }
+
+    // =========================
+// REMOVE PRODUCT
+// =========================
+    public static void removeProduct(
+            Product product
+    ) {
+
+        products.remove(product);
+    }
+
+
 }

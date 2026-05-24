@@ -1,0 +1,238 @@
+/* ==========================================================================
+   AUCTION ROOM STYLE (Giữ nguyên style gốc của bạn + Bổ sung thành phần thiếu)
+   ========================================================================== */
+
+/* --- THÀNH PHẦN GỐC CỦA BẠN (Giữ nguyên cấu trúc & thông số) --- */
+
+.page-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffdd00;
+}
+
+.auction-room-card {
+    -fx-background-color: #000000;
+    -fx-border-radius: 16;
+    -fx-padding: 15;
+    -fx-spacing: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0.2, 0, 5);
+}
+
+.auction-card:hover {
+    -fx-scale-x: 1.01;
+    -fx-scale-y: 1.01;
+}
+
+.live-status {
+    -fx-background-color: #2ecc71; /* Giữ màu xanh lá cây nguyên bản của bạn */
+    -fx-text-fill: white;
+    -fx-padding: 6 16 6 16;
+    -fx-background-radius: 20;
+    -fx-font-weight: bold;
+}
+
+.countdown-label {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #ffdd00;
+}
+
+.viewer-label {
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 13px;
+}
+
+.winner-label {
+    -fx-text-fill: #4caf50;
+    -fx-font-weight: bold;
+}
+
+.auction-description {
+    -fx-control-inner-background: #1a1a1a;
+    -fx-text-fill: white;
+    -fx-background-radius: 10;
+}
+
+
+/* --- THÀNH PHẦN BỔ SUNG (Phối chuẩn Vàng/Đen để đồng bộ hệ thống) --- */
+
+/* 1. Giao diện nền tổng thể của ScrollPane */
+.main-scroll {
+    -fx-background-color: #0b0b0b;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.main-scroll .viewport {
+    -fx-background-color: #0b0b0b;
+}
+.main-background {
+    -fx-background-color: #0b0b0b;
+}
+
+/* 2. Cấu trúc SplitPane */
+.auction-split-pane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.auction-split-pane .split-pane-divider {
+    -fx-background-color: #1a1a1a;
+    -fx-padding: 0 2 0 2;
+}
+
+/* Panel chính ở giữa (Nơi chứa thông tin đặt giá trực tiếp) */
+.hero-auction-panel {
+    -fx-background-color: #000000;
+    -fx-background-radius: 16; /* Đồng bộ độ bo góc 16 của auction-room-card */
+    -fx-border-color: #ffdd00;  /* Viền vàng nổi bật khu vực trung tâm */
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0.2, 0, 5);
+}
+
+/* Thao tác phân tách đường dòng kẻ */
+.separator .line {
+    -fx-border-color: #222222 transparent transparent transparent;
+}
+
+/* 3. Text & Nhãn hiển thị bổ sung */
+.section-title {
+    -fx-text-fill: #ffdd00;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-letter-spacing: 1px;
+}
+.product-detail-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+}
+.product-info {
+    -fx-text-fill: #888888;
+    -fx-font-size: 13px;
+}
+.hero-price-label {
+    -fx-text-fill: #ffffff; /* Giá tiền to bản màu trắng tương phản cực cao */
+    -fx-font-weight: 900;
+    -fx-font-size: 36px;
+}
+.hero-countdown-label {
+    /* Trong FXML của bạn dùng fx:id="countdownLabel" ứng với class .countdown-label phía trên */
+    -fx-font-family: "Consolas", monospace; /* Đổi font sang dạng số điện tử chống giật lag chữ */
+}
+
+/* 4. Ô nhập tiền (StyleClass: hero-bid-input) */
+.hero-bid-input {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #555555;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #333333;
+    -fx-border-width: 1.5;
+    -fx-alignment: center;
+    -fx-font-size: 15px;
+}
+.hero-bid-input:focused {
+    -fx-border-color: #ffdd00;
+    -fx-background-color: #222222;
+}
+
+/* 5. Nút bấm tương tác */
+/* Nút PLACE BID (StyleClass: hero-bid-button) */
+.hero-bid-button {
+    -fx-background-color: #ffdd00;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 10 24 10 24;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s;
+}
+.hero-bid-button:hover {
+    -fx-background-color: #e6c600;
+}
+
+/* Các nút tăng giá nhanh +10, +50, +100 (StyleClass: quick-bid-button) */
+.quick-bid-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffdd00;
+    -fx-border-color: #ffdd00;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+.quick-bid-button:hover {
+    -fx-background-color: rgba(255, 221, 0, 0.15);
+}
+
+/* Nút BACK (StyleClass: secondary-button) */
+.secondary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #666666;
+    -fx-border-color: #333333;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+.secondary-button:hover {
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #666666;
+}
+
+/* Lỗi thông báo đỏ */
+.error-label {
+    -fx-text-fill: #ff4444;
+    -fx-font-size: 13px;
+}
+
+/* 6. Danh sách lịch sử đấu giá (StyleClass: bid-history-list) */
+.bid-history-list {
+    -fx-background-color: #0a0a0a;
+    -fx-background-insets: 0;
+    -fx-padding: 5;
+    -fx-border-color: #1a1a1a;
+    -fx-border-radius: 8;
+}
+.bid-history-list .list-cell {
+    -fx-background-color: #0a0a0a;
+    -fx-text-fill: #cccccc;
+    -fx-padding: 8 10 8 10;
+    -fx-border-color: transparent transparent #151515 transparent;
+}
+.bid-history-list .list-cell:filled:hover {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #ffdd00;
+}
+
+/* 7. Biểu đồ xu hướng giá (LineChart) */
+.chart-panel {
+    -fx-background-color: #000000;
+    -fx-background-radius: 16;
+    -fx-border-color: #1a1a1a;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 15, 0.2, 0, 5);
+}
+.chart-plot-background {
+    -fx-background-color: #0a0a0a;
+}
+.chart-horizontal-grid-lines, .chart-vertical-grid-lines {
+    -fx-stroke: #1f1f1f;
+    -fx-stroke-dash-array: 3px;
+}
+.chart-series-line {
+    -fx-stroke: #ffdd00; /* Đường đồ thị màu vàng rực rỡ đúng tone */
+    -fx-stroke-width: 2.5px;
+}
+.axis {
+    -fx-tick-label-fill: #666666;
+}
+.axis-label {
+    -fx-text-fill: #ffdd00;
+    -fx-font-weight: bold;
+}
