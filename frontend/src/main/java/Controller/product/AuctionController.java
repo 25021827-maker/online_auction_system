@@ -1,610 +1,388 @@
 package Controller.product;
 
-import Model.Product;
 import FakeDB.FakeDB;
-import Session.Session;
+import Model.Product;
+import Service.product.ProductFilterService;
+import ui.product.ProductCard;
+import Service.core.SceneNavigator;
+import Session.Session; // Đảm bảo đã import Session để lấy User hiện tại
 
 import javafx.application.Platform;
-
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.Node;
-
-import javafx.event.ActionEvent;
-
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
-
-import javafx.scene.control.TextField;
-import javafx.scene.control.Label;
-import javafx.scene.control.ComboBox;
-
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
+import javafx.event.ActionEvent;
 
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Comparator;
-
-import java.util.stream.Collectors;
-import javafx.animation.Timeline;
-import javafx.animation.KeyFrame;
-import javafx.util.Duration;
+import java.util.Map;
+import java.util.HashMap;
 
 public class AuctionController {
+
+    // =========================
+    // SEARCH + FILTER
+    // =========================
 
     @FXML
     private TextField searchField;
 
     @FXML
-    private FlowPane productsContainer;
+    private TextField minPriceField;
+
+    @FXML
+    private TextField maxPriceField;
 
     @FXML
     private ComboBox<String> sortBox;
 
     @FXML
-    private ComboBox<String> priceFilterBox;
+    private ComboBox<String> statusBox;
+
+    @FXML
+    private ComboBox<String> categoryFilterBox;
+
+    @FXML
+    private ComboBox<String> conditionFilterBox;
+
+    // =====================================================
+    // USER AVATAR ON HEADER (MỚI BỔ SUNG)
+    // =====================================================
+
+    @FXML
+    private ImageView imgAvatarHeader;
 
     // =========================
-    // INIT
+    // PRODUCTS CONTAINER
     // =========================
+
+    @FXML
+    private FlowPane productsContainer;
+
+    // =========================
+    // CARD MAP
+    // =========================
+
+    private final Map<Integer, ProductCard> cardMap
+            = new HashMap<>();
+
+    // =========================
+    // INITIALIZE
+    // =========================
+
     @FXML
     public void initialize() {
 
-        loadProducts(
-                FakeDB.getProducts()
-        );
+        setupDefaults();
 
-        // DEFAULT FILTER
-        priceFilterBox.setValue("Tất cả");
+        setupListeners();
 
-        // REALTIME SEARCH
-        searchField.textProperty().addListener(
+        // Tải thông tin người dùng và bo góc Avatar
+        setupUserAvatar();
 
-                (observable, oldValue, newValue) -> {
+        Platform.runLater(() -> {
 
-                    applyFilters();
+            if (productsContainer != null) {
 
-                }
-
-        );
-
-        // SORT
-        sortBox.valueProperty().addListener(
-
-                (observable, oldValue, newValue) -> {
-
-                    applyFilters();
-
-                }
-
-        );
-
-        // PRICE FILTER
-        priceFilterBox.valueProperty().addListener(
-
-                (observable, oldValue, newValue) -> {
-
-                    applyFilters();
-
-                }
-
-        );
-
-        // PRELOAD
-        new Thread(() -> {
-
-            try {
-
-                FXMLLoader.load(
-
-                        getClass().getResource(
-                                "/ui/product/ProductForm.fxml"
-                        )
-
+                loadProducts(
+                        FakeDB.getProducts()
                 );
+            }
+        });
+    }
 
-            } catch (Exception ignored) {}
+    // =====================================================
+    // SETUP USER AVATAR (MỚI BỔ SUNG LOGIC BO GÓC)
+    // =====================================================
+    private void setupUserAvatar() {
+        if (Session.currentUser != null) {
+            // 2. Kiểm tra và nạp ảnh đại diện công nghệ
+            String userAvatarPath = Session.currentUser.getAvatarPath();
+            if (userAvatarPath != null && !userAvatarPath.isEmpty()) {
+                imgAvatarHeader.setImage(new Image(userAvatarPath));
+            } else {
+                // Sử dụng đường dẫn tương đối an toàn từ tài nguyên hệ thống
+                String defaultAvatarUrl = getClass().getResource("/images/defaultavatar.png").toExternalForm();
+                imgAvatarHeader.setImage(new Image(defaultAvatarUrl));
+            }
 
-        }).start();
+            // 3. Thực hiện mặt nạ hình chữ nhật bo góc thay vì hình tròn xoe
+            // Kích thước 42x42 khớp hoàn toàn với fitHeight/fitWidth trong FXML
+            Rectangle clip = new Rectangle(42, 42);
+
+            // Bo góc vừa phải (12px) để đồng bộ với cấu trúc nút vuông Cyberpunk
+            clip.setArcWidth(12);
+            clip.setArcHeight(12);
+
+            imgAvatarHeader.setClip(clip);
+        }
+    }
+
+    // =========================
+    // DEFAULT FILTER VALUES
+    // =========================
+
+    private void setupDefaults() {
+
+        statusBox.setValue("All");
+
+        categoryFilterBox.setValue("All");
+
+        conditionFilterBox.setValue("All");
+    }
+
+    // =========================
+    // LISTENERS
+    // =========================
+
+    private void setupListeners() {
+
+        searchField.textProperty().addListener(
+                (obs, oldV, newV) ->
+                        applyFilters()
+        );
+
+        minPriceField.textProperty().addListener(
+                (obs, oldV, newV) ->
+                        applyFilters()
+        );
+
+        maxPriceField.textProperty().addListener(
+                (obs, oldV, newV) ->
+                        applyFilters()
+        );
+
+        sortBox.valueProperty().addListener(
+                (obs, oldV, newV) ->
+                        applyFilters()
+        );
+
+        statusBox.valueProperty().addListener(
+                (obs, oldV, newV) ->
+                        applyFilters()
+        );
+
+        categoryFilterBox.valueProperty().addListener(
+                (obs, oldV, newV) ->
+                        applyFilters()
+        );
+
+        conditionFilterBox.valueProperty().addListener(
+                (obs, oldV, newV) ->
+                        applyFilters()
+        );
     }
 
     // =========================
     // APPLY FILTERS
     // =========================
+
     private void applyFilters() {
 
         List<Product> filtered =
-                new ArrayList<>(FakeDB.getProducts());
 
-        // SEARCH
-        String keyword =
-                searchField.getText().toLowerCase();
+                ProductFilterService.filter(
 
-        filtered = filtered.stream()
+                        FakeDB.getProducts(),
 
-                .filter(product ->
+                        searchField.getText(),
 
-                        product.getTitle()
-                                .toLowerCase()
-                                .contains(keyword)
+                        statusBox.getValue(),
 
-                )
+                        categoryFilterBox.getValue(),
 
-                .collect(Collectors.toList());
+                        conditionFilterBox.getValue(),
 
-        // PRICE FILTER
-        String priceFilter =
-                priceFilterBox.getValue();
+                        parseDouble(
+                                minPriceField.getText()
+                        ),
 
-        if (priceFilter != null) {
+                        parseDouble(
+                                maxPriceField.getText()
+                        ),
 
-            switch (priceFilter) {
+                        sortBox.getValue()
+                );
 
-                case "Dưới 500":
-
-                    filtered = filtered.stream()
-
-                            .filter(p ->
-                                    p.getCurrentPrice() < 500
-                            )
-
-                            .collect(Collectors.toList());
-
-                    break;
-
-                case "500 - 1000":
-
-                    filtered = filtered.stream()
-
-                            .filter(p ->
-
-                                    p.getCurrentPrice() >= 500
-                                            &&
-                                            p.getCurrentPrice() <= 1000
-
-                            )
-
-                            .collect(Collectors.toList());
-
-                    break;
-
-                case "Trên 1000":
-
-                    filtered = filtered.stream()
-
-                            .filter(p ->
-                                    p.getCurrentPrice() > 1000
-                            )
-
-                            .collect(Collectors.toList());
-
-                    break;
-            }
-        }
-
-        // SORT
-        String sortType =
-                sortBox.getValue();
-
-        if (sortType != null) {
-
-            switch (sortType) {
-
-                case "Giá thấp → cao":
-
-                    filtered.sort(
-
-                            Comparator.comparingDouble(
-                                    Product::getCurrentPrice
-                            )
-
-                    );
-
-                    break;
-
-                case "Giá cao → thấp":
-
-                    filtered.sort(
-
-                            Comparator.comparingDouble(
-                                    Product::getCurrentPrice
-                            ).reversed()
-
-                    );
-
-                    break;
-            }
-        }
-
-        // LOAD UI
         loadProducts(filtered);
     }
 
     // =========================
     // LOAD PRODUCTS
     // =========================
-    private void loadProducts(List<Product> list) {
+
+    private void loadProducts(
+            List<Product> products
+    ) {
+
+        if (productsContainer == null) {
+
+            return;
+        }
 
         productsContainer.getChildren().clear();
 
-        for (Product p : list) {
+        cardMap.clear();
 
-            addProduct(p);
+        for (Product p : products) {
 
+            ProductCard card =
+                    new ProductCard(p);
+
+            cardMap.put(
+                    p.getId(),
+                    card
+            );
+
+            productsContainer
+                    .getChildren()
+                    .add(
+                            card.getRoot()
+                    );
         }
     }
 
     // =========================
-    // PRODUCT CARD
+    // UPDATE SINGLE CARD
     // =========================
-    private void addProduct(Product p) {
 
-        VBox card = new VBox();
+    public void updateProductCard(
+            Product product
+    ) {
 
-        card.setSpacing(5);
-
-        card.setPrefWidth(150);
-
-        card.setStyle(
-
-                "-fx-background-color: white;" +
-                        "-fx-padding: 10;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-border-color: #eeeeee;" +
-                        "-fx-border-radius: 10;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1),5,0,0,2);"
-
-        );
-
-        // IMAGE
-        ImageView img = new ImageView();
-
-        img.setFitWidth(120);
-
-        img.setFitHeight(100);
-
-        if (p.getImagePath() != null
-                && !p.getImagePath().isEmpty()) {
-
-            img.setImage(
-
-                    new Image(
-                            p.getImagePath(),
-                            true
-                    )
-            );
-
-        } else {
-
-            img.setImage(
-
-                    new Image(
-                            "https://via.placeholder.com/120",
-                            true
-                    )
-            );
-        }
-
-        // NAME
-        Label name = new Label(
-                p.getTitle()
-        );
-
-        // PRICE
-        Label price = new Label(
-                p.getCurrentPrice() + " VND"
-        );
-
-        // TIMER
-        Label timerLabel = new Label(
-                p.getTimeRemaining()
-        );
-
-        timerLabel.setStyle(
-                "-fx-font-weight: bold;"
-        );
-
-        // STATUS
-        Label status = new Label(
-                p.getStatus()
-        );
-
-        updateStatusColor(status, p);
-
-        // ADD UI
-        card.getChildren().addAll(
-
-                img,
-                name,
-                price,
-                timerLabel,
-                status
-
-        );
-
-        // CLICK DETAIL
-        card.setOnMouseClicked(e -> {
-
-            try {
-
-                FXMLLoader loader = new FXMLLoader(
-
-                        getClass().getResource(
-                                "/ui/product/ProductDetail.fxml"
-                        )
-
+        ProductCard card =
+                cardMap.get(
+                        product.getId()
                 );
 
-                Parent root = loader.load();
+        if (card != null) {
 
-                ProductController controller =
-                        loader.getController();
-
-                controller.setData(p);
-
-                Stage stage = (Stage)
-
-                        productsContainer
-                                .getScene()
-                                .getWindow();
-
-                stage.setScene(
-                        new Scene(root)
-                );
-
-            } catch (Exception ex) {
-
-                ex.printStackTrace();
-
-            }
-        });
-
-        productsContainer.getChildren()
-                .add(card);
-
-        // REALTIME TIMER
-        Timeline timeline = new Timeline(
-
-                new KeyFrame(
-
-                        Duration.seconds(1),
-
-                        e -> {
-
-                            timerLabel.setText(
-                                    p.getTimeRemaining()
-                            );
-
-                            status.setText(
-                                    p.getStatus()
-                            );
-
-                            updateStatusColor(status, p);
-                        }
-
-                )
-        );
-
-        timeline.setCycleCount(
-                Timeline.INDEFINITE
-        );
-
-        timeline.play();
-    }
-    private void updateStatusColor(Label status, Product p) {
-
-        if (p.getStatus().equals("OPEN")) {
-
-            status.setStyle(
-                    "-fx-text-fill: orange;"
-            );
-
-        } else {
-
-            status.setStyle(
-                    "-fx-text-fill: green;"
-            );
+            card.update();
         }
     }
 
-
     // =========================
-    // FILTER STATUS
+    // REMOVE SINGLE CARD
     // =========================
-    @FXML
-    private void showAll() {
 
-        loadProducts(
-                FakeDB.getProducts()
-        );
-    }
+    public void removeProductCard(
+            Product product
+    ) {
 
-    @FXML
-    private void showOpen() {
+        ProductCard card =
+                cardMap.remove(
+                        product.getId()
+                );
 
-        loadProducts(
-                FakeDB.getByStatus("OPEN")
-        );
-    }
+        if (card != null) {
 
-    @FXML
-    private void showSold() {
-
-        loadProducts(
-                FakeDB.getByStatus("SOLD")
-        );
+            productsContainer
+                    .getChildren()
+                    .remove(
+                            card.getRoot()
+                    );
+        }
     }
 
     // =========================
-    // FILTER POPUP
+    // PARSE DOUBLE
     // =========================
-    @FXML
-    private void openFilter(ActionEvent event) {
+
+    private Double parseDouble(
+            String text
+    ) {
 
         try {
 
-            FXMLLoader loader = new FXMLLoader(
+            if (text == null
+                    || text.isEmpty()) {
 
-                    getClass().getResource(
-                            "/ui/product/FilterView.fxml"
-                    )
-            );
+                return null;
+            }
 
-            Parent root = loader.load();
-
-            Stage filterStage = new Stage();
-
-            filterStage.setScene(
-                    new Scene(root)
-            );
-
-            filterStage.setTitle(
-                    "Bộ lọc sản phẩm"
-            );
-
-            Stage primaryStage = (Stage)
-
-                    ((Node) event.getSource())
-                            .getScene()
-                            .getWindow();
-
-            filterStage.initOwner(primaryStage);
-
-            filterStage.initModality(
-                    Modality.APPLICATION_MODAL
-            );
-
-            filterStage.initStyle(
-                    StageStyle.UTILITY
-            );
-
-            filterStage.showAndWait();
+            return Double.parseDouble(text);
 
         } catch (Exception e) {
 
-            e.printStackTrace();
-
+            return null;
         }
     }
 
     // =========================
-    // NAVIGATION
+    // CREATE PRODUCT
     // =========================
-    @FXML
-    private void handlePostProduct(ActionEvent event) {
-
-        loadSceneAsync(
-
-                event,
-                "/ui/product/ProductForm.fxml",
-                "Đăng sản phẩm"
-
-        );
-    }
 
     @FXML
-    private void handleViewProfile(ActionEvent event) {
-
-        loadSceneAsync(
-
-                event,
-                "/ui/user/Profile.fxml",
-                "Hồ sơ cá nhân"
-
-        );
-    }
-
-    // =========================
-    // ASYNC LOAD
-    // =========================
-    private void loadSceneAsync(
-            ActionEvent event,
-            String path,
-            String title
+    private void handlePostProduct(
+            ActionEvent event
     ) {
 
-        new Thread(() -> {
+        SceneNavigator.load(
 
-            try {
+                event,
 
-                FXMLLoader loader = new FXMLLoader(
+                "/ui/product/ProductForm.fxml",
 
-                        getClass().getResource(path)
+                "Create Auction"
+        );
+    }
 
-                );
+    // =====================================================
+    // PROFILE (Hàm kích hoạt khi nhấn vào ảnh Avatar trên Header)
+    // =====================================================
+    @FXML
+    private void handleViewProfile(
+            ActionEvent event
+    ) {
 
-                Parent root = loader.load();
+        SceneNavigator.load(
 
-                Platform.runLater(() -> {
+                event,
 
-                    Stage stage = (Stage)
+                "/ui/user/Profile.fxml",
 
-                            ((Node) event.getSource())
-                                    .getScene()
-                                    .getWindow();
+                "Profile"
+        );
+    }
 
-                    stage.setScene(
-                            new Scene(root)
-                    );
+    // =========================
+    // MY PRODUCTS
+    // =========================
 
-                    stage.setTitle(title);
+    @FXML
+    private void handleMyProducts(
+            ActionEvent event
+    ) {
 
-                });
+        SceneNavigator.load(
 
-            } catch (Exception e) {
+                event,
 
-                e.printStackTrace();
+                "/ui/product/MyProducts.fxml",
 
-            }
-        }).start();
+                "My Products"
+        );
     }
 
     // =========================
     // LOGOUT
     // =========================
+
     @FXML
-    private void handleLogout(ActionEvent event) {
+    private void handleLogout(
+            ActionEvent event
+    ) {
 
-        try {
+        SceneNavigator.load(
 
-            Session.currentUser = null;
+                event,
 
-            FXMLLoader loader = new FXMLLoader(
+                "/ui/auth/Login.fxml",
 
-                    getClass().getResource(
-                            "/ui/auth/Login.fxml"
-                    )
-
-            );
-
-            Parent root = loader.load();
-
-            Stage stage = (Stage)
-
-                    ((Node) event.getSource())
-                            .getScene()
-                            .getWindow();
-
-            stage.setScene(
-                    new Scene(root)
-            );
-
-            stage.setTitle(
-                    "Đăng nhập"
-            );
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-        }
+                "Login"
+        );
     }
 }
