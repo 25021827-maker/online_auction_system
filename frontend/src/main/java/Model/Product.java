@@ -24,6 +24,11 @@ public class Product {
     // =========================
 
     private LocalDateTime startTime;
+    private String auctionId;
+
+    // Getter/Setter
+    public String getAuctionId() { return auctionId; }
+    public void setAuctionId(String auctionId) { this.auctionId = auctionId; }
 
     private LocalDateTime endTime;
 

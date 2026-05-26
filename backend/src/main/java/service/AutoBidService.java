@@ -1,57 +1,48 @@
 package service;
 
-import model.BidTransaction;
-import java.util.PriorityQueue;
+import dao.AutoBidDAO;
+import dto.BidResult;
+import entity.AutoBid;
+import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AutoBidService {
+    private static final Logger LOGGER = Logger.getLogger(AutoBidService.class.getName());
     private final AuctionService auctionService;
-
-    private final PriorityQueue<AutoBidConfig> autoBidders;
+    private final AutoBidDAO autoBidDAO = new AutoBidDAO();
 
     public AutoBidService(AuctionService auctionService) {
         this.auctionService = auctionService;
-
-        this.autoBidders = new PriorityQueue<>((a, b) -> Double.compare(b.maxLimit, a.maxLimit));
     }
 
+    public void triggerAutoBid(Long auctionId, BigDecimal currentPrice) {
+        try {
+            List<AutoBid> autoBids = autoBidDAO.findActiveByAuction(auctionId);
+            if (autoBids.isEmpty()) return;
 
-    public void registerAutoBid(String bidderId, double maxLimit, double increment) {
-        autoBidders.add(new AutoBidConfig(bidderId, maxLimit, increment));
-        System.out.println("Đã đăng ký Auto-bid cho " + bidderId + " (Max: $" + maxLimit + ")");
-    }
-
-
-    public void triggerAutoBidding(double currentHighestPrice) {
-        if (autoBidders.isEmpty()) return;
-
-
-        AutoBidConfig topBidder = autoBidders.peek();
-
-
-        double nextBidAmount = currentHighestPrice + topBidder.increment;
-
-        if (nextBidAmount <= topBidder.maxLimit) {
-
-            BidTransaction autoBid = new BidTransaction("AUTO-" + System.currentTimeMillis(), topBidder.bidderId, nextBidAmount);
-
-            System.out.println("[Auto-Bidding] Hệ thống đang tự động đặt giá cho " + topBidder.bidderId);
-            auctionService.placeBid(autoBid);
-        } else {
-            System.out.println("[Auto-Bidding] " + topBidder.bidderId + " đã chạm ngưỡng tối đa. Dừng tự động đấu giá.");
-            autoBidders.poll();
-        }
-    }
-
-
-    private static class AutoBidConfig {
-        String bidderId;
-        double maxLimit;
-        double increment;
-
-        public AutoBidConfig(String bidderId, double maxLimit, double increment) {
-            this.bidderId = bidderId;
-            this.maxLimit = maxLimit;
-            this.increment = increment;
+            // Lấy người có max_amount cao nhất
+            AutoBid top = autoBids.get(0);
+            BigDecimal nextBid = currentPrice.add(top.getIncrementStep());
+            if (nextBid.compareTo(top.getMaxAmount()) <= 0) {
+                // Đặt giá tự động
+                BidResult result = auctionService.placeBid(auctionId, top.getBidderId(), nextBid, true);
+                if (!result.isSuccess()) {
+                    // Nếu đặt giá thất bại (ví dụ số dư không đủ), vô hiệu hóa auto-bid này
+                    LOGGER.log(Level.WARNING, "Auto-bid {0} failed: {1}",
+                            new Object[]{top.getAutoBidId(), result.getMessage()});
+                    autoBidDAO.deactivate(top.getAutoBidId());
+                }
+            } else {
+                // Hết khả năng (giá vượt quá max_amount), vô hiệu auto-bid
+                autoBidDAO.deactivate(top.getAutoBidId());
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.SEVERE, "SQL Error in triggerAutoBid for auction " + auctionId, e);
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Unexpected error in triggerAutoBid", e);
         }
     }
 }
