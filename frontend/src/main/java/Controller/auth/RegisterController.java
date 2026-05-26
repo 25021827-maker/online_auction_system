@@ -56,14 +56,30 @@ public class RegisterController {
                 });
     }
 
+<<<<<<< HEAD
     @FXML private void goToLogin() throws Exception {
+=======
+    @FXML
+    private void goToLogin() throws Exception {
+>>>>>>> b7d3a129137e941cebe93c46ef4ee705c7f2ac2e
         Stage stage = (Stage) txtUser.getScene().getWindow();
         Parent root = FXMLLoader.load(getClass().getResource("/ui/auth/Login.fxml"));
         stage.setScene(new Scene(root));
         stage.setTitle("Đăng nhập");
+
+        // Kích thước nhỏ gọn cho màn Auth
+        stage.setWidth(450);
+        stage.setHeight(600);
+        stage.setResizable(false);
+        stage.centerOnScreen();
     }
 
+<<<<<<< HEAD
     // Toggle password visibility (giữ nguyên code cũ nếu có)
     @FXML private void togglePassword() { /* giữ nguyên */ }
     @FXML private void toggleConfirm() { /* giữ nguyên */ }
 }
+=======
+
+}
+>>>>>>> b7d3a129137e941cebe93c46ef4ee705c7f2ac2e

@@ -2,6 +2,8 @@ package Model;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Product {
 
@@ -11,6 +13,10 @@ public class Product {
 
     private String imagePath;
 
+    private static int nextId = 1;
+
+    private int id;
+
     // =========================
     // AUCTION INFO
     // =========================
@@ -18,6 +24,14 @@ public class Product {
     private String seller;
 
     private String highestBidder;
+
+    // =========================
+// BID HISTORY
+// =========================
+    private List<Bid> bidHistory =
+            new ArrayList<>();
+
+
 
     // =========================
     // TIME
@@ -32,6 +46,11 @@ public class Product {
 
     private LocalDateTime endTime;
 
+    private String category;
+    private String condition;
+    private String description;
+
+
     // =========================
     // FULL CONSTRUCTOR
     // =========================
@@ -41,7 +60,8 @@ public class Product {
             String imagePath,
             String seller,
             LocalDateTime startTime,
-            LocalDateTime endTime
+            LocalDateTime endTime,
+            String description
     ) {
 
         this.title = title;
@@ -57,7 +77,17 @@ public class Product {
         this.startTime = startTime;
 
         this.endTime = endTime;
+
+        this.description = description;
+
+        this.category = "Other";
+
+        this.condition = "Used";
+
+        this.id = nextId++;
+
     }
+
 
     // =========================
     // SIMPLE CONSTRUCTOR
@@ -80,6 +110,10 @@ public class Product {
         this.startTime = LocalDateTime.now();
 
         this.endTime = LocalDateTime.now().plusHours(1);
+        this.category = "Other";
+
+        this.condition = "Used";
+        this.description = "";
     }
 
     // =========================
@@ -103,6 +137,24 @@ public class Product {
 
         // ĐANG ĐẤU
         return "OPEN";
+    }
+    public boolean canModify() {
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // auction already started
+        if (!now.isBefore(startTime)) {
+
+            return false;
+        }
+
+        Duration remaining = Duration.between(
+                now,
+                startTime
+        );
+
+        // lock before 20 minutes
+        return remaining.toMinutes() > 20;
     }
 
     // =========================
@@ -170,6 +222,19 @@ public class Product {
                 secs
         );
     }
+    // =========================
+// BID HISTORY
+// =========================
+    public void addBid(Bid bid) {
+
+        bidHistory.add(bid);
+    }
+
+    public List<Bid> getBidHistory() {
+
+        return bidHistory;
+    }
+
 
     // =========================
     // SETTERS
@@ -238,4 +303,23 @@ public class Product {
 
         return endTime;
     }
+    public int getId() {
+
+        return id;
+    }
+    public String getCategory() {
+            return category;
+    }
+    public void setCategory(String category) {
+            this.category = category;
+    }
+    public String getCondition() {
+            return condition;
+    }
+    public void setCondition(String condition) {
+            this.condition = condition;
+    }
+    public String getDescription() {return description;}
+    public void setDescription(String description) {this.description = description;}
+
 }

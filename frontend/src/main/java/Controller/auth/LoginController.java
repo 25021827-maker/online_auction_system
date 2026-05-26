@@ -1,13 +1,22 @@
 package Controller.auth;
 
+<<<<<<< HEAD
 import client.AuctionClient;
+=======
+import Service.UserService;
+import Session.Session;
+import Model.User;
+import Service.core.SceneNavigator;
+
+>>>>>>> b7d3a129137e941cebe93c46ef4ee705c7f2ac2e
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
+<<<<<<< HEAD
 import javafx.stage.Stage;
 import service.UserService;
+=======
+import javafx.event.ActionEvent;
+>>>>>>> b7d3a129137e941cebe93c46ef4ee705c7f2ac2e
 
 public class LoginController {
     @FXML private TextField txtUser;
@@ -17,6 +26,7 @@ public class LoginController {
     private UserService userService = new UserService();
 
     @FXML
+<<<<<<< HEAD
     private void initialize() {
         try {
             AuctionClient.getInstance().connect("localhost", 8080);
@@ -91,5 +101,34 @@ public class LoginController {
     private void handleBroadcast(ResponsePayload payload) {
         System.out.println("Broadcast: " + payload);
         // Có thể cập nhật UI realtime tại đây, nhưng trong LoginController không cần thiết
+=======
+    private TextField txtUser;
+
+    @FXML
+    private PasswordField txtPass;
+
+    private UserService service = new UserService();
+
+    @FXML
+    private void handleLogin() throws Exception {
+        String user = txtUser.getText();
+        String pass = txtPass.getText();
+
+        User loggedUser = service.login(user, pass);
+
+        if (loggedUser != null) {
+            Session.currentUser = loggedUser;
+            // Đăng nhập thành công -> Vào màn chính kích thước lớn 1280x750
+            SceneNavigator.loadFromNode(txtUser, "/ui/product/AuctionMain.fxml", "Sàn đấu giá");
+        } else {
+            System.out.println("Sai tài khoản hoặc mật khẩu");
+        }
+    }
+
+    // Thêm hàm này để fix lỗi sập Namespace tại dòng 65 trong file Login.fxml của bạn
+    @FXML
+    private void handleRegister(ActionEvent event) {
+        SceneNavigator.load(event, "/ui/auth/Register.fxml", "Đăng ký tài khoản");
+>>>>>>> b7d3a129137e941cebe93c46ef4ee705c7f2ac2e
     }
 }
