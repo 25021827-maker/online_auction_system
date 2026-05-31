@@ -109,7 +109,8 @@
                             styleClass="secondary-button"
                             maxWidth="Infinity"/>
 
-                    <Button text="CREATE"
+                    <Button fx:id="btnSubmit"
+                            text="CREATE"
                             onAction="#saveProduct"
                             styleClass="yellow-button"
                             maxWidth="Infinity"/>

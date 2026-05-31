@@ -5,7 +5,7 @@
 /* --- THÀNH PHẦN GỐC CỦA BẠN (Giữ nguyên cấu trúc & hiệu ứng) --- */
 
 .login-background {
-    -fx-background-image: url("../images/loginbg.png");
+    -fx-background-image: url("../../images/loginbg.png");
     -fx-background-size: cover;
     -fx-background-position: center center;
     -fx-background-repeat: no-repeat;

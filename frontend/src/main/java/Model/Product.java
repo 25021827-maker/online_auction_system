@@ -26,30 +26,25 @@ public class Product {
     private String highestBidder;
 
     // =========================
-// BID HISTORY
-// =========================
+    // BID HISTORY
+    // =========================
     private List<Bid> bidHistory =
             new ArrayList<>();
-
-
 
     // =========================
     // TIME
     // =========================
 
     private LocalDateTime startTime;
-    private String auctionId;
-
-    // Getter/Setter
-    public String getAuctionId() { return auctionId; }
-    public void setAuctionId(String auctionId) { this.auctionId = auctionId; }
 
     private LocalDateTime endTime;
+
+    // 🎯 ĐÃ BỔ SUNG: Thuộc tính lưu thời điểm tạo sản phẩm để phục vụ bộ lọc Newest
+    private LocalDateTime createdAt;
 
     private String category;
     private String condition;
     private String description;
-
 
     // =========================
     // FULL CONSTRUCTOR
@@ -86,8 +81,9 @@ public class Product {
 
         this.id = nextId++;
 
+        // 🎯 ĐÃ BỔ SUNG: Tự động ghi nhận thời gian tạo khi gọi Full Constructor
+        this.createdAt = LocalDateTime.now();
     }
-
 
     // =========================
     // SIMPLE CONSTRUCTOR
@@ -114,6 +110,9 @@ public class Product {
 
         this.condition = "Used";
         this.description = "";
+
+        // 🎯 ĐÃ BỔ SUNG: Tự động ghi nhận thời gian tạo khi gọi Simple Constructor
+        this.createdAt = LocalDateTime.now();
     }
 
     // =========================
@@ -222,9 +221,10 @@ public class Product {
                 secs
         );
     }
+
     // =========================
-// BID HISTORY
-// =========================
+    // BID HISTORY
+    // =========================
     public void addBid(Bid bid) {
 
         bidHistory.add(bid);
@@ -235,10 +235,19 @@ public class Product {
         return bidHistory;
     }
 
-
     // =========================
     // SETTERS
     // =========================
+
+    // 🎯 MỚI BỔ SUNG: Cho phép sửa tiêu đề sản phẩm
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    // 🎯 MỚI BỔ SUNG: Cho phép thay đổi ảnh sản phẩm
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
 
     public void setCurrentPrice(double price) {
 
@@ -263,6 +272,11 @@ public class Product {
     public void setEndTime(LocalDateTime endTime) {
 
         this.endTime = endTime;
+    }
+
+    // 🎯 ĐÃ BỔ SUNG: Setter cho createdAt
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 
     // =========================
@@ -303,21 +317,27 @@ public class Product {
 
         return endTime;
     }
+
+    // 🎯 ĐÃ BỔ SUNG: Getter cho createdAt để bên Service không bị báo lỗi
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
     public int getId() {
 
         return id;
     }
     public String getCategory() {
-            return category;
+        return category;
     }
     public void setCategory(String category) {
-            this.category = category;
+        this.category = category;
     }
     public String getCondition() {
-            return condition;
+        return condition;
     }
     public void setCondition(String condition) {
-            this.condition = condition;
+        this.condition = condition;
     }
     public String getDescription() {return description;}
     public void setDescription(String description) {this.description = description;}

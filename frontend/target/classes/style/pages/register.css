@@ -4,21 +4,21 @@
 
 /* 1. Giao diện nền tổng thể của trang đăng ký */
 .login-background {
-    -fx-background-image: url("../images/loginbg.png");
+    -fx-background-image: url("../../images/loginbg.png");
     -fx-background-size: cover;
     -fx-background-position: center center;
     -fx-background-repeat: no-repeat;
 }
 
-/* Tiêu đề chữ của bạn (Đã được làm đậm và to bản để làm nổi bật trang) */
+/* Tiêu đề chữ của bạn (Giữ nguyên) */
 .register-title {
-    -fx-text-fill: #ffdd00; /* Màu vàng nguyên bản của bạn */
+    -fx-text-fill: #ffdd00;
     -fx-font-size: 26px;
     -fx-font-weight: bold;
     -fx-font-family: "Segoe UI", sans-serif;
 }
 
-/* Khung bọc Form đăng ký (Giữ nguyên thông số kính mờ từ form login của bạn) */
+/* Khung bọc Form đăng ký (Giữ nguyên thông số kính mờ) */
 .login-card {
     -fx-background-color: rgba(15,15,15,0.92);
     -fx-background-radius: 20;
@@ -28,20 +28,27 @@
     -fx-padding: 30;
 }
 
+/* ==========================================================================
+   ĐỒNG BỘ HỆ THỐNG NHẬP LIỆU (Border: #ffdd00 | Prompt: #aaaaaa | Text: #ffffff)
+   ========================================================================== */
+
 /* 2. Ô nhập liệu (Username, Password, Email, Phone) */
 .login-input {
-    -fx-background-color: rgba(40, 40, 40, 0.7); /* Nền tối trong suốt tiệp vào card */
-    -fx-text-fill: #ffffff;
-    -fx-prompt-text-fill: #aaaaaa;
+    -fx-background-color: rgba(40, 40, 40, 0.7);
+    -fx-text-fill: #ffffff;                      /* ĐỒNG BỘ: Chữ gõ vào màu trắng */
+    -fx-prompt-text-fill: #aaaaaa;               /* ĐỒNG BỘ: Chữ gợi ý màu xám */
     -fx-background-radius: 10;
     -fx-border-radius: 10;
-    -fx-border-color: #444444;
+    -fx-border-color: #ffdd00;                   /* ĐỒNG BỘ: Viền vàng mặc định */
     -fx-border-width: 1;
     -fx-padding: 0 15 0 15;
+    -fx-transition: all 0.2s;
+    -fx-focus-color: transparent;
+    -fx-font-weight: bold;                       /* Chữ đậm */
 }
 .login-input:focused {
     -fx-background-color: rgba(50, 50, 50, 0.9);
-    -fx-border-color: #ffdd00; /* Focus bừng sáng viền vàng */
+    -fx-border-width: 1.5;
 }
 
 /* 3. Nút bấm xem mật khẩu (Hình con mắt 👁) */
@@ -49,7 +56,7 @@
     -fx-background-color: rgba(50, 50, 50, 0.7);
     -fx-text-fill: #ffdd00;
     -fx-background-radius: 8;
-    -fx-border-color: #444444;
+    -fx-border-color: #ffdd00;                   /* ĐỒNG BỘ: Chuyển viền sang vàng */
     -fx-border-radius: 8;
     -fx-cursor: hand;
 }
@@ -63,24 +70,35 @@
     -fx-background-color: rgba(40, 40, 40, 0.7);
     -fx-background-radius: 10;
     -fx-border-radius: 10;
-    -fx-border-color: #444444;
+    -fx-border-color: #ffdd00;                   /* ĐỒNG BỘ: Viền vàng mặc định */
     -fx-border-width: 1;
+    -fx-font-weight: bold;                       /* ĐỒNG BỘ: Thêm fontweight bold như các ô trên */
 }
 .login-combobox:focused {
-    -fx-border-color: #ffdd00;
+    -fx-border-width: 1.5;
 }
-.login-combobox .label {
-    -fx-text-fill: #ffffff; /* Màu chữ đã chọn */
+
+/* Đảm bảo chữ hiển thị bên trong ô ComboBox KHI ĐÃ CHỌN luôn màu TRẮNG đồng bộ */
+.login-combobox .label,
+.login-combobox .list-cell {
+    -fx-text-fill: #ffffff !important;
 }
+
+/* Đảm bảo chữ Prompt Text của ComboBox khi TRỐNG luôn màu XÁM đồng bộ */
+.login-combobox .cell:empty {
+    -fx-text-fill: #aaaaaa !important;
+}
+
 .login-combobox .arrow-button {
     -fx-background-color: transparent;
 }
 .login-combobox .arrow {
-    -fx-background-color: #ffdd00; /* Mũi tên màu vàng */
+    -fx-background-color: #ffdd00;               /* Mũi tên màu vàng */
 }
-/* Menu danh sách xổ xuống của ComboBox */
+
+/* --- ĐÃ SỬA LỖI TRÙNG MÀU: Menu danh sách xổ xuống của ComboBox --- */
 .login-combobox .combo-box-popup .list-view {
-    -fx-background-color: #151515;
+    -fx-background-color: #151515;              /* Nền menu tối */
     -fx-border-color: #ffdd00;
     -fx-border-width: 1;
     -fx-background-radius: 8;
@@ -88,40 +106,67 @@
 }
 .login-combobox .combo-box-popup .list-cell {
     -fx-background-color: #151515;
-    -fx-text-fill: white;
-    -fx-padding: 8 12 8 12;
-}
-.login-combobox .combo-box-popup .list-cell:filled:hover {
-    -fx-background-color: #ffdd00;
-    -fx-text-fill: black;
+  }
+/* 5. Hệ thống nút hành động ở cuối form */
+
+/* Nút Sign Up chính */
+
+.register-submit-button {
+
+-fx-background-color: #2ecc71; /* Màu xanh lá gốc của bạn */
+
+-fx-text-fill: #151515;
+
+-fx-font-weight: bold;
+
+-fx-background-radius: 14; /* Bo góc 14px đồng bộ thiết kế cũ */
+
+-fx-cursor: hand;
+
 }
 
-/* 5. Hệ thống nút hành động ở cuối form */
-/* Nút Sign Up chính */
-.register-submit-button {
-    -fx-background-color: #2ecc71; /* Màu xanh lá gốc của bạn */
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-background-radius: 14; /* Bo góc 14px đồng bộ thiết kế cũ */
-    -fx-cursor: hand;
-}
 .register-submit-button:hover {
-    -fx-background-color: #27ae60;
+
+-fx-text-fill: white;
+
+-fx-underline: true;
+
 }
+
+
 
 /* Link quay lại trang đăng nhập "Back to login" */
+
 .login-back-link {
-    -fx-background-color: transparent;
-    -fx-text-fill: #ffdd00;
-    -fx-cursor: hand;
-}
-.login-back-link:hover {
-    -fx-text-fill: white;
-    -fx-underline: true;
+
+-fx-background-color: #ffdd00;
+
+-fx-text-fill: #151515;
+
+-fx-font-weight: bold;
+
+-fx-background-radius: 14;
+
+-fx-cursor: hand;
+
 }
 
+.login-back-link:hover {
+
+-fx-text-fill: white;
+
+-fx-underline: true;
+
+}
+
+
+
 /* Nhãn hiển thị thông báo lỗi */
+
 .error-label {
-    -fx-text-fill: #ff4444;
-    -fx-font-size: 13px;
+
+-fx-text-fill: #ff4444;
+
+-fx-font-size: 13px;
+
 }

@@ -15,6 +15,7 @@ import javafx.animation.Timeline;
 
 import javafx.application.Platform;
 
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 
@@ -28,6 +29,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
 import javafx.scene.chart.LineChart;
+import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 
@@ -37,6 +39,9 @@ import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
 import javafx.util.Duration;
+
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class AuctionRoomController {
 
@@ -93,7 +98,11 @@ public class AuctionRoomController {
     private ImageView imageView;
 
     @FXML
-    private LineChart<Number, Number> priceChart;
+    private LineChart<String, Number> priceChart;
+
+    // 🎯 ĐÃ BỔ SUNG: Khai báo idLabel để khớp với fx:id="idLabel" trong FXML
+    @FXML
+    private Label idLabel;
 
     // =====================================================
     // DATA
@@ -103,7 +112,7 @@ public class AuctionRoomController {
 
     private Timeline refreshTimeline;
 
-    private XYChart.Series<Number, Number> bidSeries;
+    private XYChart.Series<String, Number> bidSeries;
 
     private int lastBidCount = 0;
 
@@ -202,6 +211,13 @@ public class AuctionRoomController {
         descriptionArea.setText(
                 currentProduct.getDescription()
         );
+
+        // 🎯 ĐÃ SỬA: Lấy chính xác ID sản phẩm thay vì lấy nhầm status như lúc trước
+        if (idLabel != null) {
+            idLabel.setText(
+                    "PRODUCT ID: #" + currentProduct.getId()
+            );
+        }
 
         statusLabel.setText(
                 currentProduct.getStatus()
@@ -551,18 +567,13 @@ public class AuctionRoomController {
 
         priceChart.setAnimated(false);
 
-        NumberAxis xAxis =
-                (NumberAxis) priceChart.getXAxis();
+        CategoryAxis xAxis =
+                (CategoryAxis) priceChart.getXAxis();
 
         NumberAxis yAxis =
                 (NumberAxis) priceChart.getYAxis();
 
-        xAxis.setForceZeroInRange(false);
-
         yAxis.setForceZeroInRange(false);
-
-        xAxis.setAutoRanging(true);
-
         yAxis.setAutoRanging(true);
     }
 
@@ -574,7 +585,7 @@ public class AuctionRoomController {
 
         bidSeries.getData().clear();
 
-        int x = 1;
+        int count = 1;
 
         for (Bid bid : currentProduct.getBidHistory()) {
 
@@ -582,7 +593,7 @@ public class AuctionRoomController {
 
                     new XYChart.Data<>(
 
-                            x++,
+                            "Bid #" + (count++),
 
                             bid.getAmount()
                     )
@@ -608,23 +619,24 @@ public class AuctionRoomController {
                     .getBidHistory()
                     .get(currentSize - 1);
 
-            bidSeries.getData().add(
+            String timestamp = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
 
-                    new XYChart.Data<>(
+            Platform.runLater(() -> {
+                bidSeries.getData().add(
+                        new XYChart.Data<>(
+                                timestamp,
+                                latest.getAmount()
+                        )
+                );
 
-                            currentSize,
-
-                            latest.getAmount()
-                    )
-            );
+                if (bidSeries.getData().size() > 10) {
+                    bidSeries.getData().remove(0);
+                }
+            });
 
             lastBidCount = currentSize;
         }
     }
-
-    // =====================================================
-    // BACK
-    // =====================================================
 
     // =====================================================
     // BACK
@@ -646,7 +658,6 @@ public class AuctionRoomController {
 
         stage.setScene(scene);
 
-        // Ép kích thước cố định quay về, khóa phóng to và đẩy ra giữa laptop
         stage.setWidth(1280);
         stage.setHeight(750);
         stage.setResizable(false);
@@ -669,6 +680,31 @@ public class AuctionRoomController {
         if (refreshTimeline != null) {
 
             refreshTimeline.stop();
+        }
+    }
+
+    // =====================================================
+    // HANDLE QUICK BID
+    // =====================================================
+    public void handleQuickBid(ActionEvent event) {
+        try {
+            Button clickedButton = (Button) event.getSource();
+
+            String buttonText = clickedButton.getText().replace("+", "").trim();
+            double incrementValue = Double.parseDouble(buttonText);
+
+            double currentBidAmount = 0;
+            if (txtBid.getText() != null && !txtBid.getText().trim().isEmpty()) {
+                currentBidAmount = Double.parseDouble(txtBid.getText().trim());
+            } else {
+                currentBidAmount = currentProduct.getCurrentPrice();
+            }
+
+            double newBidAmount = currentBidAmount + incrementValue;
+            txtBid.setText(String.format("%.0f", newBidAmount));
+
+        } catch (NumberFormatException e) {
+            lblMessage.setText("Lỗi định dạng số khi tính toán giá thầu!");
         }
     }
 }

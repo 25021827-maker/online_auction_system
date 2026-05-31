@@ -12,7 +12,7 @@ public class MainApp extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/auth/Login.fxml"));
         Scene scene = new Scene(loader.load());
 
-        stage.setTitle("   BVBID");
+        stage.setTitle("BVBID");
         stage.getIcons().add(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/icon dau gia.png")));
         stage.setScene(scene);
         stage.show();

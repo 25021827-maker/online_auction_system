@@ -1,44 +1,12 @@
--- ======================================================
--- FILE: 09_triggers.sql
--- Mô tả: Tất cả triggers cho hệ thống đấu giá
--- ======================================================
-
 USE auction_db;
-
--- ------------------------------------------------------------------
--- 1. Đảm bảo cột extension_count tồn tại (cho phép gia hạn tối đa 3 lần)
--- ------------------------------------------------------------------
-SET @dbname = DATABASE();
-SET @tablename = 'auctions';
-SET @columnname = 'extension_count';
-SET @preparedStatement = (SELECT IF(
-                                         (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @dbname
-                                                                                            AND TABLE_NAME = @tablename AND COLUMN_NAME = @columnname) = 0,
-                                         'ALTER TABLE auctions ADD COLUMN extension_count INT NOT NULL DEFAULT 0',
-                                         'SELECT 1'
-                                 ));
-PREPARE stmt FROM @preparedStatement;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
--- ------------------------------------------------------------------
--- 2. Xoá các trigger cũ (nếu có)
--- ------------------------------------------------------------------
-DROP TRIGGER IF EXISTS trg_bid_check;
-DROP TRIGGER IF EXISTS trg_first_bid;
-DROP TRIGGER IF EXISTS trg_update_auction_after_bid;
-DROP TRIGGER IF EXISTS trg_finish_auction;
-DROP TRIGGER IF EXISTS trg_notify_outbid;
-DROP TRIGGER IF EXISTS trg_anti_sniping;
 
 DELIMITER $$
 
--- ------------------------------------------------------------------
--- 3. Trigger: Kiểm tra bid hợp lệ trước khi insert
--- ------------------------------------------------------------------
+-- 1. Kiểm tra bid hợp lệ
+DROP TRIGGER IF EXISTS trg_bid_check$$
 CREATE TRIGGER trg_bid_check
-    BEFORE INSERT ON bids
-    FOR EACH ROW
+BEFORE INSERT ON bids
+FOR EACH ROW
 BEGIN
     DECLARE cur_price DECIMAL(12,2);
     DECLARE auc_status VARCHAR(20);
@@ -60,24 +28,22 @@ BEGIN
     END IF;
 END$$
 
--- ------------------------------------------------------------------
--- 4. Trigger: Chuyển trạng thái từ OPEN → RUNNING khi có bid đầu tiên
--- ------------------------------------------------------------------
+-- 2. Chuyển OPEN → RUNNING khi có bid đầu tiên
+DROP TRIGGER IF EXISTS trg_first_bid$$
 CREATE TRIGGER trg_first_bid
-    AFTER INSERT ON bids
-    FOR EACH ROW
+AFTER INSERT ON bids
+FOR EACH ROW
 BEGIN
     UPDATE auctions
     SET status = 'RUNNING'
     WHERE auction_id = NEW.auction_id AND status = 'OPEN';
 END$$
 
--- ------------------------------------------------------------------
--- 5. Trigger: Cập nhật giá hiện tại và người dẫn đầu sau mỗi bid
--- ------------------------------------------------------------------
+-- 3. Cập nhật auction sau bid
+DROP TRIGGER IF EXISTS trg_update_auction_after_bid$$
 CREATE TRIGGER trg_update_auction_after_bid
-    AFTER INSERT ON bids
-    FOR EACH ROW
+AFTER INSERT ON bids
+FOR EACH ROW
 BEGIN
     UPDATE auctions
     SET current_price = NEW.bid_amount,
@@ -86,12 +52,11 @@ BEGIN
     WHERE auction_id = NEW.auction_id;
 END$$
 
--- ------------------------------------------------------------------
--- 6. Trigger: Xác định người thắng khi phiên đấu giá kết thúc
--- ------------------------------------------------------------------
+-- 4. Xác định người thắng khi phiên kết thúc
+DROP TRIGGER IF EXISTS trg_finish_auction$$
 CREATE TRIGGER trg_finish_auction
-    BEFORE UPDATE ON auctions
-    FOR EACH ROW
+BEFORE UPDATE ON auctions
+FOR EACH ROW
 BEGIN
     DECLARE win_id BIGINT DEFAULT NULL;
     DECLARE final_price_val DECIMAL(12,2) DEFAULT NULL;
@@ -107,72 +72,52 @@ BEGIN
     END IF;
 END$$
 
--- ------------------------------------------------------------------
--- 7. Trigger: Thông báo cho người dùng khi bị outbid (chỉ với bid thủ công)
--- ------------------------------------------------------------------
+-- 5. Thông báo outbid
+DROP TRIGGER IF EXISTS trg_notify_outbid$$
 CREATE TRIGGER trg_notify_outbid
-    AFTER INSERT ON bids
-    FOR EACH ROW
+AFTER INSERT ON bids
+FOR EACH ROW
 BEGIN
     DECLARE old_leader BIGINT DEFAULT NULL;
 
-    -- CHỈ gửi thông báo nếu lượt bid mới KHÔNG phải auto-bid
-    IF NEW.is_auto_bid = FALSE THEN
-        SELECT bidder_id INTO old_leader
-        FROM bids
-        WHERE auction_id = NEW.auction_id
-          AND bid_id != NEW.bid_id
-        ORDER BY bid_amount DESC, bid_time DESC
-        LIMIT 1;
+    SELECT bidder_id INTO old_leader
+    FROM bids
+    WHERE auction_id = NEW.auction_id
+      AND bid_id != NEW.bid_id
+    ORDER BY bid_amount DESC, bid_time DESC
+    LIMIT 1;
 
-        IF old_leader IS NOT NULL AND old_leader != NEW.bidder_id THEN
-            INSERT INTO notifications (user_id, auction_id, message)
-            VALUES (old_leader, NEW.auction_id,
-                    CONCAT('You have been outbid in auction ', NEW.auction_id));
-        END IF;
+    IF old_leader IS NOT NULL AND old_leader != NEW.bidder_id THEN
+        INSERT INTO notifications (user_id, auction_id, message)
+        VALUES (old_leader, NEW.auction_id,
+                CONCAT('You have been outbid in auction ', NEW.auction_id));
     END IF;
 END$$
 
--- ------------------------------------------------------------------
--- 8. Trigger: Chống sniping - Gia hạn phiên khi bid vào những giây cuối
---    Giới hạn tối đa 3 lần gia hạn (dùng cột extension_count)
---    ĐÃ SỬA LỖI: so sánh chính xác khi thời gian còn lại = threshold
---    ĐÃ SỬA: biến extend_ec -> extend_sec
--- ------------------------------------------------------------------
+-- 6. Anti-sniping: gia hạn phiên
+DROP TRIGGER IF EXISTS trg_anti_sniping$$
 CREATE TRIGGER trg_anti_sniping
-    AFTER INSERT ON bids
-    FOR EACH ROW
+AFTER INSERT ON bids
+FOR EACH ROW
 BEGIN
+    DECLARE time_left INT;
     DECLARE extend_sec INT;
-    DECLARE current_end TIMESTAMP;
-    DECLARE ext_count INT;
+    DECLARE old_end TIMESTAMP;
 
-    -- Lấy thông tin cần thiết
-    SELECT anti_sniping_seconds, end_time, extension_count
-    INTO extend_sec, current_end, ext_count
-    FROM auctions
-    WHERE auction_id = NEW.auction_id;
+    SELECT TIMESTAMPDIFF(SECOND, NOW(), end_time),
+           anti_sniping_seconds,
+           end_time
+    INTO time_left, extend_sec, old_end
+    FROM auctions WHERE auction_id = NEW.auction_id;
 
-    -- Điều kiện gia hạn:
-    -- 1. Phiên đấu giá chưa kết thúc (current_end > NOW())
-    -- 2. Thời điểm kết thúc hiện tại nằm trong khoảng [NOW(), NOW() + extend_sec]
-    --    Nghĩa là thời gian còn lại <= extend_sec (bao gồm cả trường hợp bằng chính xác)
-    -- 3. Số lần gia hạn chưa vượt quá 3
-    IF current_end > NOW()
-        AND current_end <= DATE_ADD(NOW(), INTERVAL extend_sec SECOND)
-        AND ext_count < 3 THEN
-
-        -- Gia hạn: cộng thêm extend_sec giây vào end_time
+    IF time_left <= extend_sec THEN
         UPDATE auctions
-        SET end_time = DATE_ADD(current_end, INTERVAL extend_sec SECOND),
-            extension_count = extension_count + 1
+        SET end_time = DATE_ADD(end_time, INTERVAL extend_sec SECOND)
         WHERE auction_id = NEW.auction_id;
 
-        -- Ghi log vào bảng auction_extensions (giả sử bảng đã tồn tại)
         INSERT INTO auction_extensions (auction_id, old_end_time, new_end_time,
                                         extended_by_seconds, triggered_by_bid_id)
-        VALUES (NEW.auction_id, current_end,
-                DATE_ADD(current_end, INTERVAL extend_sec SECOND),
+        VALUES (NEW.auction_id, old_end, DATE_ADD(old_end, INTERVAL extend_sec SECOND),
                 extend_sec, NEW.bid_id);
     END IF;
 END$$

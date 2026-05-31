@@ -74,6 +74,8 @@
                                                     <String fx:value="OPEN"/>
                                                     <String fx:value="SOLD"/>
                                                     <String fx:value="SCHEDULED"/>
+                                                    <String fx:value="Ending Soon"/>
+                                                    <String fx:value="Newest"/>
                                                 </FXCollections>
                                             </items>
                                         </ComboBox>
@@ -175,6 +177,10 @@
                                         onAction="#handleMyProducts"
                                         styleClass="yellow-button"/>
 
+                                <Button text="WATCHLIST"
+                                        onAction="#handleWatchlist"
+                                        styleClass="yellow-button"/>
+
                                 <Button text="LOG OUT"
                                         onAction="#handleLogout"
                                         styleClass="yellow-button"/>
@@ -194,7 +200,7 @@
                         </padding>
 
                         <Label text="AUCTIONS" styleClass="main-title"/>
-
+                        <Label fx:id="lblResultCount" text="0 products found" style="-fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold;" />
                         <FlowPane fx:id="productsContainer" hgap="25" vgap="25"/>
 
                     </VBox>

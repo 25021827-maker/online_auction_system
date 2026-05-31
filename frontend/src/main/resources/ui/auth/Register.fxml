@@ -18,39 +18,39 @@
       </image>
    </ImageView>
 
-    <VBox maxWidth="320" spacing="10">
+    <VBox maxWidth="320" spacing="10" styleClass="login-card">
 
         <!-- ===== LOGIN INFO ===== -->
-        <TextField fx:id="txtUser" prefHeight="35" promptText="Username" styleClass="search-field" />
+        <TextField fx:id="txtUser" prefHeight="35" promptText="Username" styleClass="login-input" />
         <HBox spacing="5">
             <StackPane>
-                <PasswordField fx:id="txtPass" promptText="Password" styleClass="search-field" />
-                <TextField fx:id="txtPassVisible" promptText="Password" styleClass="search-field" visible="false" />
+                <PasswordField fx:id="txtPass" promptText="Password" styleClass="login-input" />
+                <TextField fx:id="txtPassVisible" promptText="Password" styleClass="login-input" visible="false" />
             </StackPane>
-            <Button onAction="#togglePassword" text="👁" />
+            <Button onAction="#togglePassword" text="👁" styleClass="eye-button" />
         </HBox>
         <!-- CONFIRM -->
         <HBox spacing="5">
             <StackPane>
-                <PasswordField fx:id="txtConfirm" promptText="Confirm Password" styleClass="search-field" />
-                <TextField fx:id="txtConfirmVisible" promptText="Confirm Password" styleClass="search-field" visible="false" />
+                <PasswordField fx:id="txtConfirm" promptText="Confirm Password" styleClass="login-input" />
+                <TextField fx:id="txtConfirmVisible" promptText="Confirm Password" styleClass="login-input" visible="false" />
             </StackPane>
-            <Button onAction="#toggleConfirm" text="👁" />
+            <Button onAction="#toggleConfirm" text="👁" styleClass="eye-button"/>
         </HBox>
 
         <!-- ===== THÔNG TIN BỔ SUNG ===== -->
-        <TextField fx:id="txtEmail" prefHeight="35" promptText="Email" styleClass="search-field" />
-        <TextField fx:id="txtPhone" prefHeight="35" promptText="Phone number" styleClass="search-field" />
-        <ComboBox fx:id="cbNation" prefHeight="35" promptText="Nationality" styleClass="black-combo" />
-        <ComboBox fx:id="cbAddress" prefHeight="35" promptText="Address" styleClass="black-combo" />
+        <TextField fx:id="txtEmail" prefHeight="35" promptText="Email" styleClass="login-input" />
+        <TextField fx:id="txtPhone" prefHeight="35" promptText="Phone number" styleClass="login-input" />
+        <ComboBox fx:id="cbNation" prefHeight="35" promptText="Nationality" styleClass="login-combobox" />
+        <ComboBox fx:id="cbAddress" prefHeight="35" promptText="Address" styleClass="login-combobox" />
 
         <!-- ===== BUTTON ===== -->
-        <Button maxWidth="Infinity" onAction="#handleRegister" style="-fx-background-color: #2ecc71; -fx-text-fill: white;" text="Sign up" />
+        <Button maxWidth="Infinity" onAction="#handleRegister" styleClass="register-submit-button" text="Sign up" />
 
-        <Button maxWidth="Infinity" onAction="#goToLogin" text="Back to login" />
+        <Button maxWidth="Infinity" onAction="#goToLogin" text="Back to login" styleClass="login-back-link" />
 
         <!-- ===== MESSAGE ===== -->
-        <Label fx:id="lblMessage" textFill="red" />
+        <Label fx:id="lblMessage" textFill="red" styleClass="error-label" />
 
     </VBox>
 
