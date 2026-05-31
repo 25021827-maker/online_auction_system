@@ -1,0 +1,219 @@
+/* ==========================================================================
+   PRODUCT FORM STYLE (Kế thừa TextArea gốc + Hoàn thiện toàn bộ Form)
+   ========================================================================== */
+
+/* --- THÀNH PHẦN GỐC CỦA BẠN (Giữ nguyên cấu trúc & hiệu ứng đổ bóng) --- */
+
+.dark-text-area {
+    -fx-control-inner-background: #1a1a1a;
+    -fx-text-fill: #ffdd00;
+    -fx-prompt-text-fill: #888888;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: transparent;
+    -fx-font-size: 14px;
+    -fx-padding: 10;
+}
+
+.dark-text-area:focused {
+    -fx-border-color: #ffdd00;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(255,221,0,0.35), 12, 0.2, 0, 0);
+}
+
+.dark-text-area .content {
+    -fx-background-color: #1a1a1a;
+    -fx-background-radius: 12;
+}
+
+
+/* --- THÀNH PHẦN BỔ SUNG (Đồng bộ hóa giao diện đăng sản phẩm) --- */
+
+/* 1. Thiết lập nền tổng thể cho ScrollPane chống lóa trắng */
+.main-scroll {
+    -fx-background-color: #0b0b0b;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+.main-scroll .viewport {
+    -fx-background-color: #0b0b0b;
+}
+.main-background {
+    -fx-background-color: #0b0b0b;
+}
+
+/* 2. Tiêu đề và Nhãn (Labels) */
+.page-title {
+    -fx-text-fill: #ffdd00;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-alignment: center;
+    -fx-padding: 0 0 10 0;
+}
+
+.bold-label {
+    -fx-text-fill: #dddddd;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-padding: 4 0 0 0;
+}
+
+/* Khung card bọc ngoài (Đồng bộ mờ 92% với trang Login/Register) */
+.login-card {
+    -fx-background-color: rgba(15,15,15,0.92);
+    -fx-background-radius: 20;
+    -fx-border-color: #ffdd00;
+    -fx-border-width: 2;
+    -fx-border-radius: 20;
+    -fx-padding: 30;
+}
+
+/* 3. Ô nhập liệu ngắn TextField (.login-input) */
+.login-input {
+    -fx-background-color: rgba(40, 40, 40, 0.7);
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #aaaaaa;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #444444;
+    -fx-border-width: 1;
+    -fx-padding: 8 15 8 15;
+    -fx-font-size: 14px;
+}
+.login-input:focused {
+    -fx-background-color: rgba(50, 50, 50, 0.9);
+    -fx-border-color: #ffdd00;
+    /* Đổ bóng bừng sáng đồng bộ với TextArea của bạn */
+    -fx-effect: dropshadow(gaussian, rgba(255,221,0,0.35), 12, 0.2, 0, 0);
+}
+
+/* 4. Bộ chọn danh mục ComboBox (.black-combo) */
+.black-combo {
+    -fx-background-color: rgba(40, 40, 40, 0.7);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #444444;
+    -fx-border-width: 1;
+    -fx-padding: 4 8 4 8;
+}
+.black-combo:focused {
+    -fx-border-color: #ffdd00;
+    -fx-effect: dropshadow(gaussian, rgba(255,221,0,0.35), 12, 0.2, 0, 0);
+}
+.black-combo .label {
+    -fx-text-fill: #ffffff;
+}
+.black-combo .arrow-button {
+    -fx-background-color: transparent;
+}
+.black-combo .arrow {
+    -fx-background-color: #ffdd00; /* Mũi tên màu vàng chỉ xuống */
+}
+/* Danh sách menu thả xuống của ComboBox */
+.black-combo .combo-box-popup .list-view {
+    -fx-background-color: #151515;
+    -fx-border-color: #ffdd00;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+.black-combo .combo-box-popup .list-cell {
+    -fx-background-color: #151515;
+    -fx-text-fill: white;
+    -fx-padding: 8 12 8 12;
+}
+.black-combo .combo-box-popup .list-cell:filled:hover {
+    -fx-background-color: #ffdd00;
+    -fx-text-fill: black;
+}
+
+/* 5. Tùy biến bộ chọn lịch ngày (DatePicker) */
+.date-picker {
+    -fx-background-color: rgba(40, 40, 40, 0.7);
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-color: #444444;
+    -fx-border-width: 1;
+}
+.date-picker:focused {
+    -fx-border-color: #ffdd00;
+}
+.date-picker > .text-field {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-padding: 8 15 8 15;
+}
+.date-picker > .button {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+.date-picker > .button > .arrow {
+    -fx-background-color: #ffdd00; /* Biểu tượng lịch màu vàng */
+}
+/* Giao diện bảng lịch bật lên khi chọn */
+.date-picker-popup/* Khung lịch */ {
+    -fx-background-color: #151515;
+    -fx-border-color: #ffdd00;
+    -fx-border-width: 1;
+}
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: #222222;
+}
+.date-picker-popup > .month-year-pane > .label {
+    -fx-text-fill: #ffdd00;
+    -fx-font-weight: bold;
+}
+.date-picker-popup .spinner .left-arrow,
+.date-picker-popup .spinner .right-arrow {
+    -fx-background-color: #ffdd00;
+}
+.date-picker-popup .calendar-grid {
+    -fx-background-color: #151515;
+}
+.date-picker-popup .date-cell {
+    -fx-background-color: #151515;
+    -fx-text-fill: white;
+}
+.date-picker-popup .date-cell:hover {
+    -fx-background-color: #ffdd00;
+    -fx-text-fill: black;
+}
+.date-picker-popup .selected {
+    -fx-background-color: #e6c600;
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+}
+
+/* 6. Hệ thống Nút bấm (Buttons) */
+/* Nút CREATE chính (.yellow-button) */
+.yellow-button {
+    -fx-background-color: #ffdd00;
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 14;
+    -fx-padding: 10 0 10 0;
+    -fx-cursor: hand;
+}
+.yellow-button:hover {
+    -fx-background-color: #e6c600;
+    -fx-effect: dropshadow(gaussian, rgba(255,221,0,0.2), 8, 0, 0, 0);
+}
+
+/* Nút phụ CANCEL và CHOOSE IMAGE (.secondary-button) */
+.secondary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #aaaaaa;
+    -fx-border-color: #444444;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-padding: 9 0 9 0;
+    -fx-cursor: hand;
+}
+.secondary-button:hover {
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #ffdd00; /* Viền chuyển vàng khi rê chuột qua */
+    -fx-background-color: rgba(255, 221, 0, 0.05);
+}
