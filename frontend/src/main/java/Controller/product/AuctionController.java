@@ -1,176 +1,274 @@
 package Controller.product;
 
-import Model.Product;
 import FakeDB.FakeDB;
+import Model.Product;
+import Service.product.ProductFilterService;
+import ui.product.ProductCard;
+import Service.core.SceneNavigator;
+import Session.Session;
+
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.Node;
-import javafx.event.ActionEvent;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.scene.control.TextField;
-import javafx.stage.StageStyle;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.VBox;
-import javafx.scene.control.Label;
+import javafx.scene.shape.Rectangle;
+import javafx.event.ActionEvent;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 
 public class AuctionController {
 
+    // =========================
+    // SEARCH + FILTER
+    // =========================
     @FXML private TextField searchField;
+    @FXML private TextField minPriceField;
+    @FXML private TextField maxPriceField;
+    @FXML private ComboBox<String> sortBox;
+    @FXML private ComboBox<String> statusBox;
+    @FXML private ComboBox<String> categoryFilterBox;
+    @FXML private ComboBox<String> conditionFilterBox;
+    @FXML private Label lblResultCount;
+
+    // =====================================================
+    // USER AVATAR ON HEADER
+    // =====================================================
+    @FXML private ImageView imgAvatarHeader;
+
+    // =========================
+    // PRODUCTS CONTAINER
+    // =========================
     @FXML private FlowPane productsContainer;
 
-    // ===== INIT =====
+    // =========================
+    // CARD MAP
+    // =========================
+    private final Map<Integer, ProductCard> cardMap = new HashMap<>();
+
+    // 🎯 MỚI BỔ SUNG: Luồng quản lý cập nhật Realtime cho toàn bộ màn hình chính
+    private Timeline liveTimeline;
+
+    // =========================
+    // INITIALIZE
+    // =========================
     @FXML
     public void initialize() {
-        loadProducts(FakeDB.getProducts());
+        setupDefaults();
+        setupListeners();
+        setupUserAvatar();
 
-        // preload để tránh lag
-        new Thread(() -> {
-            try {
-                FXMLLoader.load(getClass().getResource("/ui/product/ProductForm.fxml"));
-            } catch (Exception ignored) {}
-        }).start();
-    }
-
-    // ===== LOAD DATA =====
-    private void loadProducts(List<Product> list) {
-        productsContainer.getChildren().clear();
-
-        for (Product p : list) {
-            addProduct(p);
-        }
-    }
-
-    // ===== CARD UI =====
-    private void addProduct(Product p) {
-        VBox card = new VBox();
-        card.setSpacing(5);
-        card.setPrefWidth(150);
-
-        card.setStyle(
-                "-fx-background-color: white;" +
-                        "-fx-padding: 10;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-border-color: #eeeeee;" +
-                        "-fx-border-radius: 10;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1),5,0,0,2);"
-        );
-
-        // IMAGE (không block UI)
-        ImageView img = new ImageView();
-        img.setFitWidth(120);
-        img.setFitHeight(100);
-
-        if (p.getImagePath() != null && !p.getImagePath().isEmpty()) {
-            img.setImage(new Image(p.getImagePath(), true));
-        } else {
-            img.setImage(new Image("https://via.placeholder.com/120", true));
+        if (searchField != null) {
+            searchField.setPromptText("Search by product name or ID...");
         }
 
-        Label name = new Label(p.getTitle());
-        Label price = new Label(p.getCurrentPrice() + " VND");
-
-        Label status = new Label(p.getStatus());
-        if (p.getStatus().equals("OPEN")) {
-            status.setStyle("-fx-text-fill: orange;");
-        } else {
-            status.setStyle("-fx-text-fill: green;");
-        }
-
-        card.getChildren().addAll(img, name, price, status);
-
-        // CLICK → DETAIL
-        card.setOnMouseClicked(e -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/product/ProductDetail.fxml"));
-                Parent root = loader.load();
-
-                ProductController controller = loader.getController();
-                controller.setData(p);
-
-                Stage stage = (Stage) productsContainer.getScene().getWindow();
-                stage.setScene(new Scene(root));
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
+        Platform.runLater(() -> {
+            if (productsContainer != null) {
+                applyFilters(); // Chạy bộ lọc lần đầu để nạp danh sách
             }
         });
 
-        productsContainer.getChildren().add(card);
+        // 🎯 MỚI BỔ SUNG: Kích hoạt mạch luồng ngầm quét mỗi 1 giây ngoài màn hình chính
+        setupLiveUpdater();
     }
 
-    // ===== FILTER =====
-    @FXML
-    private void showAll() {
-        loadProducts(FakeDB.getProducts());
+    /**
+     * 🎯 MỚI BỔ SUNG: Khởi tạo luồng ngầm đồng bộ với hoạt động giả lập của FakeDB
+     */
+    private void setupLiveUpdater() {
+        liveTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(1), event -> {
+                    // 1. Gọi FakeDB tự động nhảy giá ngẫu nhiên ngầm (giả lập user khác bid)
+                    FakeDB.simulateRealtimeBids();
+
+                    // 2. Tự động lấy lại danh sách đã qua bộ lọc hiện tại để kiểm tra xem có thay đổi gì không
+                    String status = (statusBox.getValue() == null || "STATUS".equals(statusBox.getValue())) ? "All" : statusBox.getValue();
+                    String category = (categoryFilterBox.getValue() == null || "CATEGORY".equals(categoryFilterBox.getValue())) ? "All" : categoryFilterBox.getValue();
+                    String condition = (conditionFilterBox.getValue() == null || "CONDITION".equals(conditionFilterBox.getValue())) ? "All" : conditionFilterBox.getValue();
+
+                    List<Product> currentFiltered = ProductFilterService.filter(
+                            FakeDB.getProducts(),
+                            searchField.getText(),
+                            status,
+                            category,
+                            condition,
+                            parseDouble(minPriceField.getText()),
+                            parseDouble(maxPriceField.getText()),
+                            sortBox.getValue()
+                    );
+
+                    // 3. Đẩy danh sách mới vào hàm load tối ưu để ép card đổi thông tin
+                    loadProducts(currentFiltered);
+                })
+        );
+        liveTimeline.setCycleCount(Timeline.INDEFINITE);
+        liveTimeline.play();
     }
 
-    @FXML
-    private void showOpen() {
-        loadProducts(FakeDB.getByStatus("OPEN"));
-    }
+    private void setupUserAvatar() {
+        if (Session.currentUser != null) {
+            String userAvatarPath = Session.currentUser.getAvatarPath();
+            if (userAvatarPath != null && !userAvatarPath.isEmpty()) {
+                imgAvatarHeader.setImage(new Image(userAvatarPath));
+            } else {
+                String defaultAvatarUrl = getClass().getResource("/images/defaultavatar.png").toExternalForm();
+                imgAvatarHeader.setImage(new Image(defaultAvatarUrl));
+            }
 
-    @FXML
-    private void showSold() {
-        loadProducts(FakeDB.getByStatus("SOLD"));
-    }
-
-    // ===== FILTER POPUP =====
-    @FXML
-    private void openFilter(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/product/FilterView.fxml"));
-            Parent root = loader.load();
-
-            Stage filterStage = new Stage();
-            filterStage.setScene(new Scene(root));
-            filterStage.setTitle("Bộ lọc sản phẩm");
-
-            Stage primaryStage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            filterStage.initOwner(primaryStage);
-            filterStage.initModality(Modality.APPLICATION_MODAL);
-            filterStage.initStyle(StageStyle.UTILITY);
-
-            filterStage.showAndWait();
-        } catch (Exception e) {
-            e.printStackTrace();
+            Rectangle clip = new Rectangle(42, 42);
+            clip.setArcWidth(12);
+            clip.setArcHeight(12);
+            imgAvatarHeader.setClip(clip);
         }
     }
 
-    // ===== NAVIGATION (FIX LAG) =====
+    private void setupDefaults() {
+        statusBox.setValue("STATUS");
+        categoryFilterBox.setValue("CATEGORY");
+        conditionFilterBox.setValue("CONDITION");
+    }
+
+    private void setupListeners() {
+        searchField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
+        minPriceField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
+        maxPriceField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
+        sortBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        statusBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        categoryFilterBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        conditionFilterBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+    }
+
+    private void applyFilters() {
+        String status = (statusBox.getValue() == null || "STATUS".equals(statusBox.getValue())) ? "All" : statusBox.getValue();
+        String category = (categoryFilterBox.getValue() == null || "CATEGORY".equals(categoryFilterBox.getValue())) ? "All" : categoryFilterBox.getValue();
+        String condition = (conditionFilterBox.getValue() == null || "CONDITION".equals(conditionFilterBox.getValue())) ? "All" : conditionFilterBox.getValue();
+
+        List<Product> filtered = ProductFilterService.filter(
+                FakeDB.getProducts(),
+                searchField.getText(),
+                status,
+                category,
+                condition,
+                parseDouble(minPriceField.getText()),
+                parseDouble(maxPriceField.getText()),
+                sortBox.getValue()
+        );
+
+        loadProducts(filtered);
+    }
+
+    /**
+     * 🎯 ĐÃ SỬA: Thuật toán nạp Card thông minh, không clear thô bạo -> CHỐNG NHẤP NHÁY
+     */
+    private void loadProducts(List<Product> products) {
+        if (productsContainer == null) {
+            return;
+        }
+
+        if (lblResultCount != null) {
+            lblResultCount.setText(products.size() + " products found");
+        }
+
+        // Lưu danh sách ID sản phẩm xuất hiện trong đợt quét này
+        Set<Integer> activeIds = new HashSet<>();
+
+        for (Product p : products) {
+            activeIds.add(p.getId());
+
+            if (cardMap.containsKey(p.getId())) {
+                // 1. Nếu Card đã có trên UI: Chỉ ép nó cập nhật lại chữ và số (Mượt mà, không nháy)
+                cardMap.get(p.getId()).update();
+            } else {
+                // 2. Nếu là món đồ mới: Tạo mới Card và add vào FlowPane
+                ProductCard card = new ProductCard(p);
+                cardMap.put(p.getId(), card);
+                productsContainer.getChildren().add(card.getRoot());
+            }
+        }
+
+        // 3. Nếu món đồ nào đã bị xóa (Người bán gỡ đồ), gỡ bỏ Card đó khỏi giao diện chính
+        cardMap.entrySet().removeIf(entry -> {
+            int id = entry.getKey();
+            ProductCard card = entry.getValue();
+            if (!activeIds.contains(id)) {
+                productsContainer.getChildren().remove(card.getRoot());
+                card.stopTimeline(); // Dừng luồng chạy ngầm của riêng Card đó
+                return true;
+            }
+            return false;
+        });
+    }
+
+    public void updateProductCard(Product product) {
+        ProductCard card = cardMap.get(product.getId());
+        if (card != null) {
+            card.update();
+        }
+    }
+
+    public void removeProductCard(Product product) {
+        ProductCard card = cardMap.remove(product.getId());
+        if (card != null) {
+            productsContainer.getChildren().remove(card.getRoot());
+            card.stopTimeline();
+        }
+    }
+
+    private Double parseDouble(String text) {
+        try {
+            if (text == null || text.isEmpty()) return null;
+            return Double.parseDouble(text);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // Tiện ích tắt luồng tổng khi đổi màn hình điều hướng
+    private void stopLiveTimeline() {
+        if (liveTimeline != null) {
+            liveTimeline.stop();
+        }
+    }
+
     @FXML
     private void handlePostProduct(ActionEvent event) {
-        loadSceneAsync(event, "/ui/product/ProductForm.fxml", "Đăng sản phẩm");
+        stopLiveTimeline();
+        SceneNavigator.load(event, "/ui/product/ProductForm.fxml", "Create Auction");
     }
 
     @FXML
     private void handleViewProfile(ActionEvent event) {
-        loadSceneAsync(event, "/ui/user/Profile.fxml", "Hồ sơ cá nhân");
+        stopLiveTimeline();
+        SceneNavigator.load(event, "/ui/user/Profile.fxml", "Profile");
     }
 
-    private void loadSceneAsync(ActionEvent event, String path, String title) {
+    @FXML
+    private void handleMyProducts(ActionEvent event) {
+        stopLiveTimeline();
+        SceneNavigator.load(event, "/ui/product/MyProducts.fxml", "My Products");
+    }
 
-        new Thread(() -> {
-            try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
-                Parent root = loader.load();
+    @FXML
+    private void handleLogout(ActionEvent event) {
+        stopLiveTimeline();
+        SceneNavigator.load(event, "/ui/auth/Login.fxml", "Login");
+    }
+    @FXML
+    private void handleWatchlist(ActionEvent event) {
+        // Tắt luồng ngầm Realtime của trang chủ trước khi chuyển màn hình để tránh nặng RAM
+        stopLiveTimeline();
 
-                Platform.runLater(() -> {
-                    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-                    stage.setScene(new Scene(root));
-                    stage.setTitle(title);
-                });
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }).start();
+        // Điều hướng sang màn hình Watchlist của anh em mình
+        SceneNavigator.load(event, "/ui/product/Watchlist.fxml", "My Watchlist");
     }
 }

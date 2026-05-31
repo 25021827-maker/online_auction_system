@@ -1,90 +1,213 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
+<?import javafx.scene.text.Font?>
 
-<VBox prefHeight="600.0" prefWidth="900.0" spacing="0.0"
-      xmlns="http://javafx.com/javafx/17.0.12"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="Controller.product.AuctionController">
+<ScrollPane fitToWidth="true"
+            fitToHeight="true"
+            pannable="true"
+            styleClass="main-scroll"
+            stylesheets="@../../style/pages/auction-main.css"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controller.product.AuctionController">
 
-    <children>
+    <content>
+        <StackPane alignment="CENTER" style="-fx-background-color: transparent;">
 
-        <!-- ===== HEADER ===== -->
-        <HBox alignment="CENTER_LEFT" prefHeight="70.0" spacing="20.0"
-              style="-fx-background-color: white; -fx-border-color: #eeeeee; -fx-border-width: 0 0 1 0;">
-            <padding>
-                <Insets left="20.0" right="20.0" />
-            </padding>
+            <VBox prefHeight="720.0"
+                  prefWidth="1280.0"
+                  maxWidth="1280.0"
+                  styleClass="root-container">
 
-            <children>
-                <Label text="BID_AUCTION" textFill="#1976d2">
-                    <font>
-                        <Font name="System Bold" size="22.0" />
-                    </font>
-                </Label>
+                <children>
 
-                <HBox alignment="CENTER_LEFT" spacing="10.0" HBox.hgrow="ALWAYS">
-                    <children>
-                        <TextField fx:id="searchField"
-                                   prefHeight="35.0"
-                                   prefWidth="400.0"
-                                   promptText="Tìm kiếm sản phẩm đấu giá..."
-                                   style="-fx-background-radius: 20;" />
+                    <VBox styleClass="header-container">
 
-                        <Button text="⚙ Lọc"
-                                onAction="#openFilter"
-                                prefHeight="35.0"
-                                style="-fx-background-radius: 20; -fx-background-color: #f0f0f0; -fx-cursor: hand;"/>
-                    </children>
+                        <HBox alignment="CENTER_LEFT"
+                              spacing="30.0"
+                              styleClass="top-header">
 
-                    <HBox.margin>
-                        <Insets left="30.0" />
-                    </HBox.margin>
-                </HBox>
+                            <padding>
+                                <Insets top="15"
+                                        right="30"
+                                        bottom="15"
+                                        left="30"/>
+                            </padding>
 
-                <Button text="Đăng sản phẩm"
-                        onAction="#handlePostProduct"
-                        prefHeight="35.0"
-                        style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-cursor: hand;"/>
-            </children>
-        </HBox>
-        <!-- ===== FILTER TAB (THÊM MỚI) ===== -->
-        <HBox spacing="10" style="-fx-padding: 10 20;">
-            <Button text="Tất cả" onAction="#showAll"
-                    style="-fx-background-color: #eeeeee; -fx-cursor: hand;"/>
-            <Button text="Đang đấu" onAction="#showOpen"
-                    style="-fx-background-color: #ffe0b2; -fx-cursor: hand;"/>
-            <Button text="Đã bán" onAction="#showSold"
-                    style="-fx-background-color: #c8e6c9; -fx-cursor: hand;"/>
-        </HBox>
+                            <children>
 
-        <!-- ===== PRODUCT LIST ===== -->
-        <ScrollPane fitToWidth="true"
-                    style="-fx-background-color: transparent;"
-                    VBox.vgrow="ALWAYS">
-            <content>
-                <VBox spacing="15.0">
-                    <padding>
-                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-                    </padding>
+                                <ImageView fitHeight="150.0"
+                                           fitWidth="140.0"
+                                           preserveRatio="true">
+                                    <image>
+                                        <Image url="@../../images/logo.png"/>
+                                    </image>
+                                </ImageView>
 
-                    <children>
-                        <Label text="Sản phẩm đấu giá">
-                            <font>
-                                <Font name="System Bold" size="18.0" />
-                            </font>
-                        </Label>
+                                <HBox alignment="CENTER_LEFT"
+                                      spacing="20"
+                                      HBox.hgrow="ALWAYS">
 
-                        <FlowPane fx:id="productsContainer"
-                                  hgap="20.0"
-                                  vgap="20.0"/>
-                    </children>
-                </VBox>
-            </content>
-        </ScrollPane>
+                                    <children>
 
-    </children>
-</VBox>
+                                        <TextField fx:id="searchField"
+                                                   promptText="Search auctions..."
+                                                   prefWidth="320"
+                                                   prefHeight="45"
+                                                   styleClass="search-field"/>
+
+                                        <ComboBox fx:id="statusBox"
+                                                  promptText="STATUS"
+                                                  prefWidth="150"
+                                                  prefHeight="45"
+                                                  styleClass="yellow-combo">
+                                            <items>
+                                                <FXCollections fx:factory="observableArrayList">
+                                                    <String fx:value="All"/>
+                                                    <String fx:value="OPEN"/>
+                                                    <String fx:value="SOLD"/>
+                                                    <String fx:value="SCHEDULED"/>
+                                                    <String fx:value="Ending Soon"/>
+                                                    <String fx:value="Newest"/>
+                                                </FXCollections>
+                                            </items>
+                                        </ComboBox>
+
+                                        <ComboBox fx:id="categoryFilterBox"
+                                                  promptText="CATEGORY"
+                                                  prefWidth="170"
+                                                  prefHeight="45"
+                                                  styleClass="yellow-combo">
+                                            <items>
+                                                <FXCollections fx:factory="observableArrayList">
+                                                    <String fx:value="All"/>
+                                                    <String fx:value="Electronics"/>
+                                                    <String fx:value="Fashion"/>
+                                                    <String fx:value="Book"/>
+                                                    <String fx:value="Furniture"/>
+                                                    <String fx:value="Gaming"/>
+                                                    <String fx:value="Vehicle"/>
+                                                    <String fx:value="Other"/>
+                                                </FXCollections>
+                                            </items>
+                                        </ComboBox>
+
+                                        <ComboBox fx:id="conditionFilterBox"
+                                                  promptText="CONDITION"
+                                                  prefWidth="170"
+                                                  prefHeight="45"
+                                                  styleClass="yellow-combo">
+                                            <items>
+                                                <FXCollections fx:factory="observableArrayList">
+                                                    <String fx:value="All"/>
+                                                    <String fx:value="New"/>
+                                                    <String fx:value="Like New"/>
+                                                    <String fx:value="Used"/>
+                                                    <String fx:value="Damaged"/>
+                                                </FXCollections>
+                                            </items>
+                                        </ComboBox>
+
+                                        <ComboBox fx:id="sortBox"
+                                                  promptText="SORT"
+                                                  prefWidth="170"
+                                                  prefHeight="45"
+                                                  styleClass="yellow-combo">
+                                            <items>
+                                                <FXCollections fx:factory="observableArrayList">
+                                                    <String fx:value="Giá thấp → cao"/>
+                                                    <String fx:value="Giá cao → thấp"/>
+                                                </FXCollections>
+                                            </items>
+                                        </ComboBox>
+
+                                        <TextField fx:id="minPriceField"
+                                                   promptText="Min Price"
+                                                   prefWidth="120"
+                                                   prefHeight="45"
+                                                   styleClass="search-field"/>
+
+                                        <TextField fx:id="maxPriceField"
+                                                   promptText="Max Price"
+                                                   prefWidth="120"
+                                                   prefHeight="45"
+                                                   styleClass="search-field"/>
+
+                                    </children>
+                                </HBox>
+
+                                <HBox alignment="CENTER" spacing="12">
+                                    <children>
+                                        <Button onAction="#handleViewProfile" styleClass="avatar-button">
+                                            <graphic>
+                                                <ImageView fx:id="imgAvatarHeader" fitHeight="42.0" fitWidth="42.0" pickOnBounds="true" preserveRatio="true"/>
+                                            </graphic>
+                                        </Button>
+                                    </children>
+                                </HBox>
+
+                            </children>
+                        </HBox>
+
+                        <HBox alignment="CENTER_LEFT"
+                              spacing="20"
+                              styleClass="nav-bar">
+
+                            <padding>
+                                <Insets top="10"
+                                        right="30"
+                                        bottom="20"
+                                        left="30"/>
+                            </padding>
+
+                            <children>
+
+                                <Button text="CREATE AUCTION"
+                                        onAction="#handlePostProduct"
+                                        styleClass="yellow-button"/>
+
+                                <Button text="MY PRODUCTS"
+                                        onAction="#handleMyProducts"
+                                        styleClass="yellow-button"/>
+
+                                <Button text="WATCHLIST"
+                                        onAction="#handleWatchlist"
+                                        styleClass="yellow-button"/>
+
+                                <Button text="LOG OUT"
+                                        onAction="#handleLogout"
+                                        styleClass="yellow-button"/>
+
+                            </children>
+                        </HBox>
+
+                    </VBox>
+
+                    <VBox VBox.vgrow="ALWAYS" spacing="25" styleClass="content-container">
+
+                        <padding>
+                            <Insets top="30"
+                                    right="30"
+                                    bottom="30"
+                                    left="30"/>
+                        </padding>
+
+                        <Label text="AUCTIONS" styleClass="main-title"/>
+                        <Label fx:id="lblResultCount" text="0 products found" style="-fx-text-fill: #ffffff; -fx-font-size: 14px; -fx-font-weight: bold;" />
+                        <FlowPane fx:id="productsContainer" hgap="25" vgap="25"/>
+
+                    </VBox>
+
+                </children>
+            </VBox>
+
+        </StackPane>
+    </content>
+</ScrollPane>

@@ -16,7 +16,7 @@ public class ServerMain {
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             System.out.println("Server đang lắng nghe tại cổng " + PORT);
 
-            while (true) {
+             while (true) {
 
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Có client mới kết nối: " + clientSocket.getInetAddress());

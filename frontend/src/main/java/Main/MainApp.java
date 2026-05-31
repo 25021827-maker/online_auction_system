@@ -12,10 +12,11 @@ public class MainApp extends Application {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/auth/Login.fxml"));
         Scene scene = new Scene(loader.load());
 
-        stage.setTitle("Hệ thống Đấu giá");
-        stage.getIcons().add(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/icon đấu giá.png")));
+        stage.setTitle("BVBID");
+        stage.getIcons().add(new javafx.scene.image.Image(getClass().getResourceAsStream("/images/icon dau gia.png")));
         stage.setScene(scene);
         stage.show();
+
     }
 
     public static void main(String[] args) {
