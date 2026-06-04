@@ -64,6 +64,7 @@ public class ClientHandler implements Runnable, ClientObserver {
             System.out.println("Client ngáº¯t káº¿t ná»‘i: " + e.getMessage());
         } finally {
             ServerMain.activeClients.remove(this);
+            AuctionRoomManager.removeClientFromAllRooms(this);
             auctionSubject.removeObserver(this);
             try { clientSocket.close(); } catch (Exception ignored) {}
         }
@@ -94,6 +95,8 @@ public class ClientHandler implements Runnable, ClientObserver {
                 case "SUBMIT_DEPOSIT" -> processSubmitDeposit(request.getData());
                 case "ADD_BALANCE" -> processAddBalance(request.getData());
                 case "GET_BID_HISTORY" -> processGetBidHistory(request.getData());
+                case "JOIN_AUCTION_ROOM" -> processJoinAuctionRoom(request.getData());
+                case "LEAVE_AUCTION_ROOM" -> processLeaveAuctionRoom(request.getData());
                 case "GET_ADMIN_DASHBOARD" -> {
                     if (requireAdmin("GET_ADMIN_DASHBOARD_RESPONSE")) {
                         sendResponse(ResponsePayload.success("GET_ADMIN_DASHBOARD_RESPONSE", "OK", adminDAO.getDashboard()));
@@ -138,6 +141,45 @@ public class ClientHandler implements Runnable, ClientObserver {
 
     private void sendResponse(ResponsePayload response) {
         sendMessage(gson.toJson(response));
+    }
+
+    private Long parseAuctionId(String dataJson) {
+        if (dataJson == null || dataJson.isBlank()) {
+            return null;
+        }
+
+        String trimmed = dataJson.trim();
+        try {
+            if (trimmed.startsWith("{")) {
+                JsonObject json = parseObject(trimmed);
+                return json.has("auctionId") ? json.get("auctionId").getAsLong() : null;
+            }
+            return Long.parseLong(trimmed.replace("\"", ""));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void processJoinAuctionRoom(String dataJson) {
+        Long auctionId = parseAuctionId(dataJson);
+        if (auctionId == null) {
+            sendResponse(ResponsePayload.fail("JOIN_AUCTION_ROOM_RESPONSE", "auctionId khong hop le."));
+            return;
+        }
+
+        AuctionRoomManager.joinRoom(auctionId, this);
+        sendResponse(ResponsePayload.success("JOIN_AUCTION_ROOM_RESPONSE", "Joined auction room.", auctionId));
+    }
+
+    private void processLeaveAuctionRoom(String dataJson) {
+        Long auctionId = parseAuctionId(dataJson);
+        if (auctionId == null) {
+            sendResponse(ResponsePayload.fail("LEAVE_AUCTION_ROOM_RESPONSE", "auctionId khong hop le."));
+            return;
+        }
+
+        AuctionRoomManager.leaveRoom(auctionId, this);
+        sendResponse(ResponsePayload.success("LEAVE_AUCTION_ROOM_RESPONSE", "Left auction room.", auctionId));
     }
 
     private boolean requireLoggedIn(String responseAction) {
@@ -209,8 +251,7 @@ public class ClientHandler implements Runnable, ClientObserver {
                 return;
             }
 
-            ResponsePayload event = ResponsePayload.success("NEW_BID_EVENT", "CÃ³ ngÆ°á»i vá»«a Ä‘áº·t giÃ¡", bidReq);
-            auctionSubject.notifyAllClients(gson.toJson(event));
+            broadcastBidEvent(bidReq, "New bid placed");
             for (BidRequest autoBid : autoBids) {
                 broadcastBidEvent(autoBid, "Auto bid da dat gia moi");
             }
@@ -238,8 +279,8 @@ public class ClientHandler implements Runnable, ClientObserver {
     }
 
     private void broadcastBidEvent(BidRequest bid, String message) {
-        ResponsePayload event = ResponsePayload.success("NEW_BID_EVENT", message, bid);
-        auctionSubject.notifyAllClients(gson.toJson(event));
+        ResponsePayload event = ResponsePayload.success("BID_UPDATE", message, bid);
+        AuctionRoomManager.broadcastToRoom(bid.auctionId, gson.toJson(event));
     }
 
     private void processGetActiveAuctions() {

@@ -49,12 +49,13 @@ public class AuctionRoomController {
     private Timeline refreshTimeline;
     private XYChart.Series<String, Number> bidSeries;
     private int lastBidCount = 0;
+    private boolean roomJoined = false;
     private final Gson gson = new Gson();
 
     @FXML
     public void initialize() {
         SocketClient.getInstance().on("PLACE_BID_RESPONSE", this::handleBidResponse);
-        SocketClient.getInstance().on("NEW_BID_EVENT", this::handleRealtimeBid);
+        SocketClient.getInstance().on("BID_UPDATE", this::handleRealtimeBid);
         SocketClient.getInstance().on("SET_AUTO_BID_RESPONSE", this::handleAutoBidResponse);
 
         // ĐÃ THÊM: Đăng ký nghe dữ liệu lịch sử đặt giá từ Server
@@ -76,7 +77,8 @@ public class AuctionRoomController {
 
         Platform.runLater(() -> {
             Stage stage = (Stage) nameLabel.getScene().getWindow();
-            AuctionRoomManager.joinRoom(currentProduct.getId(), stage);
+            AuctionRoomManager.joinRoom(currentProduct.getId());
+            roomJoined = true;
             stage.setOnCloseRequest(e -> cleanupRoom());
         });
         // ĐÃ THÊM: Vừa vào phòng là bắn ngay lệnh xin lịch sử giá của phiên này
@@ -273,7 +275,10 @@ public class AuctionRoomController {
     }
 
     private void cleanupRoom() {
-        if (currentProduct != null) AuctionRoomManager.leaveRoom(currentProduct.getId());
+        if (currentProduct != null && roomJoined) {
+            AuctionRoomManager.leaveRoom(currentProduct.getId());
+            roomJoined = false;
+        }
         if (refreshTimeline != null) refreshTimeline.stop();
     }
 

@@ -1,6 +1,8 @@
 package Service.auction;
 
+import dto.RequestPayload;
 import javafx.stage.Stage;
+import network.SocketClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +19,9 @@ public class AuctionRoomManager {
                 productId,
 
                 viewers.getOrDefault(productId, 0) + 1
+        );
+        SocketClient.getInstance().sendRequest(
+                new RequestPayload("JOIN_AUCTION_ROOM", String.valueOf(productId))
         );
     }
 
@@ -47,6 +52,9 @@ public class AuctionRoomManager {
 
             viewers.put(productId, current - 1);
         }
+        SocketClient.getInstance().sendRequest(
+                new RequestPayload("LEAVE_AUCTION_ROOM", String.valueOf(productId))
+        );
     }
 
     public static int getViewerCount(

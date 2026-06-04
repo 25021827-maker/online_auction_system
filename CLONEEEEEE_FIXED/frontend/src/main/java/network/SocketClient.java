@@ -6,12 +6,14 @@ import dto.ResponsePayload;
 import javafx.application.Platform;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -23,11 +25,14 @@ public class SocketClient {
     private BufferedReader in;
     private final Gson gson;
 
-    // ĐÃ SỬA: Hỗ trợ nhiều Controller cùng lắng nghe 1 sự kiện (List<Consumer>)
+    // Supports multiple controllers listening to the same server event.
     private final ConcurrentHashMap<String, List<Consumer<ResponsePayload>>> eventListeners;
 
-    private static final String SERVER_IP = "127.0.0.1";
-    private static final int SERVER_PORT = 8080;
+    private static final String DEFAULT_SERVER_HOST = "127.0.0.1";
+    private static final int DEFAULT_SERVER_PORT = 8080;
+
+    private final String serverHost;
+    private final int serverPort;
 
     private SocketClient() {
         this.gson = new GsonBuilder()
@@ -38,6 +43,9 @@ public class SocketClient {
                 .create();
 
         this.eventListeners = new ConcurrentHashMap<>();
+        Properties clientProperties = loadClientProperties();
+        this.serverHost = loadServerHost(clientProperties);
+        this.serverPort = loadServerPort(clientProperties);
         connectToServer();
     }
 
@@ -46,22 +54,63 @@ public class SocketClient {
         return instance;
     }
 
+    private Properties loadClientProperties() {
+        Properties props = new Properties();
+        try (InputStream input = getClass().getResourceAsStream("/client.properties")) {
+            if (input != null) {
+                props.load(input);
+            }
+        } catch (Exception e) {
+            System.err.println("[SocketClient] Cannot load client.properties: " + e.getMessage());
+        }
+        return props;
+    }
+
+    private String loadServerHost(Properties props) {
+        String value = System.getProperty("server.host");
+        if (value == null || value.isBlank()) {
+            value = System.getenv("AUCTION_SERVER_HOST");
+        }
+        if (value == null || value.isBlank()) {
+            value = props.getProperty("server.host");
+        }
+        return (value == null || value.isBlank()) ? DEFAULT_SERVER_HOST : value.trim();
+    }
+
+    private int loadServerPort(Properties props) {
+        String value = System.getProperty("server.port");
+        if (value == null || value.isBlank()) {
+            value = System.getenv("AUCTION_SERVER_PORT");
+        }
+        if (value == null || value.isBlank()) {
+            value = props.getProperty("server.port");
+        }
+        if (value == null || value.isBlank()) {
+            return DEFAULT_SERVER_PORT;
+        }
+
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return DEFAULT_SERVER_PORT;
+        }
+    }
+
     private void connectToServer() {
         try {
-            socket = new Socket(SERVER_IP, SERVER_PORT);
+            socket = new Socket(serverHost, serverPort);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            System.out.println("✅ [SocketClient] Đã kết nối Backend!");
+            System.out.println("[SocketClient] Connected to Backend " + serverHost + ":" + serverPort);
 
             Thread listenerThread = new Thread(this::listenForServerMessages);
             listenerThread.setDaemon(true);
             listenerThread.start();
         } catch (Exception e) {
-            System.err.println("❌ [SocketClient] Không thể kết nối tới Server: " + e.getMessage());
+            System.err.println("[SocketClient] Cannot connect to Backend " + serverHost + ":" + serverPort + " - " + e.getMessage());
         }
     }
 
-    // ĐÃ SỬA: Thêm người nghe vào danh sách thay vì ghi đè
     public void on(String eventName, Consumer<ResponsePayload> callback) {
         eventListeners.computeIfAbsent(eventName, k -> new CopyOnWriteArrayList<>()).add(callback);
     }
@@ -80,7 +129,6 @@ public class SocketClient {
                 String action = response.getAction();
 
                 if (action != null && eventListeners.containsKey(action)) {
-                    // ĐÃ SỬA: Bắn dữ liệu cho toàn bộ các Controller đang đăng ký nghe
                     List<Consumer<ResponsePayload>> callbacks = eventListeners.get(action);
                     for (Consumer<ResponsePayload> callback : callbacks) {
                         Platform.runLater(() -> callback.accept(response));
