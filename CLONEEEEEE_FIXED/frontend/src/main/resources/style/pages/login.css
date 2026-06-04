@@ -48,6 +48,31 @@
     -fx-text-fill: #dddddd;
 }
 
+.login-message {
+    -fx-padding: 8 10 8 10;
+    -fx-background-radius: 8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+.login-message-error {
+    -fx-background-color: rgba(255, 68, 68, 0.14);
+    -fx-border-color: rgba(255, 68, 68, 0.65);
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-text-fill: #ff6262;
+}
+
+.login-message-info {
+    -fx-background-color: rgba(255, 221, 0, 0.12);
+    -fx-border-color: rgba(255, 221, 0, 0.6);
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-text-fill: #ffdd00;
+}
+
 
 /* --- THÀNH PHẦN BỔ SUNG (Làm đẹp cho các ô nhập liệu) --- */
 

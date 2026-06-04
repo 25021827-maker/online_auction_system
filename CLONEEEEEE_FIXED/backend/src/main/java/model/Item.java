@@ -5,8 +5,11 @@ public abstract class Item {
     protected String name;
     protected String description;
     protected double startingPrice;
-    protected String condition; // BỔ SUNG
-    protected String imagePath; // BỔ SUNG
+    protected String category = "OTHER";
+    protected String condition;
+    protected String imagePath;
+    protected String itemStatus;
+    protected String approvalStatus;
 
     public Item(Long id, String name, String description, double startingPrice) {
         this.id = id;
@@ -24,9 +27,18 @@ public abstract class Item {
     public String getDescription() { return description; }
     public double getStartingPrice() { return startingPrice; }
 
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
     public String getCondition() { return condition; }
     public void setCondition(String condition) { this.condition = condition; }
 
     public String getImagePath() { return imagePath; }
     public void setImagePath(String imagePath) { this.imagePath = imagePath; }
+
+    public String getItemStatus() { return itemStatus; }
+    public void setItemStatus(String itemStatus) { this.itemStatus = itemStatus; }
+
+    public String getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(String approvalStatus) { this.approvalStatus = approvalStatus; }
 }

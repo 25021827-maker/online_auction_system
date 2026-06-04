@@ -1,349 +1,211 @@
 package Model;
 
+import util.VietnamTime;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Product {
-
     private String title;
-
     private double currentPrice;
-
     private String imagePath;
-
     private static int nextId = 1;
-
     private int id;
-
-    // =========================
-    // AUCTION INFO
-    // =========================
-
     private String seller;
-
     private String highestBidder;
-
-    // =========================
-    // BID HISTORY
-    // =========================
-    private List<Bid> bidHistory =
-            new ArrayList<>();
-
-    // =========================
-    // TIME
-    // =========================
-
+    private List<Bid> bidHistory = new ArrayList<>();
     private LocalDateTime startTime;
-
     private LocalDateTime endTime;
-
-    // 🎯 ĐÃ BỔ SUNG: Thuộc tính lưu thời điểm tạo sản phẩm để phục vụ bộ lọc Newest
     private LocalDateTime createdAt;
-
     private String category;
     private String condition;
     private String description;
+    private String backendStatus = "";
 
-    // =========================
-    // FULL CONSTRUCTOR
-    // =========================
-    public Product(
-            String title,
-            double currentPrice,
-            String imagePath,
-            String seller,
-            LocalDateTime startTime,
-            LocalDateTime endTime,
-            String description
-    ) {
-
+    public Product(String title, double currentPrice, String imagePath, String seller,
+                   LocalDateTime startTime, LocalDateTime endTime, String description) {
         this.title = title;
-
         this.currentPrice = currentPrice;
-
         this.imagePath = imagePath;
-
         this.seller = seller;
-
         this.highestBidder = "";
-
         this.startTime = startTime;
-
         this.endTime = endTime;
-
         this.description = description;
-
         this.category = "OTHER";
-
         this.condition = "Used";
-
         this.id = nextId++;
-
-        // 🎯 ĐÃ BỔ SUNG: Tự động ghi nhận thời gian tạo khi gọi Full Constructor
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = VietnamTime.now();
     }
 
-    // =========================
-    // SIMPLE CONSTRUCTOR
-    // =========================
-    public Product(
-            String title,
-            double currentPrice
-    ) {
-
+    public Product(String title, double currentPrice) {
         this.title = title;
-
         this.currentPrice = currentPrice;
-
         this.imagePath = "";
-
         this.seller = "Unknown";
-
         this.highestBidder = "";
-
-        this.startTime = LocalDateTime.now();
-
-        this.endTime = LocalDateTime.now().plusHours(1);
+        this.startTime = VietnamTime.now();
+        this.endTime = VietnamTime.now().plusHours(1);
         this.category = "OTHER";
-
         this.condition = "Used";
         this.description = "";
-
-        // 🎯 ĐÃ BỔ SUNG: Tự động ghi nhận thời gian tạo khi gọi Simple Constructor
-        this.createdAt = LocalDateTime.now();
+        this.id = nextId++;
+        this.createdAt = VietnamTime.now();
     }
 
-    // =========================
-    // STATUS LOGIC
-    // =========================
-
     public boolean canModify() {
-
-        LocalDateTime now = LocalDateTime.now();
-
-        // auction already started
+        LocalDateTime now = VietnamTime.now();
         if (!now.isBefore(startTime)) {
-
             return false;
         }
-
-        Duration remaining = Duration.between(
-                now,
-                startTime
-        );
-
-        // lock before 20 minutes
+        Duration remaining = Duration.between(now, startTime);
         return remaining.toMinutes() > 20;
     }
 
-    // =========================
-    // TIMER LOGIC
-    // =========================
     public String getTimeRemaining() {
+        LocalDateTime now = VietnamTime.now();
 
-        LocalDateTime now = LocalDateTime.now();
-
-        // CHƯA BẮT ĐẦU
         if (now.isBefore(startTime)) {
-
-            Duration untilStart = Duration.between(
-                    now,
-                    startTime
-            );
-
-            long seconds = untilStart.getSeconds();
-
-            long hours =
-                    seconds / 3600;
-
-            long minutes =
-                    (seconds % 3600) / 60;
-
-            long secs =
-                    seconds % 60;
-
-            return "Bắt đầu sau: "
-                    + String.format(
-                    "%02d:%02d:%02d",
-                    hours,
-                    minutes,
-                    secs
-            );
+            Duration untilStart = Duration.between(now, startTime);
+            return "Starts in: " + formatDuration(untilStart);
         }
 
-        // ĐÃ KẾT THÚC
         if (now.isAfter(endTime)) {
-
-            return "Đã kết thúc";
+            return "Ended";
         }
 
-        // ĐANG ĐẤU
-        Duration duration = Duration.between(
-                now,
-                endTime
-        );
-
-        long seconds = duration.getSeconds();
-
-        long hours =
-                seconds / 3600;
-
-        long minutes =
-                (seconds % 3600) / 60;
-
-        long secs =
-                seconds % 60;
-
-        return String.format(
-                "%02d:%02d:%02d",
-                hours,
-                minutes,
-                secs
-        );
+        return formatDuration(Duration.between(now, endTime));
     }
 
-    // =========================
-    // BID HISTORY
-    // =========================
-    public void addBid(Bid bid) {
+    private String formatDuration(Duration duration) {
+        long seconds = Math.max(0, duration.getSeconds());
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long secs = seconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, secs);
+    }
 
+    public void addBid(Bid bid) {
         bidHistory.add(bid);
     }
 
     public List<Bid> getBidHistory() {
-
         return bidHistory;
     }
 
-    // =========================
-    // SETTERS
-    // =========================
+    public String getTitle() {
+        return title;
+    }
 
-    // 🎯 MỚI BỔ SUNG: Cho phép sửa tiêu đề sản phẩm
     public void setTitle(String title) {
         this.title = title;
     }
 
-    // 🎯 MỚI BỔ SUNG: Cho phép thay đổi ảnh sản phẩm
+    public double getCurrentPrice() {
+        return currentPrice;
+    }
+
+    public void setCurrentPrice(double price) {
+        this.currentPrice = price;
+    }
+
+    public String getImagePath() {
+        return imagePath;
+    }
+
     public void setImagePath(String imagePath) {
         this.imagePath = imagePath;
     }
 
-    public void setCurrentPrice(double price) {
-
-        this.currentPrice = price;
-    }
-
-    public void setSeller(String seller) {
-
-        this.seller = seller;
-    }
-
-    public void setHighestBidder(String highestBidder) {
-
-        this.highestBidder = highestBidder;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-
-        this.startTime = startTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-
-        this.endTime = endTime;
-    }
-
-    // 🎯 ĐÃ BỔ SUNG: Setter cho createdAt
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    // =========================
-    // GETTERS
-    // =========================
-
-    public String getTitle() {
-
-        return title;
-    }
-
-    public double getCurrentPrice() {
-
-        return currentPrice;
-    }
-
-    public String getImagePath() {
-
-        return imagePath;
-    }
-
     public String getSeller() {
-
         return seller;
     }
 
-    public String getHighestBidder() {
+    public void setSeller(String seller) {
+        this.seller = seller;
+    }
 
+    public String getHighestBidder() {
         return highestBidder;
     }
 
-    public LocalDateTime getStartTime() {
+    public void setHighestBidder(String highestBidder) {
+        this.highestBidder = highestBidder;
+    }
 
+    public LocalDateTime getStartTime() {
         return startTime;
     }
 
-    public LocalDateTime getEndTime() {
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
 
+    public LocalDateTime getEndTime() {
         return endTime;
     }
 
-    // 🎯 ĐÃ BỔ SUNG: Getter cho createdAt để bên Service không bị báo lỗi
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public int getId() {
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 
+    public int getId() {
         return id;
     }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
     public String getCategory() {
         return category;
     }
+
     public void setCategory(String category) {
         this.category = category;
     }
+
     public String getCondition() {
         return condition;
     }
+
     public void setCondition(String condition) {
         this.condition = condition;
     }
-    public String getDescription() {return description;}
-    public void setDescription(String description) {this.description = description;}
 
-    private String backendStatus = "";
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public void setStatus(String status) {
         this.backendStatus = status;
     }
 
-    // Sửa lại hàm getStatus() hiện tại để ưu tiên trạng thái từ Backend
     public String getStatus() {
-        if (this.backendStatus != null && !this.backendStatus.isEmpty()) {
-            return this.backendStatus; // Lấy nguồn chân lý từ Server
+        LocalDateTime now = VietnamTime.now();
+        if (now.isBefore(startTime)) {
+            return "SCHEDULED";
         }
-
-        // Logic cũ (dự phòng)
-        LocalDateTime now = LocalDateTime.now();
-        if (now.isBefore(startTime)) return "SCHEDULED";
-        if (now.isAfter(endTime)) return "FINISHED";
+        if (now.isAfter(endTime)) {
+            return "FINISHED";
+        }
+        if (backendStatus != null && !backendStatus.isEmpty()) {
+            return backendStatus;
+        }
         return "OPEN";
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 }

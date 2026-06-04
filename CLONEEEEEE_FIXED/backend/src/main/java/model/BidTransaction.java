@@ -1,5 +1,7 @@
 package model;
 
+import util.VietnamTime;
+
 import java.time.LocalDateTime;
 
 public class BidTransaction implements Entity {
@@ -18,7 +20,7 @@ public class BidTransaction implements Entity {
         this.bidderId = bidderId;
         this.amount = amount;
         this.autoBid = autoBid;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = VietnamTime.now();
     }
 
     @Override
@@ -33,4 +35,5 @@ public class BidTransaction implements Entity {
     public String toString() {
         return "Bidder " + bidderId + " đặt $" + amount + " lúc " + timestamp;
     }
+
 }

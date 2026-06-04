@@ -303,3 +303,19 @@
     -fx-text-fill: #ff6262;
     -fx-font-weight: bold;
 }
+
+.room-wallet-line {
+    -fx-padding: 8 12 8 12;
+    -fx-background-color: #101010;
+    -fx-border-color: rgba(255, 221, 0, 0.55);
+    -fx-border-width: 1;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+}
+
+.room-wallet-text {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-alignment: center;
+}

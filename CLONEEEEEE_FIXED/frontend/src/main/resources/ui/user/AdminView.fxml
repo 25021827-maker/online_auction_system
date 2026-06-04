@@ -29,6 +29,7 @@
             <Button maxWidth="Infinity" onAction="#switchProducts" styleClass="admin-nav-button" text="Approve Products" />
             <Button maxWidth="Infinity" onAction="#switchUsers" styleClass="admin-nav-button" text="Manage Users" />
             <Button maxWidth="Infinity" onAction="#switchAuctions" styleClass="admin-nav-button" text="Manage Auctions" />
+            <Button maxWidth="Infinity" onAction="#switchWinners" styleClass="admin-nav-button" text="Auction Winners" />
             <Separator styleClass="admin-separator" />
             <Button maxWidth="Infinity" onAction="#handleLogout" styleClass="admin-secondary-button" text="Log Out" />
         </VBox>

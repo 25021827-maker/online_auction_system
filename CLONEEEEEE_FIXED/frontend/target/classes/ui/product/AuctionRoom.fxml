@@ -82,9 +82,11 @@
 
                         <Label fx:id="countdownLabel" styleClass="hero-countdown-label" />
 
-                        <HBox alignment="CENTER" spacing="8">
-                            <Label text="BALANCE:" textFill="#ffdd00" />
-                            <Label fx:id="balanceLabel" />
+                        <HBox alignment="CENTER" spacing="8" styleClass="room-wallet-line">
+                            <Label fx:id="balanceLabel"
+                                   text="BALANCE: $0.00 | AVAILABLE: $0.00 | HELD: $0.00"
+                                   styleClass="room-wallet-text"
+                                   wrapText="true" />
                         </HBox>
 
                         <Separator />

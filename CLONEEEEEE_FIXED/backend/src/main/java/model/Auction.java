@@ -1,5 +1,7 @@
 package model;
 
+import util.VietnamTime;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +13,7 @@ public class Auction implements Entity {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    public enum Status { OPEN, RUNNING, FINISHED, PAID, CANCELED }
+    public enum Status { PENDING, OPEN, RUNNING, FINISHED, PAID, CANCELED }
     private Status status;
 
     private double currentPrice;       // BỔ SUNG: Giá hiện tại
@@ -67,7 +69,7 @@ public class Auction implements Entity {
     }
 
     public boolean isRunning() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = VietnamTime.now();
         return (this.status == Status.RUNNING || this.status == Status.OPEN)
                 && now.isAfter(startTime) && now.isBefore(endTime);
     }

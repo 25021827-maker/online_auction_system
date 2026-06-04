@@ -169,4 +169,12 @@
 
 -fx-font-size: 13px;
 
+-fx-font-weight: bold;
+
+-fx-text-alignment: center;
+
+-fx-alignment: center;
+
+-fx-padding: 6 8 6 8;
+
 }

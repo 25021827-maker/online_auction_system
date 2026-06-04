@@ -11,6 +11,7 @@ Controller\user\AdminController$8.class
 Service\product\ProductFilterService.class
 dto\AuctionDTO.class
 ui\product\ProductCardFactory.class
+Controller\user\AdminController$9.class
 Main\MainApp.class
 Controller\user\AdminController.class
 dto\DepositRequest.class
@@ -29,6 +30,7 @@ Service\UserService.class
 dto\AuctionDTO$ItemDTO.class
 Controller\product\MyProductsController$1.class
 Controller\user\AdminController$6.class
+dto\AdminWinnerDTO.class
 network\SocketClient.class
 dto\CreateAuctionRequest.class
 dto\ResponsePayload.class
@@ -39,6 +41,7 @@ dto\RequestPayload.class
 dto\AdminAuctionDTO.class
 Controller\product\WatchlistController.class
 Session\Session.class
+util\VietnamTime.class
 dto\AdminDepositDTO.class
 Controller\product\ProductController.class
 Controller\product\AuctionRoomController$2.class

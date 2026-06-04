@@ -90,6 +90,28 @@
                             </children>
                         </HBox>
 
+                        <HBox spacing="10">
+                            <children>
+                                <Label text="Available Balance:">
+                                    <font>
+                                        <Font name="System Bold" size="14" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="lblAvailableBalance" />
+                            </children>
+                        </HBox>
+
+                        <HBox spacing="10">
+                            <children>
+                                <Label text="Held For Bids:">
+                                    <font>
+                                        <Font name="System Bold" size="14" />
+                                    </font>
+                                </Label>
+                                <Label fx:id="lblHeldBalance" />
+                            </children>
+                        </HBox>
+
                         <Button onAction="#handleAddMoney" prefWidth="150" style="-fx-background-color: #000000; -fx-text-fill: #ffdd00; -fx-background-radius: 8;" text="DEPOSIT" textFill="#ffdd00">
                             <font>
                                 <Font name="System Bold" size="12.0" />

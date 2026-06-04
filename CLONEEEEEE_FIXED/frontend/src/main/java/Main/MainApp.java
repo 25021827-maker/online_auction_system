@@ -4,6 +4,9 @@ import Service.core.SceneNavigator;
 import javafx.application.Application;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
+import util.VietnamTime;
+
+import java.util.TimeZone;
 
 public class MainApp extends Application {
     @Override
@@ -14,6 +17,7 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone(VietnamTime.ZONE));
         launch();
     }
 }

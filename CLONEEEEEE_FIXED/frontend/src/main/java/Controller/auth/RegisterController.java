@@ -2,20 +2,24 @@ package Controller.auth;
 
 import Service.UserService;
 import Service.core.SceneNavigator;
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import javafx.stage.Stage;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.fxml.FXMLLoader;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import dto.ResponsePayload;
+import javafx.fxml.FXML;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
+import javafx.stage.Stage;
+import network.SocketClient;
+
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
-import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
-import network.SocketClient;
-import dto.ResponsePayload;
+import java.util.Map;
 
 public class RegisterController {
 
@@ -24,51 +28,51 @@ public class RegisterController {
     @FXML private TextField txtPassVisible;
     @FXML private PasswordField txtConfirm;
     @FXML private TextField txtConfirmVisible;
-
     @FXML private TextField txtEmail;
     @FXML private TextField txtPhone;
     @FXML private ComboBox<String> cbNation;
     @FXML private ComboBox<String> cbAddress;
-
     @FXML private Label lblMessage;
-
     @FXML private ComboBox<String> cbRole;
 
     private boolean passVisible = false;
     private boolean confirmVisible = false;
-    private Map<String, List<String>> countryData;
-    private UserService service = new UserService();
+    private Map<String, List<String>> countryData = new HashMap<>();
+    private final UserService service = new UserService();
 
     @FXML
     public void initialize() {
         loadCountryData();
         cbNation.getItems().addAll(countryData.keySet());
-
         cbNation.setOnAction(e -> {
             String nation = cbNation.getValue();
-            if (nation != null) {
+            if (nation != null && countryData.containsKey(nation)) {
                 cbAddress.getItems().setAll(countryData.get(nation));
             }
         });
+
         if (cbRole != null) {
-            cbRole.getItems().addAll("Người mua (BIDDER)", "Người bán (SELLER)");
+            cbRole.getItems().addAll("Buyer (BIDDER)", "Seller (SELLER)");
             cbRole.getSelectionModel().selectFirst();
         }
+
+        clearMessage();
         SocketClient socketClient = SocketClient.getInstance();
         socketClient.clearListeners("REGISTER_RESPONSE");
         socketClient.on("REGISTER_RESPONSE", this::handleRegisterResponse);
     }
 
     private void loadCountryData() {
-        try {
+        try (InputStreamReader reader = new InputStreamReader(
+                getClass().getResourceAsStream("/data/countries.json"))) {
             Gson gson = new Gson();
             Type type = new TypeToken<Map<String, List<String>>>() {}.getType();
-            InputStreamReader reader = new InputStreamReader(
-                    getClass().getResourceAsStream("/data/countries.json")
-            );
-            countryData = gson.fromJson(reader, type);
+            Map<String, List<String>> data = gson.fromJson(reader, type);
+            if (data != null) {
+                countryData = data;
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            countryData = new HashMap<>();
         }
     }
 
@@ -102,77 +106,79 @@ public class RegisterController {
 
     @FXML
     private void handleRegister() {
-        String user = txtUser.getText();
-        String pass = passVisible ? txtPassVisible.getText() : txtPass.getText();
-        String confirm = confirmVisible ? txtConfirmVisible.getText() : txtConfirm.getText();
-
-        String email = txtEmail.getText();
-        String phone = txtPhone.getText();
+        String user = value(txtUser.getText());
+        String pass = value(passVisible ? txtPassVisible.getText() : txtPass.getText());
+        String confirm = value(confirmVisible ? txtConfirmVisible.getText() : txtConfirm.getText());
+        String email = value(txtEmail.getText());
         String nation = cbNation.getValue();
         String address = cbAddress.getValue();
 
-        // VALIDATE ĐẦU VÀO
-        if (user == null || user.trim().isEmpty() || pass == null || pass.trim().isEmpty()) {
-            lblMessage.setText("Không được để trống tài khoản và mật khẩu");
+        if (user.isEmpty() || pass.isEmpty()) {
+            showMessage("Username and password are required.", false);
             return;
         }
 
         if (!pass.equals(confirm)) {
-            lblMessage.setText("Mật khẩu không khớp");
+            showMessage("Password confirmation does not match.", false);
             return;
         }
 
-        if (email == null || !email.contains("@")) {
-            lblMessage.setText("Email không hợp lệ");
+        if (email.isEmpty() || !email.contains("@")) {
+            showMessage("Email is not valid.", false);
             return;
         }
 
         if (nation == null || address == null) {
-            lblMessage.setText("Vui lòng chọn quốc tịch và địa chỉ");
+            showMessage("Please choose nationality and address.", false);
             return;
         }
 
-        lblMessage.setText("Đang xử lý hệ thống...");
-        lblMessage.setStyle("-fx-text-fill: gray;");
+        showMessage("Creating account...", true);
 
-        // --- ĐOẠN MỚI THÊM: Lấy Role từ ComboBox ---
         String roleSelection = cbRole.getValue();
-        String roleCode = "BIDDER"; // Đặt mặc định là người mua cho an toàn
-
-        // Nếu người dùng chọn dòng có chữ SELLER, ta sẽ gán roleCode = "SELLER"
-        if (roleSelection != null && roleSelection.contains("SELLER")) {
-            roleCode = "SELLER";
-        }
-
-        // Gửi lệnh đăng ký qua mạng với Role đã chọn
+        String roleCode = roleSelection != null && roleSelection.contains("SELLER") ? "SELLER" : "BIDDER";
         service.register(user, pass, email, roleCode);
     }
 
-    // Hàm callback tự động chạy khi Backend xử lý xong Đăng ký
     private void handleRegisterResponse(ResponsePayload response) {
         if ("SUCCESS".equals(response.getStatus())) {
-            lblMessage.setText("Đăng ký thành công! Vui lòng quay lại Đăng nhập.");
-            lblMessage.setStyle("-fx-text-fill: green;");
+            showMessage("Account created. Please go back to login.", true);
         } else {
-            lblMessage.setText(response.getMessage());
-            lblMessage.setStyle("-fx-text-fill: red;");
+            showMessage("Cannot create account. Please check the information and try again.", false);
         }
     }
 
     @FXML
     private void goToLogin() throws Exception {
         if (txtUser != null) {
-            SceneNavigator.loadFromNode(txtUser, "/ui/auth/Login.fxml", "Dang nhap");
+            SceneNavigator.loadFromNode(txtUser, "/ui/auth/Login.fxml", "Login");
             return;
         }
         Stage stage = (Stage) txtUser.getScene().getWindow();
-        Parent root = FXMLLoader.load(getClass().getResource("/ui/auth/Login.fxml"));
+        Parent root = javafx.fxml.FXMLLoader.load(getClass().getResource("/ui/auth/Login.fxml"));
         stage.setScene(new Scene(root));
-        stage.setTitle("Đăng nhập");
-
+        stage.setTitle("Login");
         stage.setWidth(450);
         stage.setHeight(600);
         stage.setResizable(false);
         stage.centerOnScreen();
+    }
+
+    private String value(String text) {
+        return text == null ? "" : text.trim();
+    }
+
+    private void clearMessage() {
+        if (lblMessage != null) {
+            lblMessage.setText("");
+        }
+    }
+
+    private void showMessage(String message, boolean success) {
+        if (lblMessage == null) {
+            return;
+        }
+        lblMessage.setText(message);
+        lblMessage.setStyle(success ? "-fx-text-fill: #2ecc71;" : "-fx-text-fill: #ff6262;");
     }
 }

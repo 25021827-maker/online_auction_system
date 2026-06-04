@@ -72,8 +72,8 @@
                                                 <FXCollections fx:factory="observableArrayList">
                                                     <String fx:value="All"/>
                                                     <String fx:value="OPEN"/>
-                                                    <String fx:value="SOLD"/>
-                                                    <String fx:value="SCHEDULED"/>
+                                                    <String fx:value="RUNNING"/>
+                                                    <String fx:value="FINISHED"/>
                                                     <String fx:value="Ending Soon"/>
                                                     <String fx:value="Newest"/>
                                                 </FXCollections>
@@ -88,13 +88,10 @@
                                             <items>
                                                 <FXCollections fx:factory="observableArrayList">
                                                     <String fx:value="All"/>
-                                                    <String fx:value="Electronics"/>
-                                                    <String fx:value="Fashion"/>
-                                                    <String fx:value="Book"/>
-                                                    <String fx:value="Furniture"/>
-                                                    <String fx:value="Gaming"/>
-                                                    <String fx:value="Vehicle"/>
-                                                    <String fx:value="Other"/>
+                                                    <String fx:value="ELECTRONICS"/>
+                                                    <String fx:value="ART"/>
+                                                    <String fx:value="VEHICLE"/>
+                                                    <String fx:value="OTHER"/>
                                                 </FXCollections>
                                             </items>
                                         </ComboBox>
@@ -109,8 +106,9 @@
                                                     <String fx:value="All"/>
                                                     <String fx:value="New"/>
                                                     <String fx:value="Like New"/>
+                                                    <String fx:value="Good"/>
                                                     <String fx:value="Used"/>
-                                                    <String fx:value="Damaged"/>
+                                                    <String fx:value="For Parts"/>
                                                 </FXCollections>
                                             </items>
                                         </ComboBox>
@@ -122,8 +120,8 @@
                                                   styleClass="yellow-combo">
                                             <items>
                                                 <FXCollections fx:factory="observableArrayList">
-                                                    <String fx:value="Giá thấp → cao"/>
-                                                    <String fx:value="Giá cao → thấp"/>
+                                                    <String fx:value="Price: Low to High"/>
+                                                    <String fx:value="Price: High to Low"/>
                                                 </FXCollections>
                                             </items>
                                         </ComboBox>
@@ -186,6 +184,33 @@
                                 <Button text="LOG OUT"
                                         onAction="#handleLogout"
                                         styleClass="yellow-button"/>
+
+                                <Region HBox.hgrow="ALWAYS" />
+
+                                <HBox alignment="CENTER_RIGHT" spacing="10" styleClass="wallet-strip">
+                                    <children>
+                                        <VBox alignment="CENTER_LEFT" styleClass="wallet-card">
+                                            <children>
+                                                <Label text="BALANCE" styleClass="wallet-label" />
+                                                <Label fx:id="lblHeaderBalance" text="\$0.00" styleClass="wallet-value" />
+                                            </children>
+                                        </VBox>
+
+                                        <VBox alignment="CENTER_LEFT" styleClass="wallet-card wallet-card-available">
+                                            <children>
+                                                <Label text="AVAILABLE" styleClass="wallet-label" />
+                                                <Label fx:id="lblHeaderAvailableBalance" text="\$0.00" styleClass="wallet-value wallet-value-available" />
+                                            </children>
+                                        </VBox>
+
+                                        <VBox alignment="CENTER_LEFT" styleClass="wallet-card wallet-card-held">
+                                            <children>
+                                                <Label text="HELD" styleClass="wallet-label" />
+                                                <Label fx:id="lblHeaderHeldBalance" text="\$0.00" styleClass="wallet-value wallet-value-held" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
 
                             </children>
                         </HBox>

@@ -7,6 +7,7 @@ import dto.RequestPayload;
 import dto.ResponsePayload;
 import dto.CreateAuctionRequest;
 import com.google.gson.Gson;
+import util.VietnamTime;
 
 import javafx.stage.FileChooser;
 import java.io.File;
@@ -116,7 +117,7 @@ public class ProductFormController {
             return;
         }
 
-        if (startDateTime.isBefore(LocalDateTime.now().minusMinutes(1))) {
+        if (startDateTime.isBefore(VietnamTime.now().minusMinutes(1))) {
             showAlert(Alert.AlertType.WARNING, "Cảnh báo", "Thời gian bắt đầu không được nằm trong quá khứ.");
             return;
         }

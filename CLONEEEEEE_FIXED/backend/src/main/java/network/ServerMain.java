@@ -1,11 +1,13 @@
 package network;
 
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import dto.ResponsePayload;
 import com.google.gson.Gson;
 
 import service.AuctionManager;
+import util.VietnamTime;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -18,6 +20,7 @@ public class ServerMain {
     private static final Gson gson = new Gson();
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone(VietnamTime.ZONE));
         System.out.println("Đang khởi động Server đấu giá...");
 
         // Khởi tạo Manager ở đây để tải DB 1 lần duy nhất khi bật server

@@ -37,6 +37,7 @@ public class UserDAO {
 
                 String userStr = rs.getString("username");
                 double balance = rs.getDouble("balance");
+                double availableBalance = rs.getDouble("available_balance");
 
                 User user;
                 if (rs.getBoolean("is_admin")) {
@@ -48,6 +49,7 @@ public class UserDAO {
                 }
 
                 user.setBalance(balance);
+                user.setAvailableBalance(availableBalance);
                 user.setEmail(rs.getString("email"));
                 user.setFullName(rs.getString("full_name"));
                 user.setRole(rs.getString("role"));
@@ -61,8 +63,8 @@ public class UserDAO {
     }
 
     public Long registerUser(String username, String password, String email, String role) {
-        String sql = "INSERT INTO users (username, password, email, is_bidder, is_seller, is_admin, role, balance) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, 0)";
+        String sql = "INSERT INTO users (username, password, email, is_bidder, is_seller, is_admin, role, balance, available_balance) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0)";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -94,20 +96,26 @@ public class UserDAO {
     }
 
     public double addBalance(Long userId, double amountToAdd) {
-        String updateSql = "UPDATE users SET balance = COALESCE(balance, 0) + ? WHERE user_id = ?";
-        String selectSql = "SELECT balance FROM users WHERE user_id = ?";
+        String updateSql = """
+                UPDATE users
+                SET balance = COALESCE(balance, 0) + ?,
+                    available_balance = COALESCE(available_balance, 0) + ?
+                WHERE user_id = ?
+                """;
+        String selectSql = "SELECT available_balance FROM users WHERE user_id = ?";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
             try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
                 updateStmt.setDouble(1, amountToAdd);
-                updateStmt.setLong(2, userId);
+                updateStmt.setDouble(2, amountToAdd);
+                updateStmt.setLong(3, userId);
                 updateStmt.executeUpdate();
             }
             try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
                 selectStmt.setLong(1, userId);
                 try (ResultSet rs = selectStmt.executeQuery()) {
                     if (rs.next()) {
-                        return rs.getDouble("balance");
+                        return rs.getDouble("available_balance");
                     }
                 }
             }

@@ -12,36 +12,43 @@ import javafx.stage.Window;
 
 public class SceneNavigator {
 
-    public static void loadInitial(Stage stage, String path, String title) {
+    public static boolean loadInitial(Stage stage, String path, String title) {
         try {
             loadScreen(stage, path, title);
+            return true;
         } catch (Exception e) {
             System.err.println("Loi khi load FXML: " + path);
             e.printStackTrace();
+            return false;
         }
     }
 
-    public static void load(ActionEvent event, String path, String title) {
+    public static boolean load(ActionEvent event, String path, String title) {
         try {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             loadScreen(stage, path, title);
+            return true;
         } catch (Exception e) {
             System.err.println("Loi khi load FXML: " + path);
             e.printStackTrace();
+            return false;
         }
     }
 
-    public static void loadFromNode(Node node, String fxml, String title) {
+    public static boolean loadFromNode(Node node, String fxml, String title) {
         try {
             Stage stage = findStage(node);
             if (stage != null) {
                 loadScreen(stage, fxml, title);
+                return true;
             } else {
                 System.err.println("Khong tim thay Stage nao de chuyen trang.");
+                return false;
             }
         } catch (Exception e) {
             System.err.println("Loi khi load FXML: " + fxml);
             e.printStackTrace();
+            return false;
         }
     }
 

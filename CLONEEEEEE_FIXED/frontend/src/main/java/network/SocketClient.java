@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -97,9 +98,15 @@ public class SocketClient {
         }
     }
 
-    private void connectToServer() {
+    private synchronized boolean connectToServer() {
+        if (isConnected()) {
+            return true;
+        }
+
+        closeConnection();
         try {
-            socket = new Socket(serverHost, serverPort);
+            socket = new Socket();
+            socket.connect(new InetSocketAddress(serverHost, serverPort), 2000);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             System.out.println("[SocketClient] Connected to Backend " + serverHost + ":" + serverPort);
@@ -107,9 +114,20 @@ public class SocketClient {
             Thread listenerThread = new Thread(this::listenForServerMessages);
             listenerThread.setDaemon(true);
             listenerThread.start();
+            return true;
         } catch (Exception e) {
+            closeConnection();
             System.err.println("[SocketClient] Cannot connect to Backend " + serverHost + ":" + serverPort + " - " + e.getMessage());
+            return false;
         }
+    }
+
+    public synchronized boolean isConnected() {
+        return socket != null
+                && socket.isConnected()
+                && !socket.isClosed()
+                && out != null
+                && in != null;
     }
 
     public void on(String eventName, Consumer<ResponsePayload> callback) {
@@ -120,10 +138,17 @@ public class SocketClient {
         eventListeners.remove(eventName);
     }
 
-    public synchronized void sendRequest(RequestPayload request) {
-        if (out != null) {
-            out.println(gson.toJson(request));
+    public synchronized boolean sendRequest(RequestPayload request) {
+        if (!isConnected() && !connectToServer()) {
+            return false;
         }
+
+        out.println(gson.toJson(request));
+        if (out.checkError()) {
+            closeConnection();
+            return false;
+        }
+        return true;
     }
 
     private void listenForServerMessages() {
@@ -141,7 +166,34 @@ public class SocketClient {
                     }
                 }
             }
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        } finally {
+            closeConnection();
+        }
+    }
+
+    private synchronized void closeConnection() {
+        try {
+            if (in != null) {
+                in.close();
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            if (out != null) {
+                out.close();
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            if (socket != null) {
+                socket.close();
+            }
+        } catch (Exception ignored) {}
+
+        in = null;
+        out = null;
+        socket = null;
     }
 
     private void updateSessionBalanceIfNeeded(ResponsePayload response) {
@@ -156,9 +208,16 @@ public class SocketClient {
             JsonObject data = JsonParser.parseString(gson.toJson(response.getData())).getAsJsonObject();
             long userId = data.get("userId").getAsLong();
             double balance = data.get("balance").getAsDouble();
+            double availableBalance = data.has("availableBalance")
+                    ? data.get("availableBalance").getAsDouble()
+                    : balance;
             if (Session.getCurrentUser().getId() != null && Session.getCurrentUser().getId().equals(userId)) {
                 Session.getCurrentUser().setBalance(balance);
-                System.out.println("[SocketClient] Balance refreshed: $" + String.format("%.2f", balance));
+                Session.getCurrentUser().setAvailableBalance(availableBalance);
+                System.out.println("[SocketClient] Balance refreshed: $"
+                        + String.format("%.2f", balance)
+                        + " | available $"
+                        + String.format("%.2f", availableBalance));
             }
         } catch (Exception ignored) {}
     }

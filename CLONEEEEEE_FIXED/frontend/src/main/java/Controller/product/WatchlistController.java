@@ -9,6 +9,7 @@ import dto.ResponsePayload;
 import dto.AuctionDTO;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import util.VietnamTime;
 
 import javafx.application.Platform;
 import javafx.animation.KeyFrame;
@@ -94,8 +95,8 @@ public class WatchlistController {
         String desc = (dto.item != null) ? dto.item.description : "";
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : LocalDateTime.now();
-        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : LocalDateTime.now();
+        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : VietnamTime.now();
+        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now();
 
         Product p = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
         try {
@@ -104,6 +105,10 @@ public class WatchlistController {
             idField.set(p, dto.id.intValue());
         } catch (Exception e) {}
         p.setStatus(dto.status);
+        if (dto.item != null) {
+            p.setCategory(dto.item.category);
+            p.setCondition(dto.item.condition);
+        }
         return p;
     }
 

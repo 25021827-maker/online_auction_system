@@ -8,6 +8,7 @@ public abstract class User {
     protected String fullName;  // [BỔ SUNG]
     protected String role;
     protected double balance;
+    protected double availableBalance;
 
     public User(Long id, String username, String password, String role) {
         this.id = id;
@@ -15,6 +16,7 @@ public abstract class User {
         this.password = password;
         this.role = role;
         this.balance = 0.0;
+        this.availableBalance = 0.0;
     }
 
     public abstract void displayRoleInfo();
@@ -36,6 +38,9 @@ public abstract class User {
 
     public double getBalance() { return balance; }
     public void setBalance(double balance) { this.balance = balance; }
+
+    public double getAvailableBalance() { return availableBalance; }
+    public void setAvailableBalance(double availableBalance) { this.availableBalance = availableBalance; }
 
     public void setPassword(String password) { this.password = password; }
 

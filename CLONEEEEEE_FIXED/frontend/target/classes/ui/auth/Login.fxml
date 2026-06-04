@@ -44,8 +44,16 @@
 
         </PasswordField>
 
+        <Label fx:id="lblMessage"
+               managed="false"
+               maxWidth="260"
+               minHeight="24"
+               styleClass="login-message"
+               visible="false"
+               wrapText="true" />
+
         <!-- LOGIN BUTTON -->
-        <Button defaultButton="true" maxWidth="Infinity" onAction="#handleLogin" prefHeight="34.0" prefWidth="256.0" styleClass="login-button" text="LOG IN">
+        <Button fx:id="btnLogin" defaultButton="true" maxWidth="Infinity" onAction="#handleLogin" prefHeight="34.0" prefWidth="256.0" styleClass="login-button" text="LOG IN">
 
             <font>
                 <Font name="System Bold Italic" size="12.0" />

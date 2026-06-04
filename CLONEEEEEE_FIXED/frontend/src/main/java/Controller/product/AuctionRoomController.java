@@ -12,6 +12,7 @@ import dto.ResponsePayload;
 import dto.BidRequest;
 import dto.AutoBidRequest;
 import com.google.gson.Gson;
+import util.VietnamTime;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -33,7 +34,6 @@ import javafx.util.Duration;
 
 import java.lang.reflect.Type;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -55,6 +55,7 @@ public class AuctionRoomController {
     private int lastBidCount = 0;
     private boolean roomJoined = false;
     private final Gson gson = new Gson();
+    private String lastRealtimeBidKey = "";
 
     @FXML
     public void initialize() {
@@ -72,8 +73,11 @@ public class AuctionRoomController {
         )) {
             socketClient.clearListeners(action);
         }
-        socketClient.on("PLACE_BID_RESPONSE", this::handleBidResponse);
         socketClient.on("BID_UPDATE", this::handleRealtimeBid);
+        socketClient.on("NEW_BID_EVENT", this::handleRealtimeBid);
+        socketClient.clearListeners("AUCTION_TIME_EXTENDED");
+        socketClient.on("AUCTION_TIME_EXTENDED", this::handleAuctionTimeExtended);
+
         socketClient.on("SET_AUTO_BID_RESPONSE", this::handleAutoBidResponse);
         socketClient.on("BALANCE_UPDATE", response -> updateBalance());
         socketClient.on("GET_BALANCE_RESPONSE", response -> updateBalance());
@@ -90,6 +94,7 @@ public class AuctionRoomController {
         setupChart();
         loadChartHistory();
         updateAllUI();
+        SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
 
         refreshTimeline = new Timeline(new KeyFrame(Duration.millis(1000), e -> updateAllUI()));
         refreshTimeline.setCycleCount(Timeline.INDEFINITE);
@@ -101,7 +106,6 @@ public class AuctionRoomController {
             roomJoined = true;
             stage.setOnCloseRequest(e -> cleanupRoom());
         });
-        // ĐÃ THÊM: Vừa vào phòng là bắn ngay lệnh xin lịch sử giá của phiên này
         RequestPayload req = new RequestPayload("GET_BID_HISTORY", "{\"auctionId\":" + currentProduct.getId() + "}");
         SocketClient.getInstance().sendRequest(req);
     }
@@ -127,7 +131,16 @@ public class AuctionRoomController {
     }
 
     private void updateBalance() {
-        balanceLabel.setText("YOUR BALANCE: $" + String.format("%.2f", Session.getCurrentUser().getBalance()));
+        if (Session.getCurrentUser() == null) {
+            return;
+        }
+        double held = Math.max(0, Session.getCurrentUser().getBalance() - Session.getCurrentUser().getAvailableBalance());
+        balanceLabel.setText("BALANCE: $"
+                + String.format("%.2f", Session.getCurrentUser().getBalance())
+                + " | AVAILABLE: $"
+                + String.format("%.2f", Session.getCurrentUser().getAvailableBalance())
+                + " | HELD: $"
+                + String.format("%.2f", held));
     }
 
     private void updateHighestBidder() {
@@ -144,7 +157,31 @@ public class AuctionRoomController {
             bidHistoryList.scrollTo(bidHistoryList.getItems().size() - 1);
         }
     }
+    private void handleAuctionTimeExtended(ResponsePayload response) {
+        try {
+            if (currentProduct == null || response.getData() == null) {
+                return;
+            }
 
+            com.google.gson.JsonObject data =
+                    gson.fromJson(gson.toJson(response.getData()), com.google.gson.JsonObject.class);
+
+            long auctionId = data.get("auctionId").getAsLong();
+
+            if (auctionId != currentProduct.getId()) {
+                return;
+            }
+
+            String newEndTime = data.get("newEndTime").getAsString();
+
+            currentProduct.setEndTime(java.time.LocalDateTime.parse(newEndTime));
+
+            updateAllUI();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     private void updateAuctionStatus() {
         String status = currentProduct.getStatus();
         boolean open = status.equals("OPEN") || status.equals("RUNNING");
@@ -156,39 +193,61 @@ public class AuctionRoomController {
         if (status.equals("SCHEDULED")) {
             lblMessage.setText("Auction has not started yet");
         } else if (status.equals("FINISHED") || status.equals("SOLD")) {
-            lblMessage.setText("Auction has ended");
             String winner = currentProduct.getHighestBidder();
             winnerLabel.setText((winner == null || winner.isEmpty()) ? "No winner" : "Winner: " + winner);
+            if (winner == null || winner.isEmpty()) {
+                lblMessage.setText("Auction has ended. No winner.");
+            } else if (isCurrentUserWinner(winner)) {
+                lblMessage.setText("Auction has ended. You won. Final price: $" + String.format("%.2f", currentProduct.getCurrentPrice()));
+            } else {
+                lblMessage.setText("Auction has ended. You did not win.");
+            }
         } else {
-            // Không xóa lblMessage để giữ nguyên thông báo thành công/lỗi
             winnerLabel.setText("");
         }
     }
 
-    // --- ĐẨY LOGIC LÊN SERVER ---
+    private boolean isCurrentUserWinner(String winner) {
+        if (Session.getCurrentUser() == null || winner == null) {
+            return false;
+        }
+        String normalizedWinner = winner.replace(" ", "");
+        return normalizedWinner.equalsIgnoreCase("User#" + Session.getCurrentUser().getId());
+    }
+
+
     @FXML
     private void handleBid() {
         try {
-            double bidAmount = Double.parseDouble(txtBid.getText());
-            lblMessage.setText("Đang gửi yêu cầu...");
+            if (Session.getCurrentUser() == null) {
+                lblMessage.setText("You need to log in before bidding");
+                return;
+            }
+            if (!(currentProduct.getStatus().equals("OPEN") || currentProduct.getStatus().equals("RUNNING"))) {
+                lblMessage.setText("Auction is not open");
+                return;
+            }
 
-            // Đóng gói DTO gửi lên Server (Mọi logic trừ tiền, kiểm tra giá, refund đều do MySQL lo)
+            double bidAmount = Double.parseDouble(txtBid.getText());
+            if (bidAmount > Session.getCurrentUser().getAvailableBalance()) {
+                lblMessage.setText("Not enough available balance");
+                return;
+            }
+            lblMessage.setText("Sending bid...");
+
             BidRequest req = new BidRequest();
             req.auctionId = (long) currentProduct.getId();
-
-            // Ép kiểu an toàn cho ID (bạn cần có ID trong class User, tạm giả định lấy qua Username hoặc thuộc tính)
-            req.bidderId = (long) Session.getCurrentUser().getId();// LƯU Ý: Chỗ này bạn cần lấy ID thực tế của User từ Session.getCurrentUser().getId()
+            req.bidderId = Session.getCurrentUser().getId();
             req.amount = bidAmount;
 
             RequestPayload payload = new RequestPayload("PLACE_BID", gson.toJson(req));
             SocketClient.getInstance().sendRequest(payload);
-
         } catch (Exception e) {
             lblMessage.setText("Invalid bid amount");
         }
     }
 
-    // Xử lý khi Backend trả kết quả cho cú click Đặt giá của chính mình
+
     @FXML
     private void handleAutoBid() {
         try {
@@ -222,18 +281,26 @@ public class AuctionRoomController {
         if ("SUCCESS".equals(response.getStatus())) {
             lblMessage.setText("Bid successful!");
             txtBid.clear();
-            updateBalance();
+
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+
+            if (currentProduct != null) {
+                SocketClient.getInstance().sendRequest(
+                        new RequestPayload("GET_BID_HISTORY", "{\"auctionId\":" + currentProduct.getId() + "}")
+                );
+            }
         } else {
-            lblMessage.setText(response.getMessage()); // Hiển thị lỗi từ Server
+            lblMessage.setText(response.getMessage());
         }
     }
 
-    // Xử lý khi có ai đó (hoặc chính mình) vừa đặt giá thành công
+
     private void handleAutoBidResponse(ResponsePayload response) {
         if ("SUCCESS".equals(response.getStatus())) {
             lblMessage.setText("Auto bid enabled");
             txtAutoMax.clear();
             txtAutoStep.clear();
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
         } else {
             lblMessage.setText(response.getMessage());
         }
@@ -241,16 +308,47 @@ public class AuctionRoomController {
 
     private void handleRealtimeBid(ResponsePayload response) {
         try {
-            BidRequest newBid = gson.fromJson(gson.toJson(response.getData()), BidRequest.class);
-            // Kiểm tra xem luồng bid này có thuộc về căn phòng hiện tại không
-            if (newBid != null && newBid.auctionId == currentProduct.getId()) {
-                currentProduct.setCurrentPrice(newBid.amount);
-                String bidderName = "User#" + newBid.bidderId + (newBid.autoBid ? " (AUTO)" : "");
-                currentProduct.setHighestBidder(bidderName);
-                currentProduct.addBid(new Bid(bidderName, newBid.amount));
-                updateChartIfNeeded();
+            if (currentProduct == null) {
+                return;
             }
-        } catch (Exception e) {}
+
+            BidRequest newBid = gson.fromJson(gson.toJson(response.getData()), BidRequest.class);
+
+            if (newBid == null || newBid.auctionId == null) {
+                return;
+            }
+
+            if (!newBid.auctionId.equals((long) currentProduct.getId())) {
+                return;
+            }
+
+            String bidKey = newBid.auctionId + "-" + newBid.bidderId + "-" + newBid.amount + "-" + newBid.autoBid;
+
+            if (bidKey.equals(lastRealtimeBidKey)) {
+                return;
+            }
+
+            lastRealtimeBidKey = bidKey;
+
+            currentProduct.setCurrentPrice(newBid.amount);
+
+            String bidderName = "User#" + newBid.bidderId + (newBid.autoBid ? " (AUTO)" : "");
+            currentProduct.setHighestBidder(bidderName);
+
+            currentProduct.addBid(new Bid(bidderName, newBid.amount));
+
+            updateAllUI();
+            updateChartIfNeeded();
+
+            SocketClient.getInstance().sendRequest(
+                    new RequestPayload("GET_BID_HISTORY", "{\"auctionId\":" + currentProduct.getId() + "}")
+            );
+
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void handleAuctionCatalogChanged(ResponsePayload response) {
@@ -339,7 +437,7 @@ public class AuctionRoomController {
         int currentSize = currentProduct.getBidHistory().size();
         if (currentSize > lastBidCount) {
             Bid latest = currentProduct.getBidHistory().get(currentSize - 1);
-            String timestamp = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+            String timestamp = VietnamTime.timeNow().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             Platform.runLater(() -> {
                 bidSeries.getData().add(new XYChart.Data<>(timestamp, latest.getAmount()));
                 if (bidSeries.getData().size() > 10) bidSeries.getData().remove(0);
@@ -377,7 +475,7 @@ public class AuctionRoomController {
         if ("SUCCESS".equals(response.getStatus())) {
             Platform.runLater(() -> {
                 try {
-                    // Dịch JSON thành mảng các lượt Bid
+
                     java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<dto.BidRequest>>(){}.getType();
                     java.util.List<dto.BidRequest> history = gson.fromJson(gson.toJson(response.getData()), listType);
 
@@ -387,11 +485,12 @@ public class AuctionRoomController {
                             String bidderName = "User#" + b.bidderId + (b.autoBid ? " (AUTO)" : "");
                             currentProduct.addBid(new Bid(bidderName, b.amount));
                         }
-                        updateBidHistory(); // Cập nhật ListView
-                        loadChartHistory(); // Vẽ lại biểu đồ
+                        updateBidHistory();
+                        loadChartHistory();
                     }
                 } catch (Exception e) { e.printStackTrace(); }
             });
         }
     }
 }
+

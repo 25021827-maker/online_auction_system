@@ -10,6 +10,7 @@ public class User {
     private String fullName;
     private String role;
     private double balance;
+    private double availableBalance;
 
     // Các trường phục vụ riêng cho UI Frontend
     private String avatarPath;
@@ -27,6 +28,7 @@ public class User {
     public String getFullName() { return fullName; }
     public String getRole() { return role; }
     public double getBalance() { return balance; }
+    public double getAvailableBalance() { return availableBalance; }
     public String getAvatarPath() { return avatarPath; }
 
     // Setters
@@ -36,6 +38,7 @@ public class User {
     public void setFullName(String fullName) { this.fullName = fullName; }
     public void setRole(String role) { this.role = role; }
     public void setBalance(double balance) { this.balance = balance; }
+    public void setAvailableBalance(double availableBalance) { this.availableBalance = availableBalance; }
     public void setAvatarPath(String avatarPath) { this.avatarPath = avatarPath; }
 
     // =======================================================

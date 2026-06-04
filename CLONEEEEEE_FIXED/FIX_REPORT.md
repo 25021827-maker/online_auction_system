@@ -13,7 +13,7 @@ Rubric yêu cầu bắt buộc: OOP + design pattern, quản lý user/sản ph�
 Đã sửa:
 - `CREATE_AUCTION` đi qua `AuctionManager.createNewAuction(...)`.
 - SQL insert phiên đấu giá chỉ dùng các cột thật: `item_id`, `start_time`, `end_time`, `current_price`, `status`.
-- Phiên mới dùng `OPEN` để khớp schema và rubric.
+- Phiên mới dùng `PENDING` và chỉ chuyển `OPEN` sau khi admin duyệt.
 
 ### 2. Realtime và bid history chưa khép kín
 - Frontend gửi `GET_BID_HISTORY` nhưng backend chưa xử lý action này.
@@ -117,10 +117,10 @@ mvn -f backend/pom.xml test
 mvn -f frontend/pom.xml -DskipTests package
 ```
 
-Trước khi chạy app, tạo database bằng các file trong `database/schema/` theo thứ tự 01 đến 10, rồi set biến môi trường nếu MySQL có mật khẩu:
+Trước khi chạy app, tạo database bằng các file trong `database/schema/` theo thứ tự 01 đến 12, rồi set biến môi trường nếu MySQL có mật khẩu:
 
 ```bash
-export AUCTION_DB_URL='jdbc:mysql://localhost:3306/auction_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true'
+export AUCTION_DB_URL='jdbc:mysql://localhost:3306/auction_db?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true'
 export AUCTION_DB_USER='root'
 export AUCTION_DB_PASSWORD='your_password'
 ```

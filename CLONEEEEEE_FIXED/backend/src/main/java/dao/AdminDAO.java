@@ -5,6 +5,7 @@ import dto.AdminDashboardDTO;
 import dto.AdminDepositDTO;
 import dto.AdminProductDTO;
 import dto.AdminUserDTO;
+import dto.AdminWinnerDTO;
 import dto.DepositRequest;
 
 import java.sql.Connection;
@@ -35,6 +36,7 @@ public class AdminDAO {
     public AdminDashboardDTO getDashboard() {
         AdminDashboardDTO dto = new AdminDashboardDTO();
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+            new AuctionDAO().finishExpiredAuctions();
             dto.totalUsers = count(conn, "SELECT COUNT(*) FROM users");
             dto.totalAuctions = count(conn, "SELECT COUNT(*) FROM auctions");
             dto.activeAuctions = count(conn, "SELECT COUNT(*) FROM auctions WHERE status IN ('OPEN','RUNNING')");
@@ -50,7 +52,8 @@ public class AdminDAO {
     public List<AdminUserDTO> getUsers() {
         List<AdminUserDTO> users = new ArrayList<>();
         String sql = """
-                SELECT user_id, username, email, role, balance, is_active, is_admin, is_seller, is_bidder, created_at
+                SELECT user_id, username, email, role, balance, available_balance,
+                       is_active, is_admin, is_seller, is_bidder, created_at
                 FROM users
                 ORDER BY created_at DESC, user_id DESC
                 """;
@@ -64,6 +67,7 @@ public class AdminDAO {
                 dto.email = rs.getString("email");
                 dto.role = rs.getString("role");
                 dto.balance = rs.getDouble("balance");
+                dto.availableBalance = rs.getDouble("available_balance");
                 dto.active = rs.getBoolean("is_active");
                 dto.admin = rs.getBoolean("is_admin");
                 dto.seller = rs.getBoolean("is_seller");
@@ -130,7 +134,12 @@ public class AdminDAO {
 
     private boolean reviewDeposit(Long requestId, Long adminId, boolean approve) {
         String selectSql = "SELECT user_id, amount FROM deposit_requests WHERE request_id = ? AND status = 'PENDING' FOR UPDATE";
-        String updateUserSql = "UPDATE users SET balance = COALESCE(balance, 0) + ? WHERE user_id = ?";
+        String updateUserSql = """
+                UPDATE users
+                SET balance = COALESCE(balance, 0) + ?,
+                    available_balance = COALESCE(available_balance, 0) + ?
+                WHERE user_id = ?
+                """;
         String updateRequestSql = "UPDATE deposit_requests SET status = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE request_id = ?";
 
         Connection conn = null;
@@ -155,7 +164,8 @@ public class AdminDAO {
             if (approve) {
                 try (PreparedStatement updateUserStmt = conn.prepareStatement(updateUserSql)) {
                     updateUserStmt.setDouble(1, amount);
-                    updateUserStmt.setLong(2, userId);
+                    updateUserStmt.setDouble(2, amount);
+                    updateUserStmt.setLong(3, userId);
                     if (updateUserStmt.executeUpdate() == 0) {
                         conn.rollback();
                         return false;
@@ -236,6 +246,56 @@ public class AdminDAO {
         return null;
     }
 
+    public Double getUserAvailableBalance(Long userId) {
+        String sql = "SELECT available_balance FROM users WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("available_balance");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi lay so du kha dung user: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public List<AdminWinnerDTO> getWinners() {
+        new AuctionDAO().finishExpiredAuctions();
+        List<AdminWinnerDTO> winners = new ArrayList<>();
+        String sql = """
+                SELECT aw.auction_id, i.name AS item_name,
+                       s.username AS seller_username,
+                       b.username AS winner_username,
+                       aw.final_price, aw.status, aw.created_at
+                FROM auction_winners aw
+                JOIN items i ON i.item_id = aw.item_id
+                JOIN users s ON s.user_id = aw.seller_id
+                JOIN users b ON b.user_id = aw.bidder_id
+                ORDER BY aw.created_at DESC
+                """;
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+            while (rs.next()) {
+                AdminWinnerDTO dto = new AdminWinnerDTO();
+                dto.auctionId = rs.getLong("auction_id");
+                dto.itemName = rs.getString("item_name");
+                dto.sellerUsername = rs.getString("seller_username");
+                dto.winnerUsername = rs.getString("winner_username");
+                dto.finalPrice = rs.getDouble("final_price");
+                dto.status = rs.getString("status");
+                dto.createdAt = timestampToString(rs.getTimestamp("created_at"));
+                winners.add(dto);
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi lay danh sach winner: " + e.getMessage());
+        }
+        return winners;
+    }
+
     public List<AdminProductDTO> getProductsForReview() {
         List<AdminProductDTO> products = new ArrayList<>();
         String sql = """
@@ -279,7 +339,15 @@ public class AdminDAO {
                 UPDATE items i
                 JOIN auctions a ON a.item_id = i.item_id
                 SET i.status = 'ACTIVE', i.approval_status = 'APPROVED',
-                    a.status = CASE WHEN a.status = 'CANCELED' THEN 'OPEN' ELSE a.status END
+                    a.status = 'OPEN',
+                    a.start_time = CASE
+                        WHEN a.start_time < NOW() THEN NOW()
+                        ELSE a.start_time
+                    END,
+                    a.end_time = CASE
+                        WHEN a.end_time <= NOW() THEN DATE_ADD(NOW(), INTERVAL 30 MINUTE)
+                        ELSE a.end_time
+                    END
                 WHERE a.auction_id = ?
                 """;
         return executeSingleIdUpdate(sql, auctionId);
@@ -296,6 +364,7 @@ public class AdminDAO {
     }
 
     public List<AdminAuctionDTO> getAuctions() {
+        new AuctionDAO().finishExpiredAuctions();
         List<AdminAuctionDTO> auctions = new ArrayList<>();
         String sql = """
                 SELECT a.auction_id, i.name, u.username AS seller_username,
@@ -335,8 +404,19 @@ public class AdminDAO {
     }
 
     public boolean updateAuctionStatus(Long auctionId, String status) {
-        if (!List.of("OPEN", "RUNNING", "FINISHED", "PAID", "CANCELED").contains(status)) {
+        if (!List.of("PENDING", "OPEN", "RUNNING", "FINISHED", "PAID", "CANCELED").contains(status)) {
             return false;
+        }
+        if ("OPEN".equals(status) || "RUNNING".equals(status)) {
+            String sql = """
+                    UPDATE auctions a
+                    JOIN items i ON i.item_id = a.item_id
+                    SET a.status = ?,
+                        i.status = 'ACTIVE',
+                        i.approval_status = 'APPROVED'
+                    WHERE a.auction_id = ?
+                    """;
+            return executeSingleIdUpdate(sql, status, auctionId);
         }
         return executeSingleIdUpdate("UPDATE auctions SET status = ? WHERE auction_id = ?", status, auctionId);
     }

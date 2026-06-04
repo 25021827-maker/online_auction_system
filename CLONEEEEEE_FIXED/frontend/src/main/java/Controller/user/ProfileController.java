@@ -24,6 +24,8 @@ public class ProfileController {
 
     @FXML private Label lblUsername;
     @FXML private Label lblBalance;
+    @FXML private Label lblAvailableBalance;
+    @FXML private Label lblHeldBalance;
     @FXML private Label proofLabel;
     @FXML private ImageView qrImageView;
     @FXML private ImageView imgProfileAvatar;
@@ -63,6 +65,13 @@ public class ProfileController {
             return;
         }
         lblBalance.setText("$" + String.format("%.2f", Session.getCurrentUser().getBalance()));
+        if (lblAvailableBalance != null) {
+            lblAvailableBalance.setText("$" + String.format("%.2f", Session.getCurrentUser().getAvailableBalance()));
+        }
+        if (lblHeldBalance != null) {
+            double held = Math.max(0, Session.getCurrentUser().getBalance() - Session.getCurrentUser().getAvailableBalance());
+            lblHeldBalance.setText("$" + String.format("%.2f", held));
+        }
     }
 
     private void requestBalanceRefresh() {

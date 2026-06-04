@@ -1,5 +1,6 @@
 package Controller.user;
 
+import javafx.scene.control.Alert;
 import Service.core.SceneNavigator;
 import Session.Session;
 import com.google.gson.Gson;
@@ -9,6 +10,7 @@ import dto.AdminDashboardDTO;
 import dto.AdminDepositDTO;
 import dto.AdminProductDTO;
 import dto.AdminUserDTO;
+import dto.AdminWinnerDTO;
 import dto.RequestPayload;
 import dto.ResponsePayload;
 import javafx.beans.property.SimpleStringProperty;
@@ -52,6 +54,7 @@ public class AdminController {
                 "ADMIN_REJECT_PRODUCT_RESPONSE",
                 "GET_ADMIN_AUCTIONS_RESPONSE",
                 "ADMIN_UPDATE_AUCTION_STATUS_RESPONSE",
+                "GET_ADMIN_WINNERS_RESPONSE",
                 "GET_ACTIVE_AUCTIONS_RESPONSE",
                 "NEW_BID_EVENT",
                 "NEW_AUCTION_EVENT"
@@ -69,6 +72,7 @@ public class AdminController {
         socketClient.on("ADMIN_REJECT_PRODUCT_RESPONSE", this::handleProductsResponse);
         socketClient.on("GET_ADMIN_AUCTIONS_RESPONSE", this::handleAuctionsResponse);
         socketClient.on("ADMIN_UPDATE_AUCTION_STATUS_RESPONSE", this::handleAuctionsResponse);
+        socketClient.on("GET_ADMIN_WINNERS_RESPONSE", this::handleWinnersResponse);
         socketClient.on("NEW_BID_EVENT", this::handleBidCatalogChanged);
         socketClient.on("NEW_AUCTION_EVENT", this::handleAuctionCatalogChanged);
         switchDashboard();
@@ -115,6 +119,14 @@ public class AdminController {
     }
 
     @FXML
+    private void switchWinners() {
+        currentSection = "WINNERS";
+        lblTitle.setText("Auction Winners");
+        showLoading("Loading auction winners...");
+        send("GET_ADMIN_WINNERS", "{}");
+    }
+
+    @FXML
     private void handleLogout() {
         Session.clear();
         SceneNavigator.loadFromNode(lblTitle, "/ui/auth/Login.fxml", "Login");
@@ -146,6 +158,7 @@ public class AdminController {
         addColumn(table, "Email", u -> u.email, 220);
         addColumn(table, "Role", u -> u.role, 100);
         addColumn(table, "Balance", u -> "$" + String.format("%.2f", u.balance), 110);
+        addColumn(table, "Available", u -> "$" + String.format("%.2f", u.availableBalance), 120);
         addColumn(table, "Status", u -> u.active ? "ACTIVE" : "DISABLED", 100);
 
         TableColumn<AdminUserDTO, Void> actions = new TableColumn<>("Actions");
@@ -172,6 +185,22 @@ public class AdminController {
             }
         });
         table.getColumns().add(actions);
+        setContent(table);
+    }
+
+    private void handleWinnersResponse(ResponsePayload response) {
+        if (!isSuccess(response)) return;
+        Type type = new TypeToken<List<AdminWinnerDTO>>() {}.getType();
+        List<AdminWinnerDTO> winners = gson.fromJson(gson.toJson(response.getData()), type);
+
+        TableView<AdminWinnerDTO> table = new TableView<>(FXCollections.observableArrayList(winners));
+        addColumn(table, "Auction", w -> String.valueOf(w.auctionId), 80);
+        addColumn(table, "Product", w -> w.itemName, 240);
+        addColumn(table, "Seller", w -> w.sellerUsername, 150);
+        addColumn(table, "Winner", w -> w.winnerUsername, 150);
+        addColumn(table, "Winning Price", w -> "$" + String.format("%.2f", w.finalPrice), 140);
+        addColumn(table, "Payment", w -> w.status, 100);
+        addColumn(table, "Settled At", w -> shorten(w.createdAt), 170);
         setContent(table);
     }
 
@@ -235,13 +264,15 @@ public class AdminController {
         addColumn(table, "Auction", p -> p.auctionStatus, 110);
 
         TableColumn<AdminProductDTO, Void> actions = new TableColumn<>("Actions");
-        actions.setPrefWidth(180);
+        actions.setPrefWidth(240);
         actions.setCellFactory(column -> new TableCell<>() {
+            private final Button view = new Button("View");
             private final Button approve = new Button("Approve");
             private final Button reject = new Button("Reject");
-            private final HBox box = new HBox(8, approve, reject);
+            private final HBox box = new HBox(8, view, approve, reject);
 
             {
+                view.getStyleClass().addAll("table-action-button");
                 approve.getStyleClass().addAll("table-action-button", "success-button");
                 reject.getStyleClass().addAll("table-action-button", "danger-button");
             }
@@ -256,6 +287,7 @@ public class AdminController {
                 AdminProductDTO product = getTableView().getItems().get(getIndex());
                 approve.setDisable("APPROVED".equalsIgnoreCase(product.approvalStatus));
                 reject.setDisable("REJECTED".equalsIgnoreCase(product.approvalStatus));
+                view.setOnAction(e -> showProductDetail(product));
                 approve.setOnAction(e -> reviewProduct(product.auctionId, true));
                 reject.setOnAction(e -> reviewProduct(product.auctionId, false));
                 setGraphic(box);
@@ -283,13 +315,13 @@ public class AdminController {
         TableColumn<AdminAuctionDTO, Void> actions = new TableColumn<>("Actions");
         actions.setPrefWidth(240);
         actions.setCellFactory(column -> new TableCell<>() {
-            private final Button open = new Button("Open");
+            private final Button view = new Button("View");
             private final Button finish = new Button("Finish");
             private final Button cancel = new Button("Cancel");
-            private final HBox box = new HBox(8, open, finish, cancel);
+            private final HBox box = new HBox(8, view, finish, cancel);
 
             {
-                open.getStyleClass().addAll("table-action-button", "success-button");
+                view.getStyleClass().addAll("table-action-button");
                 finish.getStyleClass().addAll("table-action-button", "warning-button");
                 cancel.getStyleClass().addAll("table-action-button", "danger-button");
             }
@@ -302,7 +334,7 @@ public class AdminController {
                     return;
                 }
                 AdminAuctionDTO auction = getTableView().getItems().get(getIndex());
-                open.setOnAction(e -> updateAuctionStatus(auction.auctionId, "OPEN"));
+                view.setOnAction(e -> showAuctionDetail(auction));
                 finish.setOnAction(e -> updateAuctionStatus(auction.auctionId, "FINISHED"));
                 cancel.setOnAction(e -> updateAuctionStatus(auction.auctionId, "CANCELED"));
                 setGraphic(box);
@@ -317,6 +349,7 @@ public class AdminController {
             case "DASHBOARD" -> send("GET_ADMIN_DASHBOARD", "{}");
             case "PRODUCTS" -> send("GET_ADMIN_PRODUCTS", "{}");
             case "AUCTIONS" -> send("GET_ADMIN_AUCTIONS", "{}");
+            case "WINNERS" -> send("GET_ADMIN_WINNERS", "{}");
             default -> {
             }
         }
@@ -326,6 +359,7 @@ public class AdminController {
         switch (currentSection) {
             case "DASHBOARD" -> send("GET_ADMIN_DASHBOARD", "{}");
             case "AUCTIONS" -> send("GET_ADMIN_AUCTIONS", "{}");
+            case "WINNERS" -> send("GET_ADMIN_WINNERS", "{}");
             default -> {
             }
         }
@@ -396,5 +430,40 @@ public class AdminController {
 
     private String nullSafe(String value) {
         return value == null ? "" : value;
+    }
+
+    // Show product detail dialog
+    private void showProductDetail(AdminProductDTO product) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Auction ID: ").append(product.auctionId).append("\n");
+        sb.append("Product: ").append(product.itemName).append("\n");
+        sb.append("Seller: ").append(product.sellerUsername).append("\n");
+        sb.append("Category: ").append(product.category).append("\n");
+        sb.append("Starting Price: $").append(String.format("%.2f", product.startingPrice)).append("\n");
+        sb.append("Approval Status: ").append(product.approvalStatus).append("\n");
+        sb.append("Auction Status: ").append(product.auctionStatus);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Product Detail");
+        alert.setHeaderText(null);
+        alert.setContentText(sb.toString());
+        alert.showAndWait();
+    }
+
+    // Show auction detail dialog
+    private void showAuctionDetail(AdminAuctionDTO auction) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Auction ID: ").append(auction.auctionId).append("\n");
+        sb.append("Product: ").append(auction.itemName).append("\n");
+        sb.append("Seller: ").append(auction.sellerUsername).append("\n");
+        sb.append("Current Price: $").append(String.format("%.2f", auction.currentPrice)).append("\n");
+        sb.append("Status: ").append(auction.status).append("\n");
+        sb.append("Approval Status: ").append(auction.approvalStatus).append("\n");
+        sb.append("Bid Count: ").append(auction.bidCount).append("\n");
+        sb.append("Ends: ").append(auction.endTime);
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Auction Detail");
+        alert.setHeaderText(null);
+        alert.setContentText(sb.toString());
+        alert.showAndWait();
     }
 }

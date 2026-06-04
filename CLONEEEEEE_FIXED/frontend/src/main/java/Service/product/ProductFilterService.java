@@ -1,6 +1,7 @@
 package Service.product;
 
 import Model.Product;
+import util.VietnamTime;
 
 import java.time.LocalDateTime;
 import java.time.Duration;
@@ -37,13 +38,13 @@ public class ProductFilterService {
         // 🎯 STATUS: LỌC TRẠNG THÁI + BỘ LỌC THỜI GIAN NÂNG CAO
         // =====================================================
         if (status != null && !status.equals("All")) {
-            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime now = VietnamTime.now();
 
             switch (status) {
                 case "Ending Soon":
                     // Sắp kết thúc: Sản phẩm phải đang OPEN và thời gian còn lại từ 0 đến 24 giờ
                     filtered = filtered.stream()
-                            .filter(p -> "OPEN".equals(p.getStatus())
+                            .filter(p -> ("OPEN".equals(p.getStatus()) || "RUNNING".equals(p.getStatus()))
                                     && p.getEndTime() != null
                                     && !Duration.between(now, p.getEndTime()).isNegative()
                                     && Duration.between(now, p.getEndTime()).toHours() <= 24)
@@ -103,14 +104,14 @@ public class ProductFilterService {
 
             switch (sortType) {
 
-                case "Giá thấp → cao":
+                case "Price: Low to High":
                     filtered = filtered.stream()
                             .sorted((a, b) ->
                                     Double.compare(a.getCurrentPrice(), b.getCurrentPrice()))
                             .collect(Collectors.toList());
                     break;
 
-                case "Giá cao → thấp":
+                case "Price: High to Low":
                     filtered = filtered.stream()
                             .sorted((a, b) ->
                                     Double.compare(b.getCurrentPrice(), a.getCurrentPrice()))

@@ -5,6 +5,7 @@ import exception.AuctionClosedException;
 import exception.InvalidBidException;
 import model.Auction;
 import model.BidTransaction;
+import util.VietnamTime;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -74,13 +75,14 @@ public class AuctionService {
         if (bid.getBidderId().equals(auction.getSellerId())) {
             throw new InvalidBidException("Nguoi ban khong duoc tu dat gia cho san pham cua minh.");
         }
+        LocalDateTime now = VietnamTime.now();
         if (auction.getStatus() == Auction.Status.FINISHED
                 || auction.getStatus() == Auction.Status.PAID
                 || auction.getStatus() == Auction.Status.CANCELED
-                || LocalDateTime.now().isAfter(auction.getEndTime())) {
+                || now.isAfter(auction.getEndTime())) {
             throw new AuctionClosedException("Phien dau gia da dong.");
         }
-        if (LocalDateTime.now().isBefore(auction.getStartTime())) {
+        if (now.isBefore(auction.getStartTime())) {
             throw new AuctionClosedException("Phien dau gia chua bat dau.");
         }
         if (bid.getAmount() <= auction.getCurrentPrice()) {

@@ -70,14 +70,22 @@ public class AuctionManager {
 
     private List<BidRequest> processAutoBidsLocked(Long auctionId, AuctionService targetService) {
         List<BidRequest> generatedBids = new ArrayList<>();
-        for (int i = 0; i < 50; i++) {
-            AutoBidService.AutoBidDecision decision = autoBidService.findNextBid(auctionId);
+
+        /*
+         * Auto bid tính thẳng giá cần đặt.
+         */
+        for (int i = 0; i < 3; i++) {
+            AutoBidService.AutoBidDecision decision =
+                    autoBidService.findNextBid(auctionId);
+
             if (decision == null) {
                 break;
             }
 
             try {
-                BidTransaction autoBid = new BidTransaction(null, decision.bidderId, decision.amount, true);
+                BidTransaction autoBid =
+                        new BidTransaction(null, decision.bidderId, decision.amount, true);
+
                 targetService.placeBidInternal(autoBid);
 
                 BidRequest event = new BidRequest();
@@ -85,7 +93,9 @@ public class AuctionManager {
                 event.bidderId = decision.bidderId;
                 event.amount = decision.amount;
                 event.autoBid = true;
+
                 generatedBids.add(event);
+
             } catch (exception.InvalidBidException | exception.AuctionClosedException e) {
                 autoBidService.deactivateAutoBid(auctionId, decision.bidderId);
             }

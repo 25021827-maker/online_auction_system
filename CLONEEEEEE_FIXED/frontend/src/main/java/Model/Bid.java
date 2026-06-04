@@ -1,5 +1,7 @@
 package Model;
 
+import util.VietnamTime;
+
 import java.time.LocalDateTime;
 
 public class Bid {
@@ -22,7 +24,7 @@ public class Bid {
 
         this.amount = amount;
 
-        this.bidTime = LocalDateTime.now();
+        this.bidTime = VietnamTime.now();
     }
 
     // =========================

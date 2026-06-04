@@ -9,6 +9,7 @@ import model.BidTransaction;
 import model.User;
 import service.AuctionManager;
 import service.UserService;
+import util.VietnamTime;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -18,6 +19,12 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ClientHandler implements Runnable {
     private static final long MIN_AUCTION_DURATION_MINUTES = 5;
@@ -29,6 +36,14 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private BufferedReader in;
     private volatile User authenticatedUser;
+
+    private static final long AUTO_BID_DELAY_SECONDS = 2;
+
+    private static final ScheduledExecutorService AUTO_BID_SCHEDULER =
+            Executors.newScheduledThreadPool(2);
+
+    private static final ConcurrentHashMap<Long, ScheduledFuture<?>> PENDING_AUTO_BID_TASKS =
+            new ConcurrentHashMap<>();
 
     public ClientHandler(Socket socket, AuctionManager manager) {
         this.clientSocket = socket;
@@ -58,7 +73,7 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Client ngáº¯t káº¿t ná»‘i: " + e.getMessage());
+            System.out.println("Client disconnected: " + e.getMessage());
         } finally {
             ServerMain.activeClients.remove(this);
             AuctionRoomManager.removeClientFromAllRooms(this);
@@ -123,11 +138,16 @@ public class ClientHandler implements Runnable {
                         sendResponse(ResponsePayload.success("GET_ADMIN_AUCTIONS_RESPONSE", "OK", adminDAO.getAuctions()));
                     }
                 }
+                case "GET_ADMIN_WINNERS" -> {
+                    if (requireAdmin("GET_ADMIN_WINNERS_RESPONSE")) {
+                        sendResponse(ResponsePayload.success("GET_ADMIN_WINNERS_RESPONSE", "OK", adminDAO.getWinners()));
+                    }
+                }
                 case "ADMIN_UPDATE_AUCTION_STATUS" -> processAdminUpdateAuctionStatus(request.getData());
-                default -> sendResponse(ResponsePayload.fail(request.getAction() + "_RESPONSE", "HÃ nh Ä‘á»™ng khÃ´ng há»£p lá»‡: " + request.getAction()));
+                default -> sendResponse(ResponsePayload.fail(request.getAction() + "_RESPONSE", "Hanh dong khong hop le: " + request.getAction()));
             }
         } catch (Exception e) {
-            sendResponse(ResponsePayload.fail(request.getAction() + "_RESPONSE", "Lá»—i Server: " + e.getMessage()));
+            sendResponse(ResponsePayload.fail(request.getAction() + "_RESPONSE", "Loi Server: " + e.getMessage()));
         }
     }
 
@@ -221,37 +241,52 @@ public class ClientHandler implements Runnable {
         User loggedInUser = userService.login(loginReq.username, loginReq.password);
         authenticatedUser = loggedInUser;
         sendResponse(loggedInUser != null
-                ? ResponsePayload.success("LOGIN_RESPONSE", "ÄÄƒng nháº­p thÃ nh cÃ´ng", loggedInUser)
-                : ResponsePayload.fail("LOGIN_RESPONSE", "Sai tÃªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u"));
+                ? ResponsePayload.success("LOGIN_RESPONSE", "Äï¿½Æ’ng nháº­p thÃ nh cÃ´ng", loggedInUser)
+                : ResponsePayload.fail("LOGIN_RESPONSE", "Sai tÃªn ï¿½â€˜ï¿½Æ’ng nháº­p hoáº·c máº­t kháº©u"));
     }
 
     private void processRegister(String jsonData) {
         RegisterRequest req = gson.fromJson(jsonData, RegisterRequest.class);
         boolean isSuccess = userService.register(req.username, req.password, req.email, req.role);
         sendResponse(isSuccess
-                ? ResponsePayload.success("REGISTER_RESPONSE", "ÄÄƒng kÃ½ thÃ nh cÃ´ng!", null)
-                : ResponsePayload.fail("REGISTER_RESPONSE", "ÄÄƒng kÃ½ tháº¥t báº¡i. TÃªn Ä‘Äƒng nháº­p/email cÃ³ thá»ƒ Ä‘Ã£ tá»“n táº¡i."));
+                ? ResponsePayload.success("REGISTER_RESPONSE", "Äï¿½Æ’ng kÃ½ thÃ nh cÃ´ng!", null)
+                : ResponsePayload.fail("REGISTER_RESPONSE", "Äï¿½Æ’ng kÃ½ tháº¥t báº¡i. TÃªn ï¿½â€˜ï¿½Æ’ng nháº­p/email cÃ³ thï¿½Æ’ ï¿½â€˜Ã£ tï¿½â€œn táº¡i."));
     }
 
     private void processBid(String jsonData) {
         BidRequest bidReq = gson.fromJson(jsonData, BidRequest.class);
+
         try {
             if (bidReq == null || !requireSameUser(bidReq.bidderId, "PLACE_BID_RESPONSE")) {
                 return;
             }
+
+            AuctionDAO.AuctionBidState beforeBidState = new AuctionDAO().getAuctionBidState(bidReq.auctionId);
+            Long previousLeaderId = beforeBidState == null ? null : beforeBidState.currentLeaderId;
+
             BidTransaction newBid = new BidTransaction(null, bidReq.bidderId, bidReq.amount);
-            List<BidRequest> autoBids = auctionManager.processBidWithAutoBids(bidReq.auctionId, newBid);
+
+            boolean ok = auctionManager.processBid(bidReq.auctionId, newBid);
             bidReq.autoBid = false;
-            if (autoBids == null) {
-                sendResponse(ResponsePayload.fail("PLACE_BID_RESPONSE", "GiÃ¡ Ä‘áº·t khÃ´ng há»£p lá»‡ hoáº·c phiÃªn Ä‘Ã£ Ä‘Ã³ng."));
+
+            if (!ok) {
+                sendResponse(ResponsePayload.fail("PLACE_BID_RESPONSE", "Gia dat khong hop le hoac phien da dong."));
                 return;
             }
 
             broadcastBidEvent(bidReq, "New bid placed");
-            for (BidRequest autoBid : autoBids) {
-                broadcastBidEvent(autoBid, "Auto bid da dat gia moi");
+            broadcastAuctionTimeIfChanged(bidReq.auctionId);
+
+            sendResponse(ResponsePayload.success("PLACE_BID_RESPONSE", "Dat gia thanh cong!", null));
+
+            sendBalanceUpdate(bidReq.bidderId);
+
+            if (previousLeaderId != null && !previousLeaderId.equals(bidReq.bidderId)) {
+                sendBalanceUpdate(previousLeaderId);
             }
-            sendResponse(ResponsePayload.success("PLACE_BID_RESPONSE", "Äáº·t giÃ¡ thÃ nh cÃ´ng!", null));
+
+            scheduleDelayedAutoBid(bidReq.auctionId);
+
         } catch (exception.InvalidBidException | exception.AuctionClosedException e) {
             sendResponse(ResponsePayload.fail("PLACE_BID_RESPONSE", e.getMessage()));
         }
@@ -259,30 +294,69 @@ public class ClientHandler implements Runnable {
 
     private void processSetAutoBid(String jsonData) {
         AutoBidRequest req = gson.fromJson(jsonData, AutoBidRequest.class);
+
         try {
             if (req == null || !requireSameUser(req.bidderId, "SET_AUTO_BID_RESPONSE")) {
                 return;
             }
+
             auctionManager.configureAutoBid(req);
+
             sendResponse(ResponsePayload.success("SET_AUTO_BID_RESPONSE", "Auto bid da duoc bat.", null));
 
-            for (BidRequest autoBid : auctionManager.processAutoBids(req.auctionId)) {
-                broadcastBidEvent(autoBid, "Auto bid da dat gia moi");
-            }
+            scheduleDelayedAutoBid(req.auctionId);
+
         } catch (exception.InvalidBidException | exception.AuctionClosedException e) {
             sendResponse(ResponsePayload.fail("SET_AUTO_BID_RESPONSE", e.getMessage()));
         }
     }
 
+    private void scheduleDelayedAutoBid(Long auctionId) {
+        if (auctionId == null) {
+            return;
+        }
+
+        ScheduledFuture<?> oldTask = PENDING_AUTO_BID_TASKS.remove(auctionId);
+
+        if (oldTask != null && !oldTask.isDone()) {
+            oldTask.cancel(false);
+        }
+
+        ScheduledFuture<?> newTask = AUTO_BID_SCHEDULER.schedule(() -> {
+            PENDING_AUTO_BID_TASKS.remove(auctionId);
+
+            try {
+                List<BidRequest> autoBids = auctionManager.processAutoBids(auctionId);
+
+                for (BidRequest autoBid : autoBids) {
+                    broadcastBidEvent(autoBid, "Auto bid da dat gia moi");
+                    broadcastAuctionTimeIfChanged(autoBid.auctionId);
+                    sendBalanceUpdate(autoBid.bidderId);
+                }
+
+            } catch (Exception e) {
+                System.err.println("Loi khi chay delayed auto bid cho auction " + auctionId);
+                e.printStackTrace();
+            }
+
+        }, AUTO_BID_DELAY_SECONDS, TimeUnit.SECONDS);
+
+        PENDING_AUTO_BID_TASKS.put(auctionId, newTask);
+    }
+
     private void broadcastBidEvent(BidRequest bid, String message) {
-        ResponsePayload event = ResponsePayload.success("BID_UPDATE", message, bid);
-        AuctionRoomManager.broadcastToRoom(bid.auctionId, gson.toJson(event));
+        ResponsePayload roomEvent = ResponsePayload.success("BID_UPDATE", message, bid);
+
+        AuctionRoomManager.broadcastToRoom(bid.auctionId, gson.toJson(roomEvent));
+
         ServerMain.broadcast(ResponsePayload.success("NEW_BID_EVENT", message, bid));
+
+        ServerMain.broadcast(ResponsePayload.success("AUCTION_PRICE_CHANGED", message, bid));
     }
 
     private void processGetActiveAuctions() {
         List<Auction> activeAuctions = auctionManager.getActiveAuctionsList();
-        sendResponse(ResponsePayload.success("GET_ACTIVE_AUCTIONS_RESPONSE", "ThÃ nh cÃ´ng", activeAuctions));
+        sendResponse(ResponsePayload.success("GET_ACTIVE_AUCTIONS_RESPONSE", "ThÃ nh cÃ´ng", toAuctionDTOs(activeAuctions)));
     }
 
     private void processCreateAuction(String dataJson) {
@@ -298,13 +372,13 @@ public class ClientHandler implements Runnable {
                     req.startingPrice, req.category, req.condition, req.imagePath, start, end);
 
             if (isSuccess) {
-                sendResponse(ResponsePayload.success("CREATE_AUCTION_RESPONSE", "Táº¡o phiÃªn Ä‘áº¥u giÃ¡ thÃ nh cÃ´ng", null));
-                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "CÃ³ sáº£n pháº©m má»›i", null));
+                sendResponse(ResponsePayload.success("CREATE_AUCTION_RESPONSE", "Táº¡o phiÃªn ï¿½â€˜áº¥u giÃ¡ thÃ nh cÃ´ng", null));
+                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "CÃ³ sáº£n pháº©m mï¿½â€ºi", null));
             } else {
-                sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "KhÃ´ng thá»ƒ táº¡o phiÃªn Ä‘áº¥u giÃ¡."));
+                sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "KhÃ´ng thï¿½Æ’ táº¡o phiÃªn ï¿½â€˜áº¥u giÃ¡."));
             }
         } catch (Exception e) {
-            sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "Dá»¯ liá»‡u táº¡o phiÃªn khÃ´ng há»£p lá»‡: " + e.getMessage()));
+            sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "Dá»¯ liï¿½â€¡u táº¡o phiÃªn khÃ´ng há»£p lï¿½â€¡: " + e.getMessage()));
         }
     }
 
@@ -323,12 +397,12 @@ public class ClientHandler implements Runnable {
             if (isSuccess) {
                 auctionManager.reloadActiveAuctions();
                 sendResponse(ResponsePayload.success("UPDATE_AUCTION_RESPONSE", "Cáº­p nháº­t thÃ nh cÃ´ng!", null));
-                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m Ä‘Æ°á»£c cáº­p nháº­t", req.auctionId));
+                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m ï¿½â€˜Æ°á»£c cáº­p nháº­t", req.auctionId));
             } else {
-                sendResponse(ResponsePayload.fail("UPDATE_AUCTION_RESPONSE", "KhÃ´ng thá»ƒ cáº­p nháº­t phiÃªn Ä‘áº¥u giÃ¡."));
+                sendResponse(ResponsePayload.fail("UPDATE_AUCTION_RESPONSE", "KhÃ´ng thï¿½Æ’ cáº­p nháº­t phiÃªn ï¿½â€˜áº¥u giÃ¡."));
             }
         } catch (Exception e) {
-            sendResponse(ResponsePayload.fail("UPDATE_AUCTION_RESPONSE", "Dá»¯ liá»‡u cáº­p nháº­t khÃ´ng há»£p lá»‡: " + e.getMessage()));
+            sendResponse(ResponsePayload.fail("UPDATE_AUCTION_RESPONSE", "Dá»¯ liï¿½â€¡u cáº­p nháº­t khÃ´ng há»£p lï¿½â€¡: " + e.getMessage()));
         }
     }
 
@@ -336,7 +410,7 @@ public class ClientHandler implements Runnable {
         if (start == null || end == null) {
             throw new IllegalArgumentException("Thoi gian dau gia khong hop le.");
         }
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = VietnamTime.now();
         if (start.isBefore(now.minusMinutes(1))) {
             throw new IllegalArgumentException("Thoi gian bat dau khong duoc nam trong qua khu.");
         }
@@ -354,7 +428,7 @@ public class ClientHandler implements Runnable {
         if (!requireSeller(sellerId, "GET_MY_PRODUCTS_RESPONSE")) {
             return;
         }
-        sendResponse(ResponsePayload.success("GET_MY_PRODUCTS_RESPONSE", "ThÃ nh cÃ´ng", new AuctionDAO().getAuctionsBySeller(sellerId)));
+        sendResponse(ResponsePayload.success("GET_MY_PRODUCTS_RESPONSE", "ThÃ nh cÃ´ng", toAuctionDTOs(new AuctionDAO().getAuctionsBySeller(sellerId))));
     }
 
     private void processDeleteProduct(String dataJson) {
@@ -366,9 +440,9 @@ public class ClientHandler implements Runnable {
         }
         if (new AuctionDAO().deleteAuction(auctionId, sellerId)) {
             sendResponse(ResponsePayload.success("DELETE_PRODUCT_RESPONSE", "ÄÃ£ xÃ³a", null));
-            ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m bá»‹ xÃ³a", null));
+            ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m bï¿½â€¹ xÃ³a", null));
         } else {
-            sendResponse(ResponsePayload.fail("DELETE_PRODUCT_RESPONSE", "KhÃ´ng thá»ƒ xÃ³a sáº£n pháº©m."));
+            sendResponse(ResponsePayload.fail("DELETE_PRODUCT_RESPONSE", "KhÃ´ng thï¿½Æ’ xÃ³a sáº£n pháº©m."));
         }
     }
 
@@ -378,7 +452,11 @@ public class ClientHandler implements Runnable {
         if (!requireSameUser(userId, "GET_WATCHLIST_RESPONSE")) {
             return;
         }
-        sendResponse(ResponsePayload.success("GET_WATCHLIST_RESPONSE", "ThÃ nh cÃ´ng", new AuctionDAO().getWatchlist(userId)));
+        sendResponse(ResponsePayload.success("GET_WATCHLIST_RESPONSE", "ThÃ nh cÃ´ng", toAuctionDTOs(new AuctionDAO().getWatchlist(userId))));
+    }
+
+    private List<AuctionDTO> toAuctionDTOs(List<Auction> auctions) {
+        return auctions.stream().map(AuctionDTO::from).toList();
     }
 
     private void processSubmitDeposit(String dataJson) {
@@ -455,9 +533,11 @@ public class ClientHandler implements Runnable {
     }
 
     private JsonObject buildBalanceData(Long userId, double balance) {
+        Double availableBalance = adminDAO.getUserAvailableBalance(userId);
         JsonObject data = new JsonObject();
         data.addProperty("userId", userId);
         data.addProperty("balance", balance);
+        data.addProperty("availableBalance", availableBalance != null ? availableBalance : balance);
         return data;
     }
 
@@ -485,7 +565,9 @@ public class ClientHandler implements Runnable {
         JsonObject json = parseObject(dataJson);
         Long auctionId = json.get("auctionId").getAsLong();
         String status = json.get("status").getAsString();
-        boolean ok = adminDAO.updateAuctionStatus(auctionId, status);
+        boolean ok = "FINISHED".equalsIgnoreCase(status)
+                ? new AuctionDAO().settleAuction(auctionId)
+                : adminDAO.updateAuctionStatus(auctionId, status);
         if (ok) {
             auctionManager.reloadActiveAuctions();
             ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Admin da cap nhat phien dau gia", null));
@@ -501,11 +583,51 @@ public class ClientHandler implements Runnable {
                 "Nap tien truc tiep da bi tat. Vui long gui yeu cau nap tien de admin duyet."
         ));
     }
+    private void broadcastAuctionTimeIfChanged(Long auctionId) {
+        try {
+            AuctionDAO.AuctionBidState state = new AuctionDAO().getAuctionBidState(auctionId);
+
+            if (state == null || state.endTime == null) {
+                return;
+            }
+
+            com.google.gson.JsonObject data = new com.google.gson.JsonObject();
+            data.addProperty("auctionId", auctionId);
+            data.addProperty("newEndTime", state.endTime.toString());
+
+            ServerMain.broadcast(
+                    ResponsePayload.success("AUCTION_TIME_EXTENDED", "Auction time updated", data)
+            );
+
+            ResponsePayload roomEvent =
+                    ResponsePayload.success("AUCTION_TIME_EXTENDED", "Auction time updated", data);
+
+            AuctionRoomManager.broadcastToRoom(auctionId, gson.toJson(roomEvent));
+
+        } catch (Exception e) {
+            System.err.println("Loi broadcast thoi gian auction:");
+            e.printStackTrace();
+        }
+    }
 
     private void processGetBidHistory(String dataJson) {
         JsonObject json = parseObject(dataJson);
         Long auctionId = json.get("auctionId").getAsLong();
+
         List<BidTransaction> history = new AuctionDAO().getBidHistory(auctionId);
-        sendResponse(ResponsePayload.success("GET_BID_HISTORY_RESPONSE", "ThÃ nh cÃ´ng", history));
+
+        List<BidRequest> result = new java.util.ArrayList<>();
+
+        for (BidTransaction bid : history) {
+            BidRequest dto = new BidRequest();
+            dto.auctionId = auctionId;
+            dto.bidderId = bid.getBidderId();
+            dto.amount = bid.getAmount();
+            dto.autoBid = bid.isAutoBid();
+            result.add(dto);
+        }
+
+        sendResponse(ResponsePayload.success("GET_BID_HISTORY_RESPONSE", "Thanh cong", result));
     }
 }
+

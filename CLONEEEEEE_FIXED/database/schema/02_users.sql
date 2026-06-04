@@ -11,7 +11,8 @@ CREATE TABLE users (
                        is_admin BOOLEAN DEFAULT FALSE,
                        is_active BOOLEAN DEFAULT TRUE,
                        role VARCHAR(20) DEFAULT 'BIDDER',      -- [THÊM MỚI] Ánh xạ trực tiếp với Frontend
-                       balance DECIMAL(12,2) DEFAULT 0.0,      -- [THÊM MỚI] Lưu số dư tài khoản
+                       balance DECIMAL(12,2) NOT NULL DEFAULT 0.0,      -- Tiền thật trong tài khoản
+                       available_balance DECIMAL(12,2) NOT NULL DEFAULT 0.0,      -- Tiền có thể dùng để bid
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

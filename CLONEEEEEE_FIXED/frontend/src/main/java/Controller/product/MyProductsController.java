@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import dto.AuctionDTO;
 import dto.RequestPayload;
 import dto.ResponsePayload;
+import util.VietnamTime;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.FXML;
@@ -154,8 +155,8 @@ public class MyProductsController {
         String desc = (dto.item != null) ? dto.item.description : "";
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : LocalDateTime.now();
-        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : LocalDateTime.now();
+        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : VietnamTime.now();
+        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now();
 
         Product product = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
         try {
@@ -164,12 +165,24 @@ public class MyProductsController {
             idField.set(product, dto.id.intValue());
         } catch (Exception ignored) {}
 
-        product.setStatus(dto.status);
+        product.setStatus(resolveSellerDisplayStatus(dto));
         if (dto.item != null) {
             product.setCategory(dto.item.category);
             product.setCondition(dto.item.condition);
         }
         return product;
+    }
+
+    private String resolveSellerDisplayStatus(AuctionDTO dto) {
+        if (dto.item != null && dto.item.approvalStatus != null) {
+            if ("PENDING".equalsIgnoreCase(dto.item.approvalStatus)) {
+                return "PENDING_APPROVAL";
+            }
+            if ("REJECTED".equalsIgnoreCase(dto.item.approvalStatus)) {
+                return "REJECTED";
+            }
+        }
+        return dto.status == null ? "" : dto.status;
     }
 
     private void stopLiveTimeline() {
@@ -289,7 +302,7 @@ public class MyProductsController {
         }
 
         private void updateActionButtonState() {
-            java.time.Duration untilStart = java.time.Duration.between(LocalDateTime.now(), product.getStartTime());
+            java.time.Duration untilStart = java.time.Duration.between(VietnamTime.now(), product.getStartTime());
             boolean locked = product.getStatus().equals("RUNNING")
                     || product.getStatus().equals("FINISHED")
                     || product.getStatus().equals("SOLD")

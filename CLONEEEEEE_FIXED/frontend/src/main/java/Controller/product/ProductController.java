@@ -38,16 +38,17 @@ public class ProductController {
 
     @FXML
     public void initialize() {
-        // Đăng ký nhận kết quả khi chính mình đặt giá
+
         SocketClient socketClient = SocketClient.getInstance();
         socketClient.clearListeners("PLACE_BID_RESPONSE");
         socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("AUCTION_PRICE_CHANGED");
         socketClient.clearListeners("BALANCE_UPDATE");
         socketClient.clearListeners("GET_BALANCE_RESPONSE");
         socketClient.on("PLACE_BID_RESPONSE", this::handleBidResponse);
 
-        // Đăng ký nhận thông báo Real-time khi người khác đặt giá
         socketClient.on("NEW_BID_EVENT", this::handleRealtimeBid);
+        socketClient.on("AUCTION_PRICE_CHANGED", this::handleRealtimeBid);
         socketClient.on("BALANCE_UPDATE", response -> updateBalanceLabel());
         socketClient.on("GET_BALANCE_RESPONSE", response -> updateBalanceLabel());
     }
@@ -56,19 +57,20 @@ public class ProductController {
         this.currentProduct = p;
 
         nameLabel.setText(p.getTitle());
-        priceLabel.setText("Giá hiện tại: $" + p.getCurrentPrice());
-        sellerLabel.setText("Người bán: " + p.getSeller());
+        priceLabel.setText("GiÃ¡ hiá»‡n táº¡i: $" + p.getCurrentPrice());
+        sellerLabel.setText("NgÆ°á»i bÃ¡n: " + p.getSeller());
         updateHighestBidderLabel();
         updateBalanceLabel();
+        SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
 
         String status = p.getStatus();
         if (!(status.equals("OPEN") || status.equals("RUNNING"))) {
             txtBid.setDisable(true);
             bidButton.setDisable(true);
             if (status.equals("SCHEDULED")) {
-                lblMessage.setText("Phiên đấu giá chưa bắt đầu");
+                lblMessage.setText("PhiÃªn Ä‘áº¥u giÃ¡ chÆ°a báº¯t Ä‘áº§u");
             } else {
-                lblMessage.setText("Phiên đấu giá đã kết thúc");
+                lblMessage.setText("PhiÃªn Ä‘áº¥u giÃ¡ Ä‘Ã£ káº¿t thÃºc");
             }
         }
 
@@ -79,15 +81,21 @@ public class ProductController {
 
     private void updateBalanceLabel() {
         if (Session.getCurrentUser() != null) {
-            balanceLabel.setText("Số dư của bạn: $" + String.format("%.2f", Session.getCurrentUser().getBalance()));
+            double held = Math.max(0, Session.getCurrentUser().getBalance() - Session.getCurrentUser().getAvailableBalance());
+            balanceLabel.setText("Balance: $"
+                    + String.format("%.2f", Session.getCurrentUser().getBalance())
+                    + " | Available: $"
+                    + String.format("%.2f", Session.getCurrentUser().getAvailableBalance())
+                    + " | Held: $"
+                    + String.format("%.2f", held));
         }
     }
 
     private void updateHighestBidderLabel() {
         if (currentProduct.getHighestBidder() == null || currentProduct.getHighestBidder().isEmpty()) {
-            highestBidderLabel.setText("Người giữ giá cao nhất: Chưa có");
+            highestBidderLabel.setText("NgÆ°á»i giá»¯ giÃ¡ cao nháº¥t: ChÆ°a cÃ³");
         } else {
-            highestBidderLabel.setText("Người giữ giá cao nhất: " + currentProduct.getHighestBidder());
+            highestBidderLabel.setText("NgÆ°á»i giá»¯ giÃ¡ cao nháº¥t: " + currentProduct.getHighestBidder());
         }
     }
 
@@ -95,45 +103,45 @@ public class ProductController {
     private void handleBid() {
         try {
             if (!(currentProduct.getStatus().equals("OPEN") || currentProduct.getStatus().equals("RUNNING"))) {
-                lblMessage.setText("Phiên đấu giá chưa mở hoặc đã kết thúc");
+                lblMessage.setText("Phien dau gia chua mo hoac da ket thuc");
+                return;
+            }
+            if (Session.getCurrentUser() == null) {
+                lblMessage.setText("Ban can dang nhap de dat gia.");
                 return;
             }
 
             double bidAmount = Double.parseDouble(txtBid.getText());
-            lblMessage.setText("Đang gửi yêu cầu đặt giá...");
+            if (bidAmount > Session.getCurrentUser().getAvailableBalance()) {
+                lblMessage.setText("Khong du so du kha dung de dat gia.");
+                return;
+            }
+            lblMessage.setText("Dang gui yeu cau dat gia...");
 
-            // Đóng gói DTO gửi lên Server
             BidRequest req = new BidRequest();
             req.auctionId = (long) currentProduct.getId();
-            req.bidderId = (long) Session.getCurrentUser().getId(); // Sử dụng ID vừa thêm vào User.java
+            req.bidderId = Session.getCurrentUser().getId();
             req.amount = bidAmount;
 
             RequestPayload payload = new RequestPayload("PLACE_BID", gson.toJson(req));
             SocketClient.getInstance().sendRequest(payload);
-
         } catch (Exception e) {
-            lblMessage.setText("Bid không hợp lệ");
+            lblMessage.setText("Bid khong hop le");
         }
     }
 
-    // Hàm callback khi nhận kết quả đặt giá từ Server
+    // HÃ m callback khi nháº­n káº¿t quáº£ Ä‘áº·t giÃ¡ tá»« Server
     private void handleBidResponse(ResponsePayload response) {
         if ("SUCCESS".equals(response.getStatus())) {
-            lblMessage.setText("Bid thành công!");
-
-            // Trừ tiền tạm trên giao diện (Đồng bộ chuẩn sẽ dựa vào API lấy Profile sau)
-            try {
-                double bidAmount = Double.parseDouble(txtBid.getText());
-                Session.getCurrentUser().deductMoney(bidAmount);
-                updateBalanceLabel();
-                txtBid.clear();
-            } catch (Exception e) {}
+            lblMessage.setText("Bid thanh cong!");
+            txtBid.clear();
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
         } else {
             lblMessage.setText(response.getMessage());
         }
     }
 
-    // Hàm callback cập nhật giá Real-time khi ai đó đặt giá
+    // HÃ m callback cáº­p nháº­t giÃ¡ Real-time khi ai Ä‘Ã³ Ä‘áº·t giÃ¡
     private void handleRealtimeBid(ResponsePayload response) {
         try {
             BidRequest newBid = gson.fromJson(gson.toJson(response.getData()), BidRequest.class);
@@ -141,9 +149,9 @@ public class ProductController {
                 currentProduct.setCurrentPrice(newBid.amount);
                 currentProduct.setHighestBidder("User#" + newBid.bidderId);
 
-                // Bắt buộc đẩy vào Platform.runLater để vẽ lại giao diện
+                // Báº¯t buá»™c Ä‘áº©y vÃ o Platform.runLater Ä‘á»ƒ váº½ láº¡i giao diá»‡n
                 Platform.runLater(() -> {
-                    priceLabel.setText("Giá hiện tại: $" + newBid.amount);
+                    priceLabel.setText("GiÃ¡ hiá»‡n táº¡i: $" + newBid.amount);
                     updateHighestBidderLabel();
                 });
             }
@@ -157,3 +165,4 @@ public class ProductController {
         SceneNavigator.showFixedFullScreen(stage, root, "San dau gia");
     }
 }
+

@@ -11,6 +11,7 @@ import dto.ResponsePayload;
 import dto.AuctionDTO;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import util.VietnamTime;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -39,6 +40,9 @@ public class AuctionController {
     @FXML private ComboBox<String> categoryFilterBox;
     @FXML private ComboBox<String> conditionFilterBox;
     @FXML private Label lblResultCount;
+    @FXML private Label lblHeaderBalance;
+    @FXML private Label lblHeaderAvailableBalance;
+    @FXML private Label lblHeaderHeldBalance;
     @FXML private ImageView imgAvatarHeader;
     @FXML private FlowPane productsContainer;
 
@@ -63,18 +67,28 @@ public class AuctionController {
         setupUserAvatar();
 
         if (searchField != null) {
-            searchField.setPromptText("Tìm kiếm sản phẩm...");
+            searchField.setPromptText("Search products...");
         }
 
         SocketClient socketClient = SocketClient.getInstance();
         socketClient.clearListeners("GET_ACTIVE_AUCTIONS_RESPONSE");
         socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("AUCTION_PRICE_CHANGED");
         socketClient.clearListeners("NEW_AUCTION_EVENT");
+        socketClient.clearListeners("BALANCE_UPDATE");
+        socketClient.clearListeners("GET_BALANCE_RESPONSE");
+        socketClient.clearListeners("AUCTION_TIME_EXTENDED");
+        socketClient.on("AUCTION_TIME_EXTENDED", e -> fetchAuctionsFromServer());
         socketClient.on("GET_ACTIVE_AUCTIONS_RESPONSE", this::handleLoadAuctions);
         socketClient.on("NEW_BID_EVENT", this::handleRealtimeBidUpdate);
+        socketClient.on("AUCTION_PRICE_CHANGED", this::handleRealtimeBidUpdate);
         socketClient.on("NEW_AUCTION_EVENT", e -> fetchAuctionsFromServer());
+        socketClient.on("BALANCE_UPDATE", this::handleBalanceUpdate);
+        socketClient.on("GET_BALANCE_RESPONSE", this::handleBalanceUpdate);
 
         fetchAuctionsFromServer();
+        requestBalanceRefresh();
+        updateHeaderBalance();
 
         // ---- ĐOẠN MỚI THÊM: ẨN NÚT VỚI BIDDER ----
         if (Session.getCurrentUser() != null && "BIDDER".equalsIgnoreCase(Session.getCurrentUser().getRole())) {
@@ -92,6 +106,32 @@ public class AuctionController {
     private void fetchAuctionsFromServer() {
         RequestPayload req = new RequestPayload("GET_ACTIVE_AUCTIONS", "{}");
         SocketClient.getInstance().sendRequest(req);
+    }
+
+    private void requestBalanceRefresh() {
+        if (Session.getCurrentUser() != null) {
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+        }
+    }
+
+    private void handleBalanceUpdate(ResponsePayload response) {
+        updateHeaderBalance();
+    }
+
+    private void updateHeaderBalance() {
+        if (lblHeaderBalance == null || Session.getCurrentUser() == null) {
+            return;
+        }
+        double balance = Session.getCurrentUser().getBalance();
+        double available = Session.getCurrentUser().getAvailableBalance();
+        double held = Math.max(0, Session.getCurrentUser().getBalance() - Session.getCurrentUser().getAvailableBalance());
+        lblHeaderBalance.setText("$" + String.format("%.2f", balance));
+        if (lblHeaderAvailableBalance != null) {
+            lblHeaderAvailableBalance.setText("$" + String.format("%.2f", available));
+        }
+        if (lblHeaderHeldBalance != null) {
+            lblHeaderHeldBalance.setText("$" + String.format("%.2f", held));
+        }
     }
 
     private void handleLoadAuctions(ResponsePayload response) {
@@ -128,14 +168,14 @@ public class AuctionController {
     // Phiên dịch DTO (Backend) thành Product (Frontend)
     private Product mapToProduct(AuctionDTO dto) {
         // Bóc dữ liệu an toàn
-        String title = (dto.item != null && dto.item.name != null) ? dto.item.name : "Sản phẩm ẩn danh";
+        String title = (dto.item != null && dto.item.name != null) ? dto.item.name : "Untitled product";
         double price = dto.currentPrice > 0 ? dto.currentPrice : (dto.item != null ? dto.item.startingPrice : 0);
         String image = (dto.item != null && dto.item.imagePath != null) ? dto.item.imagePath : "";
         String desc = (dto.item != null && dto.item.description != null) ? dto.item.description : "";
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : LocalDateTime.now();
-        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : LocalDateTime.now().plusHours(1);
+        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : VietnamTime.now();
+        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now().plusHours(1);
 
         Product p = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
         // Ép kiểu ID từ Long xuống int cho khớp Frontend
