@@ -89,7 +89,7 @@ public class AdminController {
 
     @FXML
     private void handleLogout() {
-        Session.currentUser = null;
+        Session.clear();
         SceneNavigator.loadFromNode(lblTitle, "/ui/auth/Login.fxml", "Login");
     }
 
@@ -308,7 +308,7 @@ public class AdminController {
     }
 
     private void reviewDeposit(Long requestId, boolean approve) {
-        Long adminId = Session.currentUser != null ? Session.currentUser.getId() : null;
+        Long adminId = Session.getCurrentUser() != null ? Session.getCurrentUser().getId() : null;
         String data = "{\"requestId\":" + requestId + ",\"adminId\":" + adminId + "}";
         send(approve ? "ADMIN_APPROVE_DEPOSIT" : "ADMIN_REJECT_DEPOSIT", data);
     }

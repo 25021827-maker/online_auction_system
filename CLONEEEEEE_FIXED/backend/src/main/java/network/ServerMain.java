@@ -20,7 +20,6 @@ public class ServerMain {
     public static void main(String[] args) {
         System.out.println("Đang khởi động Server đấu giá...");
 
-        AuctionSubject globalSubject = new AuctionSubject();
         // Khởi tạo Manager ở đây để tải DB 1 lần duy nhất khi bật server
         AuctionManager auctionManager = new AuctionManager();
 
@@ -32,7 +31,7 @@ public class ServerMain {
                 System.out.println("Có client mới kết nối: " + clientSocket.getInetAddress());
 
                 // Truyền auctionManager vào ClientHandler
-                ClientHandler handler = new ClientHandler(clientSocket, globalSubject, auctionManager);
+                ClientHandler handler = new ClientHandler(clientSocket, auctionManager);
                 new Thread(handler).start();
             }
         } catch (IOException e) {

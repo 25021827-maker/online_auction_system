@@ -19,10 +19,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class ClientHandler implements Runnable, ClientObserver {
+public class ClientHandler implements Runnable {
     private static final long MIN_AUCTION_DURATION_MINUTES = 5;
     private final Socket clientSocket;
-    private final AuctionSubject auctionSubject;
     private final AuctionManager auctionManager;
     private final UserService userService;
     private final AdminDAO adminDAO;
@@ -31,9 +30,8 @@ public class ClientHandler implements Runnable, ClientObserver {
     private BufferedReader in;
     private volatile User authenticatedUser;
 
-    public ClientHandler(Socket socket, AuctionSubject subject, AuctionManager manager) {
+    public ClientHandler(Socket socket, AuctionManager manager) {
         this.clientSocket = socket;
-        this.auctionSubject = subject;
         this.auctionManager = manager;
         this.userService = new UserService();
         this.adminDAO = new AdminDAO();
@@ -51,7 +49,6 @@ public class ClientHandler implements Runnable, ClientObserver {
         try {
             out = new PrintWriter(clientSocket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            auctionSubject.addObserver(this);
 
             String requestLine;
             while ((requestLine = in.readLine()) != null) {
@@ -65,14 +62,8 @@ public class ClientHandler implements Runnable, ClientObserver {
         } finally {
             ServerMain.activeClients.remove(this);
             AuctionRoomManager.removeClientFromAllRooms(this);
-            auctionSubject.removeObserver(this);
             try { clientSocket.close(); } catch (Exception ignored) {}
         }
-    }
-
-    @Override
-    public void sendRealtimeUpdate(String message) {
-        sendMessage(message);
     }
 
     public synchronized void sendMessage(String jsonMsg) {
@@ -98,6 +89,7 @@ public class ClientHandler implements Runnable, ClientObserver {
                 case "GET_WATCHLIST" -> processGetWatchlist(request.getData());
                 case "SUBMIT_DEPOSIT" -> processSubmitDeposit(request.getData());
                 case "ADD_BALANCE" -> processAddBalance(request.getData());
+                case "GET_BALANCE" -> processGetBalance();
                 case "GET_BID_HISTORY" -> processGetBidHistory(request.getData());
                 case "JOIN_AUCTION_ROOM" -> processJoinAuctionRoom(request.getData());
                 case "LEAVE_AUCTION_ROOM" -> processLeaveAuctionRoom(request.getData());
@@ -301,7 +293,7 @@ public class ClientHandler implements Runnable, ClientObserver {
             LocalDateTime start = LocalDateTime.parse(req.startTime);
             LocalDateTime end = LocalDateTime.parse(req.endTime);
             validateAuctionSchedule(start, end);
-            boolean isSuccess = auctionManager.createNewAuction(req.sellerId, req.itemName, req.description,
+            boolean isSuccess = auctionManager.createAuction(req.sellerId, req.itemName, req.description,
                     req.startingPrice, req.category, req.condition, req.imagePath, start, end);
 
             if (isSuccess) {
@@ -429,16 +421,42 @@ public class ClientHandler implements Runnable, ClientObserver {
                 : ResponsePayload.fail(action, "Khong the xu ly yeu cau nap tien."));
     }
 
+    private void processGetBalance() {
+        if (!requireLoggedIn("GET_BALANCE_RESPONSE")) {
+            return;
+        }
+        sendBalanceResponse(authenticatedUser.getId(), "GET_BALANCE_RESPONSE");
+    }
+
     private void sendBalanceUpdate(Long userId) {
+        sendBalanceToUser(userId, "BALANCE_UPDATE");
+    }
+
+    private void sendBalanceResponse(Long userId, String action) {
+        Double balance = adminDAO.getUserBalance(userId);
+        if (balance == null) {
+            sendResponse(ResponsePayload.fail(action, "Khong the lay so du moi nhat."));
+            return;
+        }
+
+        JsonObject data = buildBalanceData(userId, balance);
+        sendResponse(ResponsePayload.success(action, "Balance loaded.", data));
+    }
+
+    private void sendBalanceToUser(Long userId, String action) {
         Double balance = adminDAO.getUserBalance(userId);
         if (balance == null) {
             return;
         }
 
+        ServerMain.sendToUser(userId, ResponsePayload.success(action, "Balance updated.", buildBalanceData(userId, balance)));
+    }
+
+    private JsonObject buildBalanceData(Long userId, double balance) {
         JsonObject data = new JsonObject();
         data.addProperty("userId", userId);
         data.addProperty("balance", balance);
-        ServerMain.sendToUser(userId, ResponsePayload.success("BALANCE_UPDATE", "Balance updated.", data));
+        return data;
     }
 
     private void processAdminReviewProduct(String dataJson, boolean approve) {

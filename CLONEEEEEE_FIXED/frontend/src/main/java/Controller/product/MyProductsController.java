@@ -50,9 +50,9 @@ public class MyProductsController {
     }
 
     private void fetchMyProductsFromServer() {
-        if (Session.currentUser == null) return;
+        if (Session.getCurrentUser() == null) return;
         // Gửi ID của chính mình lên để lọc danh sách sản phẩm mình đăng bán
-        RequestPayload req = new RequestPayload("GET_MY_PRODUCTS", "{\"sellerId\":" + Session.currentUser.getId() + "}");
+        RequestPayload req = new RequestPayload("GET_MY_PRODUCTS", "{\"sellerId\":" + Session.getCurrentUser().getId() + "}");
         SocketClient.getInstance().sendRequest(req);
     }
 

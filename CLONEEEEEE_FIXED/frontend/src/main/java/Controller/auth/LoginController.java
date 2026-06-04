@@ -56,7 +56,8 @@ public class LoginController {
                     User loggedUser = gson.fromJson(userJson, User.class);
 
                     // Lưu User vào phiên hoạt động
-                    Session.currentUser = loggedUser;
+                    Session.setCurrentUser(loggedUser);
+                    SocketClient.getInstance().startBalancePolling();
 
                     // Điều hướng sang trang chính dựa trên Role
                     if (loggedUser.getRole() != null && loggedUser.getRole().equalsIgnoreCase("ADMIN")) {

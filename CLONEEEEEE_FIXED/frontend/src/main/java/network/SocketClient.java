@@ -34,6 +34,7 @@ public class SocketClient {
 
     private final String serverHost;
     private final int serverPort;
+    private volatile boolean balancePollingStarted = false;
 
     private SocketClient() {
         this.gson = new GsonBuilder()
@@ -48,6 +49,7 @@ public class SocketClient {
         this.serverHost = loadServerHost(clientProperties);
         this.serverPort = loadServerPort(clientProperties);
         connectToServer();
+        startBalancePolling();
     }
 
     public static synchronized SocketClient getInstance() {
@@ -116,10 +118,33 @@ public class SocketClient {
         eventListeners.computeIfAbsent(eventName, k -> new CopyOnWriteArrayList<>()).add(callback);
     }
 
-    public void sendRequest(RequestPayload request) {
+    public synchronized void sendRequest(RequestPayload request) {
         if (out != null) {
             out.println(gson.toJson(request));
         }
+    }
+
+    public synchronized void startBalancePolling() {
+        if (balancePollingStarted) {
+            return;
+        }
+        balancePollingStarted = true;
+
+        Thread pollingThread = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(3000);
+                    if (Session.getCurrentUser() != null) {
+                        sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (Exception ignored) {}
+            }
+        });
+        pollingThread.setDaemon(true);
+        pollingThread.start();
     }
 
     private void listenForServerMessages() {
@@ -141,7 +166,10 @@ public class SocketClient {
     }
 
     private void updateSessionBalanceIfNeeded(ResponsePayload response) {
-        if (!"BALANCE_UPDATE".equals(response.getAction()) || Session.currentUser == null) {
+        String action = response.getAction();
+        if (Session.getCurrentUser() == null
+                || (!"BALANCE_UPDATE".equals(action) && !"GET_BALANCE_RESPONSE".equals(action))
+                || !"SUCCESS".equals(response.getStatus())) {
             return;
         }
 
@@ -149,8 +177,9 @@ public class SocketClient {
             JsonObject data = JsonParser.parseString(gson.toJson(response.getData())).getAsJsonObject();
             long userId = data.get("userId").getAsLong();
             double balance = data.get("balance").getAsDouble();
-            if (Session.currentUser.getId() != null && Session.currentUser.getId().equals(userId)) {
-                Session.currentUser.setBalance(balance);
+            if (Session.getCurrentUser().getId() != null && Session.getCurrentUser().getId().equals(userId)) {
+                Session.getCurrentUser().setBalance(balance);
+                System.out.println("[SocketClient] Balance refreshed: $" + String.format("%.2f", balance));
             }
         } catch (Exception ignored) {}
     }

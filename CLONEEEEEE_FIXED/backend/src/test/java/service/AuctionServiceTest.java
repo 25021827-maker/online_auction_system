@@ -47,4 +47,10 @@ public class AuctionServiceTest {
         BidTransaction lateBid = new BidTransaction(null, 3L, 2000.0);
         assertThrows(AuctionClosedException.class, () -> auctionService.placeBid(lateBid));
     }
+
+    @Test
+    public void testSellerCannotBidOwnAuction_ThrowsException() {
+        BidTransaction sellerBid = new BidTransaction(null, 2L, 1200.0);
+        assertThrows(InvalidBidException.class, () -> auctionService.placeBid(sellerBid));
+    }
 }

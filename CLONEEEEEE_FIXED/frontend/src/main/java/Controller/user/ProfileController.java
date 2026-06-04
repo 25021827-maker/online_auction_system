@@ -6,6 +6,8 @@ import com.google.gson.Gson;
 import dto.DepositRequest;
 import dto.RequestPayload;
 import dto.ResponsePayload;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -15,6 +17,7 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 import network.SocketClient;
 
 import java.io.InputStream;
@@ -31,17 +34,20 @@ public class ProfileController {
     private final Gson gson = new Gson();
     private String proofImagePath = "";
     private double pendingAmount = 0;
+    private Timeline balanceRefreshTimeline;
 
     @FXML
     public void initialize() {
         SocketClient.getInstance().on("SUBMIT_DEPOSIT_RESPONSE", this::handleDepositSubmitResponse);
         SocketClient.getInstance().on("BALANCE_UPDATE", this::handleBalanceUpdate);
+        SocketClient.getInstance().on("GET_BALANCE_RESPONSE", this::handleBalanceUpdate);
 
-        if (Session.currentUser != null) {
-            lblUsername.setText(Session.currentUser.getUsername());
+        if (Session.getCurrentUser() != null) {
+            lblUsername.setText(Session.getCurrentUser().getUsername());
             updateBalanceUI();
             setupProfileAvatar();
         }
+        startBalanceRefresh();
 
         try (InputStream qrStream = getClass().getResourceAsStream("/images/myqr.png")) {
             if (qrStream != null) {
@@ -53,14 +59,30 @@ public class ProfileController {
     }
 
     private void updateBalanceUI() {
-        lblBalance.setText("$" + String.format("%.2f", Session.currentUser.getBalance()));
+        if (Session.getCurrentUser() == null) {
+            return;
+        }
+        lblBalance.setText("$" + String.format("%.2f", Session.getCurrentUser().getBalance()));
+    }
+
+    private void startBalanceRefresh() {
+        requestBalanceRefresh();
+        balanceRefreshTimeline = new Timeline(new KeyFrame(Duration.seconds(3), e -> requestBalanceRefresh()));
+        balanceRefreshTimeline.setCycleCount(Timeline.INDEFINITE);
+        balanceRefreshTimeline.play();
+    }
+
+    private void requestBalanceRefresh() {
+        if (Session.getCurrentUser() != null) {
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+        }
     }
 
     private void setupProfileAvatar() {
-        if (Session.currentUser == null || imgProfileAvatar == null) return;
+        if (Session.getCurrentUser() == null || imgProfileAvatar == null) return;
 
         try {
-            String userAvatarPath = Session.currentUser.getAvatarPath();
+            String userAvatarPath = Session.getCurrentUser().getAvatarPath();
             if (userAvatarPath != null && !userAvatarPath.isEmpty()) {
                 imgProfileAvatar.setImage(new Image(userAvatarPath));
             } else {
@@ -114,7 +136,7 @@ public class ProfileController {
         }
 
         DepositRequest deposit = new DepositRequest();
-        deposit.userId = Session.currentUser.getId();
+        deposit.userId = Session.getCurrentUser().getId();
         deposit.amount = pendingAmount;
         deposit.proofImagePath = proofImagePath;
 
@@ -140,8 +162,11 @@ public class ProfileController {
 
     @FXML
     private void goHome(ActionEvent event) {
-        if (Session.currentUser != null
-                && "ADMIN".equalsIgnoreCase(Session.currentUser.getRole())) {
+        if (balanceRefreshTimeline != null) {
+            balanceRefreshTimeline.stop();
+        }
+        if (Session.getCurrentUser() != null
+                && "ADMIN".equalsIgnoreCase(Session.getCurrentUser().getRole())) {
             SceneNavigator.loadFromNode(lblUsername, "/ui/user/AdminView.fxml", "Admin Dashboard");
         } else {
             SceneNavigator.loadFromNode(lblUsername, "/ui/product/AuctionMain.fxml", "San dau gia");
@@ -159,7 +184,7 @@ public class ProfileController {
         java.io.File selectedFile = fileChooser.showOpenDialog(null);
         if (selectedFile != null) {
             String newAvatarPath = selectedFile.toURI().toString();
-            Session.currentUser.setAvatarPath(newAvatarPath);
+            Session.getCurrentUser().setAvatarPath(newAvatarPath);
             imgProfileAvatar.setImage(new Image(newAvatarPath));
         }
     }

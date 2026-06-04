@@ -12,43 +12,41 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AuctionManager {
-    private final ConcurrentHashMap<Long, AuctionService> activeServices;
+    private volatile ConcurrentHashMap<Long, AuctionService> activeServices;
     private final AuctionDAO auctionDAO;
     private final AutoBidService autoBidService;
 
     public AuctionManager() {
-        this.activeServices = new ConcurrentHashMap<>();
         this.auctionDAO = new AuctionDAO();
         this.autoBidService = new AutoBidService(auctionDAO);
-        loadActiveAuctionsFromDB();
+        this.activeServices = loadActiveAuctionsFromDB();
     }
 
-    private void loadActiveAuctionsFromDB() {
+    private ConcurrentHashMap<Long, AuctionService> loadActiveAuctionsFromDB() {
+        ConcurrentHashMap<Long, AuctionService> services = new ConcurrentHashMap<>();
         List<Auction> activeAuctions = auctionDAO.getActiveAuctions();
         for (Auction auction : activeAuctions) {
-            activeServices.put(auction.getId(), new AuctionService(auction));
+            services.put(auction.getId(), new AuctionService(auction));
         }
         System.out.println("Da tai " + activeAuctions.size() + " phien dau gia tu Database len he thong.");
+        return services;
     }
 
     public void reloadActiveAuctions() {
-        activeServices.clear();
-        loadActiveAuctionsFromDB();
+        activeServices = loadActiveAuctionsFromDB();
     }
 
     public boolean processBid(Long auctionId, BidTransaction newBid) {
         AuctionService targetService = getServiceOrThrow(auctionId);
-        synchronized (targetService) {
-            return targetService.placeBid(newBid);
-        }
+        return targetService.placeBid(newBid);
     }
 
     public List<BidRequest> processBidWithAutoBids(Long auctionId, BidTransaction newBid) {
         AuctionService targetService = getServiceOrThrow(auctionId);
-        synchronized (targetService) {
-            boolean ok = targetService.placeBid(newBid);
+        return targetService.withBidLock(() -> {
+            boolean ok = targetService.placeBidInternal(newBid);
             return ok ? processAutoBidsLocked(auctionId, targetService) : List.of();
-        }
+        });
     }
 
     public void configureAutoBid(AutoBidRequest request) {
@@ -65,9 +63,9 @@ public class AuctionManager {
         if (targetService == null) {
             return List.of();
         }
-        synchronized (targetService) {
+        return targetService.withBidLock(() -> {
             return processAutoBidsLocked(auctionId, targetService);
-        }
+        });
     }
 
     private List<BidRequest> processAutoBidsLocked(Long auctionId, AuctionService targetService) {
@@ -80,7 +78,7 @@ public class AuctionManager {
 
             try {
                 BidTransaction autoBid = new BidTransaction(null, decision.bidderId, decision.amount, true);
-                targetService.placeBid(autoBid);
+                targetService.placeBidInternal(autoBid);
 
                 BidRequest event = new BidRequest();
                 event.auctionId = auctionId;
@@ -108,8 +106,8 @@ public class AuctionManager {
         return auctionDAO.getActiveAuctions();
     }
 
-    public boolean createNewAuction(Long sellerId, String itemName, String description, double startingPrice, String category, String condition, String imagePath, LocalDateTime startTime, LocalDateTime endTime) {
-        boolean isSuccess = auctionDAO.createNewAuction(sellerId, itemName, description, startingPrice, category, condition, imagePath, startTime, endTime);
+    public boolean createAuction(Long sellerId, String itemName, String description, double startingPrice, String category, String condition, String imagePath, LocalDateTime startTime, LocalDateTime endTime) {
+        boolean isSuccess = auctionDAO.createAuction(sellerId, itemName, description, startingPrice, category, condition, imagePath, startTime, endTime);
         if (isSuccess) {
             reloadActiveAuctions();
         }

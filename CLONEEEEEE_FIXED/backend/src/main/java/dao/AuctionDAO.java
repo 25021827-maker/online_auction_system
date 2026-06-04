@@ -17,67 +17,6 @@ import java.time.LocalDateTime;
 
 public class AuctionDAO {
 
-    public boolean createNewAuction(Long sellerId, String itemName, String description, double startingPrice, String category, String condition, String imagePath, LocalDateTime startTime, LocalDateTime endTime) {
-        // Lưu thông tin Sản phẩm (Có seller_id)
-        // Sửa câu lệnh để nhét imagePath (dấu ? số 7)
-        String insertItemSql = "INSERT INTO items (seller_id, name, description, starting_price, category, condition_status, image_url, status, approval_status) VALUES (?, ?, ?, ?, ?, ?, ?, 'HIDDEN', 'PENDING')";
-
-        // LƯU Ý: Bảng auctions KHÔNG có seller_id. Đã xóa khỏi câu lệnh này để tránh Crash Database!
-        String insertAuctionSql = "INSERT INTO auctions (item_id, start_time, end_time, current_price, status) VALUES (?, ?, ?, ?, 'OPEN')";
-
-        Connection conn = null;
-        try {
-            conn = DatabaseConnection.getInstance().getConnection();
-            conn.setAutoCommit(false);
-
-            Long newItemId = null;
-
-            try (PreparedStatement pstmtItem = conn.prepareStatement(insertItemSql, Statement.RETURN_GENERATED_KEYS)) {
-                pstmtItem.setLong(1, sellerId);
-                pstmtItem.setString(2, itemName);
-                pstmtItem.setString(3, description);
-                pstmtItem.setDouble(4, startingPrice);
-                pstmtItem.setString(5, category);
-                // Trong khối gán giá trị của createNewAuction:
-                pstmtItem.setString(6, condition);
-                // THÊM DÒNG NÀY (Đừng quên truyền biến imagePath vào tham số hàm)
-                pstmtItem.setString(7, imagePath != null ? imagePath : "");
-                pstmtItem.executeUpdate();
-
-                try (ResultSet rs = pstmtItem.getGeneratedKeys()) {
-                    if (rs.next()) newItemId = rs.getLong(1);
-                }
-            }
-
-            if (newItemId == null) {
-                conn.rollback();
-                return false;
-            }
-
-            try (PreparedStatement pstmtAuction = conn.prepareStatement(insertAuctionSql)) {
-                pstmtAuction.setLong(1, newItemId);
-                pstmtAuction.setTimestamp(2, java.sql.Timestamp.valueOf(startTime));
-                pstmtAuction.setTimestamp(3, java.sql.Timestamp.valueOf(endTime));
-                pstmtAuction.setDouble(4, startingPrice);
-                pstmtAuction.executeUpdate();
-            }
-
-            conn.commit();
-            return true;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            if (conn != null) {
-                try { conn.rollback(); } catch (Exception ex) {}
-            }
-            return false;
-        } finally {
-            if (conn != null) {
-                try { conn.setAutoCommit(true); conn.close(); } catch (Exception e) {}
-            }
-        }
-    } // ĐÃ XÓA DẤU NGOẶC NHỌN THỪA Ở ĐÂY
-
     public boolean placeBid(Long auctionId, Long bidderId, double bidAmount) throws SQLException {
         return placeBid(auctionId, bidderId, bidAmount, false);
     }

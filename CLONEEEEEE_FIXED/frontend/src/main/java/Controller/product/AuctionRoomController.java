@@ -57,6 +57,8 @@ public class AuctionRoomController {
         SocketClient.getInstance().on("PLACE_BID_RESPONSE", this::handleBidResponse);
         SocketClient.getInstance().on("BID_UPDATE", this::handleRealtimeBid);
         SocketClient.getInstance().on("SET_AUTO_BID_RESPONSE", this::handleAutoBidResponse);
+        SocketClient.getInstance().on("BALANCE_UPDATE", response -> updateBalance());
+        SocketClient.getInstance().on("GET_BALANCE_RESPONSE", response -> updateBalance());
 
         // ĐÃ THÊM: Đăng ký nghe dữ liệu lịch sử đặt giá từ Server
         SocketClient.getInstance().on("GET_BID_HISTORY_RESPONSE", this::handleLoadBidHistory);
@@ -107,7 +109,7 @@ public class AuctionRoomController {
     }
 
     private void updateBalance() {
-        balanceLabel.setText("YOUR BALANCE: $" + String.format("%.2f", Session.currentUser.getBalance()));
+        balanceLabel.setText("YOUR BALANCE: $" + String.format("%.2f", Session.getCurrentUser().getBalance()));
     }
 
     private void updateHighestBidder() {
@@ -157,7 +159,7 @@ public class AuctionRoomController {
             req.auctionId = (long) currentProduct.getId();
 
             // Ép kiểu an toàn cho ID (bạn cần có ID trong class User, tạm giả định lấy qua Username hoặc thuộc tính)
-            req.bidderId = (long) Session.currentUser.getId();// LƯU Ý: Chỗ này bạn cần lấy ID thực tế của User từ Session.currentUser.getId()
+            req.bidderId = (long) Session.getCurrentUser().getId();// LƯU Ý: Chỗ này bạn cần lấy ID thực tế của User từ Session.getCurrentUser().getId()
             req.amount = bidAmount;
 
             RequestPayload payload = new RequestPayload("PLACE_BID", gson.toJson(req));
@@ -172,7 +174,7 @@ public class AuctionRoomController {
     @FXML
     private void handleAutoBid() {
         try {
-            if (currentProduct == null || Session.currentUser == null) {
+            if (currentProduct == null || Session.getCurrentUser() == null) {
                 lblMessage.setText("Cannot set auto bid right now");
                 return;
             }
@@ -186,7 +188,7 @@ public class AuctionRoomController {
 
             AutoBidRequest req = new AutoBidRequest();
             req.auctionId = (long) currentProduct.getId();
-            req.bidderId = Session.currentUser.getId();
+            req.bidderId = Session.getCurrentUser().getId();
             req.maxAmount = maxAmount;
             req.incrementStep = step;
 

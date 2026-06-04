@@ -52,8 +52,8 @@ public class WatchlistController {
     }
 
     private void fetchWatchlistFromServer() {
-        if (Session.currentUser == null) return;
-        RequestPayload req = new RequestPayload("GET_WATCHLIST", "{\"userId\":" + Session.currentUser.getId() + "}");
+        if (Session.getCurrentUser() == null) return;
+        RequestPayload req = new RequestPayload("GET_WATCHLIST", "{\"userId\":" + Session.getCurrentUser().getId() + "}");
         SocketClient.getInstance().sendRequest(req);
     }
 

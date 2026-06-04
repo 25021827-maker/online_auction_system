@@ -43,6 +43,8 @@ public class ProductController {
 
         // Đăng ký nhận thông báo Real-time khi người khác đặt giá
         SocketClient.getInstance().on("NEW_BID_EVENT", this::handleRealtimeBid);
+        SocketClient.getInstance().on("BALANCE_UPDATE", response -> updateBalanceLabel());
+        SocketClient.getInstance().on("GET_BALANCE_RESPONSE", response -> updateBalanceLabel());
     }
 
     public void setData(Product p) {
@@ -71,8 +73,8 @@ public class ProductController {
     }
 
     private void updateBalanceLabel() {
-        if (Session.currentUser != null) {
-            balanceLabel.setText("Số dư của bạn: $" + String.format("%.2f", Session.currentUser.getBalance()));
+        if (Session.getCurrentUser() != null) {
+            balanceLabel.setText("Số dư của bạn: $" + String.format("%.2f", Session.getCurrentUser().getBalance()));
         }
     }
 
@@ -98,7 +100,7 @@ public class ProductController {
             // Đóng gói DTO gửi lên Server
             BidRequest req = new BidRequest();
             req.auctionId = (long) currentProduct.getId();
-            req.bidderId = (long) Session.currentUser.getId(); // Sử dụng ID vừa thêm vào User.java
+            req.bidderId = (long) Session.getCurrentUser().getId(); // Sử dụng ID vừa thêm vào User.java
             req.amount = bidAmount;
 
             RequestPayload payload = new RequestPayload("PLACE_BID", gson.toJson(req));
@@ -117,7 +119,7 @@ public class ProductController {
             // Trừ tiền tạm trên giao diện (Đồng bộ chuẩn sẽ dựa vào API lấy Profile sau)
             try {
                 double bidAmount = Double.parseDouble(txtBid.getText());
-                Session.currentUser.deductMoney(bidAmount);
+                Session.getCurrentUser().deductMoney(bidAmount);
                 updateBalanceLabel();
                 txtBid.clear();
             } catch (Exception e) {}

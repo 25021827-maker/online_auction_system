@@ -121,7 +121,7 @@ public class ProductFormController {
             return;
         }
 
-        if (Session.currentUser == null || !"SELLER".equals(Session.currentUser.getRole())) {
+        if (Session.getCurrentUser() == null || !"SELLER".equals(Session.getCurrentUser().getRole())) {
             showAlert(Alert.AlertType.ERROR, "Từ chối truy cập", "Chỉ tài khoản người bán (SELLER) mới được tạo phiên đấu giá!");
             return;
         }
@@ -131,7 +131,7 @@ public class ProductFormController {
 
         // Đóng gói DTO
         CreateAuctionRequest req = new CreateAuctionRequest();
-        req.sellerId = (long) Session.currentUser.getId();
+        req.sellerId = (long) Session.getCurrentUser().getId();
         req.auctionId = (editingProduct != null) ? (long) editingProduct.getId() : null;
         req.itemName = name;
         req.description = desc;

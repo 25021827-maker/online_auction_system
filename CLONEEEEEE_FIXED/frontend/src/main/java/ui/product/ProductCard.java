@@ -94,14 +94,14 @@ public class ProductCard {
             // Ngăn chặn sự kiện click lan ra ngoài làm mở màn hình đấu giá (Mẹo JavaFX)
             e.consume();
 
-            if (Session.currentUser != null) {
+            if (Session.getCurrentUser() != null) {
                 int pId = product.getId();
-                if (Session.currentUser.isWatching(pId)) {
+                if (Session.getCurrentUser().isWatching(pId)) {
                     // Nếu đang theo dõi thì bấm vào sẽ hủy theo dõi
-                    Session.currentUser.removeFromWatchlist(pId);
+                    Session.getCurrentUser().removeFromWatchlist(pId);
                 } else {
                     // Nếu chưa theo dõi thì bấm vào sẽ thêm vào danh sách
-                    Session.currentUser.addToWatchlist(pId);
+                    Session.getCurrentUser().addToWatchlist(pId);
                 }
                 // Cập nhật giao diện nút bấm ngay lập tức
                 updateWatchButtonState();
@@ -180,9 +180,9 @@ public class ProductCard {
      * 🎯 MỚI BỔ SUNG: Hàm cập nhật trạng thái màu sắc, chữ hiển thị của nút Watch
      */
     private void updateWatchButtonState() {
-        if (watchBtn == null || Session.currentUser == null) return;
+        if (watchBtn == null || Session.getCurrentUser() == null) return;
 
-        if (Session.currentUser.isWatching(product.getId())) {
+        if (Session.getCurrentUser().isWatching(product.getId())) {
             watchBtn.setText("★ Watching");
             // Gắn mã màu đỏ rực rỡ trực tiếp nếu css nhóm chưa khai báo kịp
             watchBtn.setStyle("-fx-text-fill: #ff3b30; -fx-font-weight: bold;");

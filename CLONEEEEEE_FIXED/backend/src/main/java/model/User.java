@@ -3,7 +3,7 @@ package model;
 public abstract class User {
     protected Long id;
     protected String username;
-    protected String password;
+    protected transient String password;
     protected String email;     // [BỔ SUNG]
     protected String fullName;  // [BỔ SUNG]
     protected String role;
@@ -38,7 +38,12 @@ public abstract class User {
     public void setBalance(double balance) { this.balance = balance; }
 
     public void setPassword(String password) { this.password = password; }
+
+    /**
+     * @deprecated Password verification is handled by dao.UserDAO with BCrypt.
+     */
+    @Deprecated
     public boolean checkPassword(String inputPassword) {
-        return this.password.equals(inputPassword);
+        return this.password != null && this.password.equals(inputPassword);
     }
 }

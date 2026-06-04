@@ -2,6 +2,7 @@ package dao;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -114,9 +115,10 @@ public class DatabaseConnection {
     }
 
     private void ensureDefaultAdmin(Connection conn) throws SQLException {
+        String hashedPassword = BCrypt.hashpw("admin123", BCrypt.gensalt(12));
         String updateSql = """
                 UPDATE users
-                SET password = 'admin123',
+                SET password = ?,
                     is_bidder = FALSE,
                     is_seller = FALSE,
                     is_admin = TRUE,
@@ -126,8 +128,9 @@ public class DatabaseConnection {
                 WHERE username = 'admin'
                 """;
 
-        try (Statement stmt = conn.createStatement()) {
-            int updated = stmt.executeUpdate(updateSql);
+        try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
+            pstmt.setString(1, hashedPassword);
+            int updated = pstmt.executeUpdate();
             if (updated > 0) {
                 return;
             }
@@ -140,7 +143,7 @@ public class DatabaseConnection {
 
         try (PreparedStatement pstmt = conn.prepareStatement(insertSql)) {
             pstmt.setString(1, "admin");
-            pstmt.setString(2, "admin123");
+            pstmt.setString(2, hashedPassword);
             pstmt.setString(3, "admin@bvbid.local");
             pstmt.executeUpdate();
         }

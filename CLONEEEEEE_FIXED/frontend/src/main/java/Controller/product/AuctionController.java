@@ -53,8 +53,8 @@ public class AuctionController {
 
     @FXML
     public void initialize() {
-        if (Session.currentUser != null
-                && "ADMIN".equalsIgnoreCase(Session.currentUser.getRole())) {
+        if (Session.getCurrentUser() != null
+                && "ADMIN".equalsIgnoreCase(Session.getCurrentUser().getRole())) {
             SceneNavigator.loadFromNode(productsContainer, "/ui/user/AdminView.fxml", "Admin Dashboard");
             return;
         }
@@ -73,7 +73,7 @@ public class AuctionController {
         fetchAuctionsFromServer();
 
         // ---- ĐOẠN MỚI THÊM: ẨN NÚT VỚI BIDDER ----
-        if (Session.currentUser != null && "BIDDER".equalsIgnoreCase(Session.currentUser.getRole())) {
+        if (Session.getCurrentUser() != null && "BIDDER".equalsIgnoreCase(Session.getCurrentUser().getRole())) {
             if (btnPostProduct != null) {
                 btnPostProduct.setVisible(false);
                 btnPostProduct.setManaged(false); // Ẩn hoàn toàn khỏi Layout
@@ -155,8 +155,8 @@ public class AuctionController {
     }
 
     private void setupUserAvatar() {
-        if (Session.currentUser != null) {
-            String userAvatarPath = Session.currentUser.getAvatarPath();
+        if (Session.getCurrentUser() != null) {
+            String userAvatarPath = Session.getCurrentUser().getAvatarPath();
             if (userAvatarPath != null && !userAvatarPath.isEmpty()) {
                 imgAvatarHeader.setImage(new Image(userAvatarPath));
             } else {
