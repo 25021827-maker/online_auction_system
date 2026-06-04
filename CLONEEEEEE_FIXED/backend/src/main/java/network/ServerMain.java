@@ -47,4 +47,17 @@ public class ServerMain {
         }
     }
 
+    public static void sendToUser(Long userId, ResponsePayload payload) {
+        if (userId == null || payload == null) {
+            return;
+        }
+
+        String jsonMsg = gson.toJson(payload);
+        for (ClientHandler client : activeClients) {
+            if (userId.equals(client.getAuthenticatedUserId())) {
+                client.sendMessage(jsonMsg);
+            }
+        }
+    }
+
 }

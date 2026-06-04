@@ -130,7 +130,7 @@ public class AdminDAO {
 
     private boolean reviewDeposit(Long requestId, Long adminId, boolean approve) {
         String selectSql = "SELECT user_id, amount FROM deposit_requests WHERE request_id = ? AND status = 'PENDING' FOR UPDATE";
-        String updateUserSql = "UPDATE users SET balance = balance + ? WHERE user_id = ?";
+        String updateUserSql = "UPDATE users SET balance = COALESCE(balance, 0) + ? WHERE user_id = ?";
         String updateRequestSql = "UPDATE deposit_requests SET status = ?, reviewed_at = CURRENT_TIMESTAMP, reviewed_by = ? WHERE request_id = ?";
 
         Connection conn = null;
@@ -156,7 +156,10 @@ public class AdminDAO {
                 try (PreparedStatement updateUserStmt = conn.prepareStatement(updateUserSql)) {
                     updateUserStmt.setDouble(1, amount);
                     updateUserStmt.setLong(2, userId);
-                    updateUserStmt.executeUpdate();
+                    if (updateUserStmt.executeUpdate() == 0) {
+                        conn.rollback();
+                        return false;
+                    }
                 }
             }
 
@@ -184,6 +187,53 @@ public class AdminDAO {
                 try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
             }
         }
+    }
+
+    public AdminDepositDTO getDepositRequest(Long requestId) {
+        String sql = """
+                SELECT d.request_id, d.user_id, u.username, d.amount, d.proof_image_path,
+                       d.status, d.created_at, d.reviewed_at
+                FROM deposit_requests d
+                JOIN users u ON u.user_id = d.user_id
+                WHERE d.request_id = ?
+                """;
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, requestId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    AdminDepositDTO dto = new AdminDepositDTO();
+                    dto.requestId = rs.getLong("request_id");
+                    dto.userId = rs.getLong("user_id");
+                    dto.username = rs.getString("username");
+                    dto.amount = rs.getDouble("amount");
+                    dto.proofImagePath = rs.getString("proof_image_path");
+                    dto.status = rs.getString("status");
+                    dto.createdAt = timestampToString(rs.getTimestamp("created_at"));
+                    dto.reviewedAt = timestampToString(rs.getTimestamp("reviewed_at"));
+                    return dto;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi lay yeu cau nap tien: " + e.getMessage());
+        }
+        return null;
+    }
+
+    public Double getUserBalance(Long userId) {
+        String sql = "SELECT balance FROM users WHERE user_id = ?";
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setLong(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("balance");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi lay so du user: " + e.getMessage());
+        }
+        return null;
     }
 
     public List<AdminProductDTO> getProductsForReview() {

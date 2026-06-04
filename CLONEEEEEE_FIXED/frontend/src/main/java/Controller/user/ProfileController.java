@@ -35,6 +35,7 @@ public class ProfileController {
     @FXML
     public void initialize() {
         SocketClient.getInstance().on("SUBMIT_DEPOSIT_RESPONSE", this::handleDepositSubmitResponse);
+        SocketClient.getInstance().on("BALANCE_UPDATE", this::handleBalanceUpdate);
 
         if (Session.currentUser != null) {
             lblUsername.setText(Session.currentUser.getUsername());
@@ -131,6 +132,10 @@ public class ProfileController {
                 proofLabel.setText("System error: " + response.getMessage());
             }
         });
+    }
+
+    private void handleBalanceUpdate(ResponsePayload response) {
+        Platform.runLater(this::updateBalanceUI);
     }
 
     @FXML

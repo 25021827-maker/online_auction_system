@@ -79,6 +79,10 @@ public class ClientHandler implements Runnable, ClientObserver {
         if (out != null) out.println(jsonMsg);
     }
 
+    public Long getAuthenticatedUserId() {
+        return authenticatedUser == null ? null : authenticatedUser.getId();
+    }
+
     private void handleRequest(RequestPayload request) {
         try {
             switch (request.getAction()) {
@@ -415,10 +419,26 @@ public class ClientHandler implements Runnable, ClientObserver {
         JsonObject json = parseObject(dataJson);
         Long requestId = json.get("requestId").getAsLong();
         Long adminId = authenticatedUser.getId();
+        AdminDepositDTO deposit = approve ? adminDAO.getDepositRequest(requestId) : null;
         boolean ok = approve ? adminDAO.approveDeposit(requestId, adminId) : adminDAO.rejectDeposit(requestId, adminId);
+        if (ok && approve && deposit != null) {
+            sendBalanceUpdate(deposit.userId);
+        }
         sendResponse(ok
                 ? ResponsePayload.success(action, "Da xu ly yeu cau nap tien.", adminDAO.getDepositRequests())
                 : ResponsePayload.fail(action, "Khong the xu ly yeu cau nap tien."));
+    }
+
+    private void sendBalanceUpdate(Long userId) {
+        Double balance = adminDAO.getUserBalance(userId);
+        if (balance == null) {
+            return;
+        }
+
+        JsonObject data = new JsonObject();
+        data.addProperty("userId", userId);
+        data.addProperty("balance", balance);
+        ServerMain.sendToUser(userId, ResponsePayload.success("BALANCE_UPDATE", "Balance updated.", data));
     }
 
     private void processAdminReviewProduct(String dataJson, boolean approve) {

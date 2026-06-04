@@ -1,6 +1,7 @@
 package network;
 
 import com.google.gson.*;
+import Session.Session;
 import dto.RequestPayload;
 import dto.ResponsePayload;
 import javafx.application.Platform;
@@ -127,6 +128,7 @@ public class SocketClient {
             while ((serverMessage = in.readLine()) != null) {
                 ResponsePayload response = gson.fromJson(serverMessage, ResponsePayload.class);
                 String action = response.getAction();
+                updateSessionBalanceIfNeeded(response);
 
                 if (action != null && eventListeners.containsKey(action)) {
                     List<Consumer<ResponsePayload>> callbacks = eventListeners.get(action);
@@ -136,5 +138,20 @@ public class SocketClient {
                 }
             }
         } catch (Exception e) {}
+    }
+
+    private void updateSessionBalanceIfNeeded(ResponsePayload response) {
+        if (!"BALANCE_UPDATE".equals(response.getAction()) || Session.currentUser == null) {
+            return;
+        }
+
+        try {
+            JsonObject data = JsonParser.parseString(gson.toJson(response.getData())).getAsJsonObject();
+            long userId = data.get("userId").getAsLong();
+            double balance = data.get("balance").getAsDouble();
+            if (Session.currentUser.getId() != null && Session.currentUser.getId().equals(userId)) {
+                Session.currentUser.setBalance(balance);
+            }
+        } catch (Exception ignored) {}
     }
 }
