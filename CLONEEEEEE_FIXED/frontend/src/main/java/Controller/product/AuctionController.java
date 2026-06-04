@@ -66,9 +66,13 @@ public class AuctionController {
             searchField.setPromptText("Tìm kiếm sản phẩm...");
         }
 
-        SocketClient.getInstance().on("GET_ACTIVE_AUCTIONS_RESPONSE", this::handleLoadAuctions);
-        SocketClient.getInstance().on("NEW_BID_EVENT", this::handleRealtimeBidUpdate);
-        SocketClient.getInstance().on("NEW_AUCTION_EVENT", e -> fetchAuctionsFromServer());
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("GET_ACTIVE_AUCTIONS_RESPONSE");
+        socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("NEW_AUCTION_EVENT");
+        socketClient.on("GET_ACTIVE_AUCTIONS_RESPONSE", this::handleLoadAuctions);
+        socketClient.on("NEW_BID_EVENT", this::handleRealtimeBidUpdate);
+        socketClient.on("NEW_AUCTION_EVENT", e -> fetchAuctionsFromServer());
 
         fetchAuctionsFromServer();
 
@@ -207,7 +211,7 @@ public class AuctionController {
         for (Product p : products) {
             activeIds.add(p.getId());
             if (cardMap.containsKey(p.getId())) {
-                cardMap.get(p.getId()).update();
+                cardMap.get(p.getId()).updateProduct(p);
             } else {
                 ProductCard card = new ProductCard(p);
                 cardMap.put(p.getId(), card);

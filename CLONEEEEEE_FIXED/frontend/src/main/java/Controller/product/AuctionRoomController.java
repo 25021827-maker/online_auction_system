@@ -6,6 +6,7 @@ import Service.auction.AuctionRoomManager;
 import Service.core.SceneNavigator;
 import Session.Session;
 import network.SocketClient;
+import dto.AuctionDTO;
 import dto.RequestPayload;
 import dto.ResponsePayload;
 import dto.BidRequest;
@@ -30,8 +31,11 @@ import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.lang.reflect.Type;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class AuctionRoomController {
 
@@ -54,14 +58,28 @@ public class AuctionRoomController {
 
     @FXML
     public void initialize() {
-        SocketClient.getInstance().on("PLACE_BID_RESPONSE", this::handleBidResponse);
-        SocketClient.getInstance().on("BID_UPDATE", this::handleRealtimeBid);
-        SocketClient.getInstance().on("SET_AUTO_BID_RESPONSE", this::handleAutoBidResponse);
-        SocketClient.getInstance().on("BALANCE_UPDATE", response -> updateBalance());
-        SocketClient.getInstance().on("GET_BALANCE_RESPONSE", response -> updateBalance());
-
-        // ĐÃ THÊM: Đăng ký nghe dữ liệu lịch sử đặt giá từ Server
-        SocketClient.getInstance().on("GET_BID_HISTORY_RESPONSE", this::handleLoadBidHistory);
+        SocketClient socketClient = SocketClient.getInstance();
+        for (String action : List.of(
+                "PLACE_BID_RESPONSE",
+                "BID_UPDATE",
+                "SET_AUTO_BID_RESPONSE",
+                "GET_BID_HISTORY_RESPONSE",
+                "GET_ACTIVE_AUCTIONS_RESPONSE",
+                "BALANCE_UPDATE",
+                "GET_BALANCE_RESPONSE",
+                "NEW_BID_EVENT",
+                "NEW_AUCTION_EVENT"
+        )) {
+            socketClient.clearListeners(action);
+        }
+        socketClient.on("PLACE_BID_RESPONSE", this::handleBidResponse);
+        socketClient.on("BID_UPDATE", this::handleRealtimeBid);
+        socketClient.on("SET_AUTO_BID_RESPONSE", this::handleAutoBidResponse);
+        socketClient.on("BALANCE_UPDATE", response -> updateBalance());
+        socketClient.on("GET_BALANCE_RESPONSE", response -> updateBalance());
+        socketClient.on("GET_BID_HISTORY_RESPONSE", this::handleLoadBidHistory);
+        socketClient.on("NEW_AUCTION_EVENT", this::handleAuctionCatalogChanged);
+        socketClient.on("GET_ACTIVE_AUCTIONS_RESPONSE", this::handleAuctionRefreshResponse);
     }
     public void setData(Product p) {
         currentProduct = p;
@@ -233,6 +251,68 @@ public class AuctionRoomController {
                 updateChartIfNeeded();
             }
         } catch (Exception e) {}
+    }
+
+    private void handleAuctionCatalogChanged(ResponsePayload response) {
+        if (currentProduct == null) {
+            return;
+        }
+        SocketClient.getInstance().sendRequest(new RequestPayload("GET_ACTIVE_AUCTIONS", "{}"));
+    }
+
+    private void handleAuctionRefreshResponse(ResponsePayload response) {
+        if (!"SUCCESS".equals(response.getStatus()) || currentProduct == null) {
+            return;
+        }
+
+        try {
+            Type listType = new com.google.gson.reflect.TypeToken<List<AuctionDTO>>() {}.getType();
+            List<AuctionDTO> auctions = gson.fromJson(gson.toJson(response.getData()), listType);
+            if (auctions == null) {
+                return;
+            }
+
+            for (AuctionDTO auction : auctions) {
+                if (auction.id != null && auction.id == currentProduct.getId()) {
+                    updateCurrentProduct(auction);
+                    Platform.runLater(this::updateAllUI);
+                    return;
+                }
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void updateCurrentProduct(AuctionDTO auction) {
+        if (auction.item != null) {
+            currentProduct.setTitle(auction.item.name);
+            currentProduct.setDescription(auction.item.description);
+            currentProduct.setCategory(auction.item.category);
+            currentProduct.setCondition(auction.item.condition);
+            currentProduct.setImagePath(auction.item.imagePath);
+
+            if (auction.item.imagePath == null || auction.item.imagePath.isEmpty()) {
+                imageView.setImage(null);
+            } else {
+                try {
+                    imageView.setImage(new Image(auction.item.imagePath, true));
+                } catch (Exception ignored) {}
+            }
+        }
+
+        currentProduct.setCurrentPrice(auction.currentPrice);
+        currentProduct.setSeller("Seller#" + auction.sellerId);
+        currentProduct.setStatus(auction.status);
+        if (auction.highestBidderId != null && auction.highestBidderId > 0) {
+            currentProduct.setHighestBidder("User #" + auction.highestBidderId);
+        } else {
+            currentProduct.setHighestBidder("");
+        }
+        if (auction.startTime != null) {
+            currentProduct.setStartTime(LocalDateTime.parse(auction.startTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+        if (auction.endTime != null) {
+            currentProduct.setEndTime(LocalDateTime.parse(auction.endTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
     }
 
     private void setupChart() {

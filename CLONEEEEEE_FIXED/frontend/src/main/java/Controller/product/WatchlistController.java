@@ -37,8 +37,14 @@ public class WatchlistController {
             watchlistContainer.setPrefWidth(1160.0);
         }
 
-        // Đăng ký nhận danh sách Watchlist từ Server
-        SocketClient.getInstance().on("GET_WATCHLIST_RESPONSE", this::handleLoadWatchlist);
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("GET_ACTIVE_AUCTIONS_RESPONSE");
+        socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("GET_WATCHLIST_RESPONSE");
+        socketClient.clearListeners("NEW_AUCTION_EVENT");
+        socketClient.on("GET_WATCHLIST_RESPONSE", this::handleLoadWatchlist);
+        socketClient.on("NEW_BID_EVENT", response -> fetchWatchlistFromServer());
+        socketClient.on("NEW_AUCTION_EVENT", response -> fetchWatchlistFromServer());
 
         // Phát lệnh lấy danh sách Watchlist
         fetchWatchlistFromServer();

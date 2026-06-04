@@ -17,6 +17,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.util.Objects;
+
 public class ProductCard {
 
     private Product product;
@@ -29,21 +31,14 @@ public class ProductCard {
     private ImageView imageView;
     private Button watchBtn; // 🎯 MỚI BỔ SUNG: Nút bấm theo dõi sản phẩm
     private Timeline refreshTimeline;
+    private String loadedImagePath = "";
 
     public ProductCard(Product product) {
         this.product = product;
 
         buildUI();
 
-        // 🎯 MỚI: Nạp ảnh một lần duy nhất tại đây khi khởi tạo Card để CHỐNG NHÁY
-        if (product.getImagePath() != null && !product.getImagePath().isEmpty()) {
-            try {
-                // Sử dụng cấu hình nạp ảnh giữ nguyên tỷ lệ và mượt mà
-                imageView.setImage(new Image(product.getImagePath(), true));
-            } catch (Exception e) {
-                System.out.println("Không nạp được ảnh cho sản phẩm ID: " + product.getId());
-            }
-        }
+        loadImageIfChanged();
 
         // Cập nhật các thông tin bằng chữ lần đầu tiên
         update();
@@ -174,6 +169,34 @@ public class ProductCard {
 
         // Đồng bộ trạng thái giao diện nút bấm theo dõi mỗi giây theo nhịp Timeline
         updateWatchButtonState();
+    }
+
+    public void updateProduct(Product product) {
+        if (product == null) {
+            return;
+        }
+        this.product = product;
+        loadImageIfChanged();
+        update();
+    }
+
+    private void loadImageIfChanged() {
+        String imagePath = product.getImagePath() == null ? "" : product.getImagePath();
+        if (Objects.equals(loadedImagePath, imagePath)) {
+            return;
+        }
+
+        loadedImagePath = imagePath;
+        if (imagePath.isEmpty()) {
+            imageView.setImage(null);
+            return;
+        }
+
+        try {
+            imageView.setImage(new Image(imagePath, true));
+        } catch (Exception e) {
+            System.out.println("Không nạp được ảnh cho sản phẩm ID: " + product.getId());
+        }
     }
 
     /**

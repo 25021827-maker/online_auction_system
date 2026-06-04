@@ -255,8 +255,8 @@ public class AuctionDAO {
         } catch (Exception e) { return false; }
     }
 
-    public boolean updateAuction(Long auctionId, Long sellerId, String itemName, String description, double startingPrice, String category, String condition, java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
-        String updateItemSql = "UPDATE items i JOIN auctions a ON i.item_id = a.item_id SET i.name=?, i.description=?, i.category=?, i.condition_status=?, i.starting_price=?, a.current_price=? WHERE a.auction_id=? AND i.seller_id=?";
+    public boolean updateAuction(Long auctionId, Long sellerId, String itemName, String description, double startingPrice, String category, String condition, String imagePath, java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
+        String updateItemSql = "UPDATE items i JOIN auctions a ON i.item_id = a.item_id SET i.name=?, i.description=?, i.category=?, i.condition_status=?, i.image_url=?, i.starting_price=?, a.current_price=? WHERE a.auction_id=? AND i.seller_id=?";
         String updateAuctionSql = "UPDATE auctions a JOIN items i ON a.item_id = i.item_id SET a.start_time=?, a.end_time=? WHERE a.auction_id=? AND i.seller_id=?";
 
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
@@ -268,10 +268,11 @@ public class AuctionDAO {
                 pstmt1.setString(2, description);
                 pstmt1.setString(3, category);
                 pstmt1.setString(4, condition);
-                pstmt1.setDouble(5, startingPrice);
+                pstmt1.setString(5, imagePath != null ? imagePath : "");
                 pstmt1.setDouble(6, startingPrice);
-                pstmt1.setLong(7, auctionId);
-                pstmt1.setLong(8, sellerId);
+                pstmt1.setDouble(7, startingPrice);
+                pstmt1.setLong(8, auctionId);
+                pstmt1.setLong(9, sellerId);
                 int updatedItem = pstmt1.executeUpdate();
 
                 pstmt2.setTimestamp(1, java.sql.Timestamp.valueOf(startTime));

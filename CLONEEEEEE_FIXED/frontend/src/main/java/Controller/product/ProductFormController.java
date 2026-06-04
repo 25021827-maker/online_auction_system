@@ -59,8 +59,13 @@ public class ProductFormController {
             conditionBox.getSelectionModel().selectFirst();
         }
 
-        // Đăng ký nghe kết quả từ Server
-        SocketClient.getInstance().on("CREATE_AUCTION_RESPONSE", this::handleCreateResponse);
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("GET_ACTIVE_AUCTIONS_RESPONSE");
+        socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("NEW_AUCTION_EVENT");
+        socketClient.clearListeners("CREATE_AUCTION_RESPONSE");
+        socketClient.clearListeners("UPDATE_AUCTION_RESPONSE");
+        socketClient.on("CREATE_AUCTION_RESPONSE", this::handleCreateResponse);
     }
 
     // Hàm gắn với onAction="#chooseImage" trong FXML
@@ -167,10 +172,14 @@ public class ProductFormController {
     private void handleCreateResponse(ResponsePayload response) {
         Platform.runLater(() -> {
             btnSubmit.setDisable(false);
-            btnSubmit.setText("CREATE");
+            btnSubmit.setText(editingProduct != null ? "UPDATE PRODUCT" : "CREATE");
 
             if ("SUCCESS".equals(response.getStatus())) {
-                showAlert(Alert.AlertType.INFORMATION, "Chờ admin duyệt", "Phiên đấu giá đã được gửi và sẽ hiển thị sau khi admin phê duyệt.");
+                if (editingProduct != null) {
+                    showAlert(Alert.AlertType.INFORMATION, "Update", "Product updated successfully.");
+                } else {
+                    showAlert(Alert.AlertType.INFORMATION, "Chờ admin duyệt", "Phiên đấu giá đã được gửi và sẽ hiển thị sau khi admin phê duyệt.");
+                }
                 try {
                     SceneNavigator.loadFromNode(txtName, "/ui/product/AuctionMain.fxml", "Sàn đấu giá");
                 } catch (Exception e) {}
@@ -195,6 +204,7 @@ public class ProductFormController {
     }
     public void setEditData(Model.Product p) {
         this.editingProduct = p;
+        this.selectedImagePath = p.getImagePath() == null ? "" : p.getImagePath();
         txtName.setText(p.getTitle());
         txtDesc.setText(p.getDescription());
         txtPrice.setText(String.valueOf(p.getCurrentPrice()));

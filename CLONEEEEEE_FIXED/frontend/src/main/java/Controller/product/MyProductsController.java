@@ -46,8 +46,16 @@ public class MyProductsController {
 
     @FXML
     public void initialize() {
-        SocketClient.getInstance().on("GET_MY_PRODUCTS_RESPONSE", this::handleLoadMyProducts);
-        SocketClient.getInstance().on("DELETE_PRODUCT_RESPONSE", this::handleDeleteResponse);
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("GET_ACTIVE_AUCTIONS_RESPONSE");
+        socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("GET_MY_PRODUCTS_RESPONSE");
+        socketClient.clearListeners("DELETE_PRODUCT_RESPONSE");
+        socketClient.clearListeners("NEW_AUCTION_EVENT");
+        socketClient.on("GET_MY_PRODUCTS_RESPONSE", this::handleLoadMyProducts);
+        socketClient.on("DELETE_PRODUCT_RESPONSE", this::handleDeleteResponse);
+        socketClient.on("NEW_BID_EVENT", response -> fetchMyProductsFromServer());
+        socketClient.on("NEW_AUCTION_EVENT", response -> fetchMyProductsFromServer());
 
         fetchMyProductsFromServer();
         setupLiveUpdater();
@@ -190,6 +198,7 @@ public class MyProductsController {
         private final Label conditionLabel;
         private final Button editButton;
         private final Button deleteButton;
+        private String loadedImagePath = "";
 
         private MyProductCard(Product product) {
             this.product = product;
@@ -263,14 +272,20 @@ public class MyProductsController {
         }
 
         private void loadImageIfNeeded() {
-            if (imageView.getImage() != null) {
+            String imagePath = product.getImagePath() == null ? "" : product.getImagePath();
+            if (loadedImagePath.equals(imagePath)) {
                 return;
             }
-            if (product.getImagePath() != null && !product.getImagePath().isEmpty()) {
-                try {
-                    imageView.setImage(new Image(product.getImagePath(), true));
-                } catch (Exception ignored) {}
+
+            loadedImagePath = imagePath;
+            if (imagePath.isEmpty()) {
+                imageView.setImage(null);
+                return;
             }
+
+            try {
+                imageView.setImage(new Image(imagePath, true));
+            } catch (Exception ignored) {}
         }
 
         private void updateActionButtonState() {

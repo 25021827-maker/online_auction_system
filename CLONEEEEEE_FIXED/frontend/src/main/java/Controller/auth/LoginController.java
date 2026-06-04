@@ -27,7 +27,9 @@ public class LoginController {
     @FXML
     public void initialize() {
         // Lắng nghe tín hiệu "LOGIN_RESPONSE" từ Server
-        SocketClient.getInstance().on("LOGIN_RESPONSE", this::handleLoginResponse);
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("LOGIN_RESPONSE");
+        socketClient.on("LOGIN_RESPONSE", this::handleLoginResponse);
     }
 
     @FXML
@@ -57,7 +59,6 @@ public class LoginController {
 
                     // Lưu User vào phiên hoạt động
                     Session.setCurrentUser(loggedUser);
-                    SocketClient.getInstance().startBalancePolling();
 
                     // Điều hướng sang trang chính dựa trên Role
                     if (loggedUser.getRole() != null && loggedUser.getRole().equalsIgnoreCase("ADMIN")) {

@@ -35,25 +35,48 @@ public class AdminController {
     @FXML private StackPane contentArea;
 
     private final Gson gson = new Gson();
+    private String currentSection = "DASHBOARD";
 
     @FXML
     public void initialize() {
-        SocketClient.getInstance().on("GET_ADMIN_DASHBOARD_RESPONSE", this::handleDashboardResponse);
-        SocketClient.getInstance().on("GET_ADMIN_USERS_RESPONSE", this::handleUsersResponse);
-        SocketClient.getInstance().on("ADMIN_SET_USER_ACTIVE_RESPONSE", this::handleUsersResponse);
-        SocketClient.getInstance().on("GET_ADMIN_DEPOSITS_RESPONSE", this::handleDepositsResponse);
-        SocketClient.getInstance().on("ADMIN_APPROVE_DEPOSIT_RESPONSE", this::handleDepositsResponse);
-        SocketClient.getInstance().on("ADMIN_REJECT_DEPOSIT_RESPONSE", this::handleDepositsResponse);
-        SocketClient.getInstance().on("GET_ADMIN_PRODUCTS_RESPONSE", this::handleProductsResponse);
-        SocketClient.getInstance().on("ADMIN_APPROVE_PRODUCT_RESPONSE", this::handleProductsResponse);
-        SocketClient.getInstance().on("ADMIN_REJECT_PRODUCT_RESPONSE", this::handleProductsResponse);
-        SocketClient.getInstance().on("GET_ADMIN_AUCTIONS_RESPONSE", this::handleAuctionsResponse);
-        SocketClient.getInstance().on("ADMIN_UPDATE_AUCTION_STATUS_RESPONSE", this::handleAuctionsResponse);
+        SocketClient socketClient = SocketClient.getInstance();
+        for (String action : List.of(
+                "GET_ADMIN_DASHBOARD_RESPONSE",
+                "GET_ADMIN_USERS_RESPONSE",
+                "ADMIN_SET_USER_ACTIVE_RESPONSE",
+                "GET_ADMIN_DEPOSITS_RESPONSE",
+                "ADMIN_APPROVE_DEPOSIT_RESPONSE",
+                "ADMIN_REJECT_DEPOSIT_RESPONSE",
+                "GET_ADMIN_PRODUCTS_RESPONSE",
+                "ADMIN_APPROVE_PRODUCT_RESPONSE",
+                "ADMIN_REJECT_PRODUCT_RESPONSE",
+                "GET_ADMIN_AUCTIONS_RESPONSE",
+                "ADMIN_UPDATE_AUCTION_STATUS_RESPONSE",
+                "GET_ACTIVE_AUCTIONS_RESPONSE",
+                "NEW_BID_EVENT",
+                "NEW_AUCTION_EVENT"
+        )) {
+            socketClient.clearListeners(action);
+        }
+        socketClient.on("GET_ADMIN_DASHBOARD_RESPONSE", this::handleDashboardResponse);
+        socketClient.on("GET_ADMIN_USERS_RESPONSE", this::handleUsersResponse);
+        socketClient.on("ADMIN_SET_USER_ACTIVE_RESPONSE", this::handleUsersResponse);
+        socketClient.on("GET_ADMIN_DEPOSITS_RESPONSE", this::handleDepositsResponse);
+        socketClient.on("ADMIN_APPROVE_DEPOSIT_RESPONSE", this::handleDepositsResponse);
+        socketClient.on("ADMIN_REJECT_DEPOSIT_RESPONSE", this::handleDepositsResponse);
+        socketClient.on("GET_ADMIN_PRODUCTS_RESPONSE", this::handleProductsResponse);
+        socketClient.on("ADMIN_APPROVE_PRODUCT_RESPONSE", this::handleProductsResponse);
+        socketClient.on("ADMIN_REJECT_PRODUCT_RESPONSE", this::handleProductsResponse);
+        socketClient.on("GET_ADMIN_AUCTIONS_RESPONSE", this::handleAuctionsResponse);
+        socketClient.on("ADMIN_UPDATE_AUCTION_STATUS_RESPONSE", this::handleAuctionsResponse);
+        socketClient.on("NEW_BID_EVENT", this::handleBidCatalogChanged);
+        socketClient.on("NEW_AUCTION_EVENT", this::handleAuctionCatalogChanged);
         switchDashboard();
     }
 
     @FXML
     private void switchDashboard() {
+        currentSection = "DASHBOARD";
         lblTitle.setText("Admin Dashboard");
         showLoading("Loading dashboard...");
         send("GET_ADMIN_DASHBOARD", "{}");
@@ -61,6 +84,7 @@ public class AdminController {
 
     @FXML
     private void switchDeposits() {
+        currentSection = "DEPOSITS";
         lblTitle.setText("Approve Deposits");
         showLoading("Loading deposit requests...");
         send("GET_ADMIN_DEPOSITS", "{}");
@@ -68,6 +92,7 @@ public class AdminController {
 
     @FXML
     private void switchProducts() {
+        currentSection = "PRODUCTS";
         lblTitle.setText("Approve Products");
         showLoading("Loading product approvals...");
         send("GET_ADMIN_PRODUCTS", "{}");
@@ -75,6 +100,7 @@ public class AdminController {
 
     @FXML
     private void switchUsers() {
+        currentSection = "USERS";
         lblTitle.setText("Manage Users");
         showLoading("Loading users...");
         send("GET_ADMIN_USERS", "{}");
@@ -82,6 +108,7 @@ public class AdminController {
 
     @FXML
     private void switchAuctions() {
+        currentSection = "AUCTIONS";
         lblTitle.setText("Manage Auctions");
         showLoading("Loading auctions...");
         send("GET_ADMIN_AUCTIONS", "{}");
@@ -283,6 +310,25 @@ public class AdminController {
         });
         table.getColumns().add(actions);
         setContent(table);
+    }
+
+    private void handleAuctionCatalogChanged(ResponsePayload response) {
+        switch (currentSection) {
+            case "DASHBOARD" -> send("GET_ADMIN_DASHBOARD", "{}");
+            case "PRODUCTS" -> send("GET_ADMIN_PRODUCTS", "{}");
+            case "AUCTIONS" -> send("GET_ADMIN_AUCTIONS", "{}");
+            default -> {
+            }
+        }
+    }
+
+    private void handleBidCatalogChanged(ResponsePayload response) {
+        switch (currentSection) {
+            case "DASHBOARD" -> send("GET_ADMIN_DASHBOARD", "{}");
+            case "AUCTIONS" -> send("GET_ADMIN_AUCTIONS", "{}");
+            default -> {
+            }
+        }
     }
 
     private <T> void addColumn(TableView<T> table, String title, Function<T, String> mapper, double width) {

@@ -34,7 +34,6 @@ public class SocketClient {
 
     private final String serverHost;
     private final int serverPort;
-    private volatile boolean balancePollingStarted = false;
 
     private SocketClient() {
         this.gson = new GsonBuilder()
@@ -49,7 +48,6 @@ public class SocketClient {
         this.serverHost = loadServerHost(clientProperties);
         this.serverPort = loadServerPort(clientProperties);
         connectToServer();
-        startBalancePolling();
     }
 
     public static synchronized SocketClient getInstance() {
@@ -118,33 +116,14 @@ public class SocketClient {
         eventListeners.computeIfAbsent(eventName, k -> new CopyOnWriteArrayList<>()).add(callback);
     }
 
+    public void clearListeners(String eventName) {
+        eventListeners.remove(eventName);
+    }
+
     public synchronized void sendRequest(RequestPayload request) {
         if (out != null) {
             out.println(gson.toJson(request));
         }
-    }
-
-    public synchronized void startBalancePolling() {
-        if (balancePollingStarted) {
-            return;
-        }
-        balancePollingStarted = true;
-
-        Thread pollingThread = new Thread(() -> {
-            while (true) {
-                try {
-                    Thread.sleep(3000);
-                    if (Session.getCurrentUser() != null) {
-                        sendRequest(new RequestPayload("GET_BALANCE", "{}"));
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
-                } catch (Exception ignored) {}
-            }
-        });
-        pollingThread.setDaemon(true);
-        pollingThread.start();
     }
 
     private void listenForServerMessages() {

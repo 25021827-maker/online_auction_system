@@ -277,6 +277,7 @@ public class ClientHandler implements Runnable {
     private void broadcastBidEvent(BidRequest bid, String message) {
         ResponsePayload event = ResponsePayload.success("BID_UPDATE", message, bid);
         AuctionRoomManager.broadcastToRoom(bid.auctionId, gson.toJson(event));
+        ServerMain.broadcast(ResponsePayload.success("NEW_BID_EVENT", message, bid));
     }
 
     private void processGetActiveAuctions() {
@@ -317,11 +318,12 @@ public class ClientHandler implements Runnable {
             LocalDateTime end = LocalDateTime.parse(req.endTime);
             validateAuctionSchedule(start, end);
             boolean isSuccess = new AuctionDAO().updateAuction(req.auctionId, req.sellerId, req.itemName, req.description,
-                    req.startingPrice, req.category, req.condition, start, end);
+                    req.startingPrice, req.category, req.condition, req.imagePath, start, end);
 
             if (isSuccess) {
+                auctionManager.reloadActiveAuctions();
                 sendResponse(ResponsePayload.success("UPDATE_AUCTION_RESPONSE", "Cáº­p nháº­t thÃ nh cÃ´ng!", null));
-                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m Ä‘Æ°á»£c cáº­p nháº­t", null));
+                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m Ä‘Æ°á»£c cáº­p nháº­t", req.auctionId));
             } else {
                 sendResponse(ResponsePayload.fail("UPDATE_AUCTION_RESPONSE", "KhÃ´ng thá»ƒ cáº­p nháº­t phiÃªn Ä‘áº¥u giÃ¡."));
             }
@@ -507,4 +509,3 @@ public class ClientHandler implements Runnable {
         sendResponse(ResponsePayload.success("GET_BID_HISTORY_RESPONSE", "ThÃ nh cÃ´ng", history));
     }
 }
-

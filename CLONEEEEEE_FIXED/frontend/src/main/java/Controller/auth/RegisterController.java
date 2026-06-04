@@ -54,10 +54,9 @@ public class RegisterController {
             cbRole.getItems().addAll("Người mua (BIDDER)", "Người bán (SELLER)");
             cbRole.getSelectionModel().selectFirst();
         }
-        SocketClient.getInstance().on("REGISTER_RESPONSE", this::handleRegisterResponse);
-
-        // Lắng nghe tín hiệu "REGISTER_RESPONSE" từ Server
-        SocketClient.getInstance().on("REGISTER_RESPONSE", this::handleRegisterResponse);
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("REGISTER_RESPONSE");
+        socketClient.on("REGISTER_RESPONSE", this::handleRegisterResponse);
     }
 
     private void loadCountryData() {

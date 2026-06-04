@@ -39,12 +39,17 @@ public class ProductController {
     @FXML
     public void initialize() {
         // Đăng ký nhận kết quả khi chính mình đặt giá
-        SocketClient.getInstance().on("PLACE_BID_RESPONSE", this::handleBidResponse);
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("PLACE_BID_RESPONSE");
+        socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("BALANCE_UPDATE");
+        socketClient.clearListeners("GET_BALANCE_RESPONSE");
+        socketClient.on("PLACE_BID_RESPONSE", this::handleBidResponse);
 
         // Đăng ký nhận thông báo Real-time khi người khác đặt giá
-        SocketClient.getInstance().on("NEW_BID_EVENT", this::handleRealtimeBid);
-        SocketClient.getInstance().on("BALANCE_UPDATE", response -> updateBalanceLabel());
-        SocketClient.getInstance().on("GET_BALANCE_RESPONSE", response -> updateBalanceLabel());
+        socketClient.on("NEW_BID_EVENT", this::handleRealtimeBid);
+        socketClient.on("BALANCE_UPDATE", response -> updateBalanceLabel());
+        socketClient.on("GET_BALANCE_RESPONSE", response -> updateBalanceLabel());
     }
 
     public void setData(Product p) {

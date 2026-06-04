@@ -6,8 +6,6 @@ import com.google.gson.Gson;
 import dto.DepositRequest;
 import dto.RequestPayload;
 import dto.ResponsePayload;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -17,7 +15,6 @@ import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.shape.Rectangle;
-import javafx.util.Duration;
 import network.SocketClient;
 
 import java.io.InputStream;
@@ -34,20 +31,23 @@ public class ProfileController {
     private final Gson gson = new Gson();
     private String proofImagePath = "";
     private double pendingAmount = 0;
-    private Timeline balanceRefreshTimeline;
 
     @FXML
     public void initialize() {
-        SocketClient.getInstance().on("SUBMIT_DEPOSIT_RESPONSE", this::handleDepositSubmitResponse);
-        SocketClient.getInstance().on("BALANCE_UPDATE", this::handleBalanceUpdate);
-        SocketClient.getInstance().on("GET_BALANCE_RESPONSE", this::handleBalanceUpdate);
+        SocketClient socketClient = SocketClient.getInstance();
+        socketClient.clearListeners("SUBMIT_DEPOSIT_RESPONSE");
+        socketClient.clearListeners("BALANCE_UPDATE");
+        socketClient.clearListeners("GET_BALANCE_RESPONSE");
+        socketClient.on("SUBMIT_DEPOSIT_RESPONSE", this::handleDepositSubmitResponse);
+        socketClient.on("BALANCE_UPDATE", this::handleBalanceUpdate);
+        socketClient.on("GET_BALANCE_RESPONSE", this::handleBalanceUpdate);
 
         if (Session.getCurrentUser() != null) {
             lblUsername.setText(Session.getCurrentUser().getUsername());
             updateBalanceUI();
             setupProfileAvatar();
         }
-        startBalanceRefresh();
+        requestBalanceRefresh();
 
         try (InputStream qrStream = getClass().getResourceAsStream("/images/myqr.png")) {
             if (qrStream != null) {
@@ -63,13 +63,6 @@ public class ProfileController {
             return;
         }
         lblBalance.setText("$" + String.format("%.2f", Session.getCurrentUser().getBalance()));
-    }
-
-    private void startBalanceRefresh() {
-        requestBalanceRefresh();
-        balanceRefreshTimeline = new Timeline(new KeyFrame(Duration.seconds(3), e -> requestBalanceRefresh()));
-        balanceRefreshTimeline.setCycleCount(Timeline.INDEFINITE);
-        balanceRefreshTimeline.play();
     }
 
     private void requestBalanceRefresh() {
@@ -162,9 +155,6 @@ public class ProfileController {
 
     @FXML
     private void goHome(ActionEvent event) {
-        if (balanceRefreshTimeline != null) {
-            balanceRefreshTimeline.stop();
-        }
         if (Session.getCurrentUser() != null
                 && "ADMIN".equalsIgnoreCase(Session.getCurrentUser().getRole())) {
             SceneNavigator.loadFromNode(lblUsername, "/ui/user/AdminView.fxml", "Admin Dashboard");
