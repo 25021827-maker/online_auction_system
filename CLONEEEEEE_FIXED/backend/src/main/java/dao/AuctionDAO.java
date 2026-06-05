@@ -1,9 +1,11 @@
 package dao;
 
+import dto.UserAuctionResultDTO;
 import model.Auction;
 import model.BidTransaction;
 import model.Item;
 import model.ItemFactory;
+import service.ImageStorageService;
 import util.VietnamTime;
 
 import java.sql.Connection;
@@ -329,6 +331,124 @@ public class AuctionDAO {
 
     public int finishExpiredAuctions() {
         return finishExpiredAuctionsAndGetResults().size();
+    }
+
+    public List<UserAuctionResultDTO> getWinListByBidder(Long bidderId) {
+        List<UserAuctionResultDTO> results = new ArrayList<>();
+
+        String sql = """
+                SELECT
+                    aw.winner_id,
+                    aw.auction_id,
+                    aw.item_id,
+                    aw.seller_id,
+                    aw.bidder_id,
+                    aw.final_price,
+                    aw.status,
+                    aw.created_at,
+                    i.name AS item_name,
+                    i.category,
+                    i.condition_status,
+                    i.image_url AS image_path,
+                    seller.username AS seller_username,
+                    bidder.username AS winner_username
+                FROM auction_winners aw
+                JOIN items i ON i.item_id = aw.item_id
+                JOIN users seller ON seller.user_id = aw.seller_id
+                JOIN users bidder ON bidder.user_id = aw.bidder_id
+                WHERE aw.bidder_id = ?
+                ORDER BY aw.created_at DESC, aw.winner_id DESC
+                """;
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, bidderId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    UserAuctionResultDTO dto = mapUserAuctionResult(rs);
+                    dto.roleView = "BIDDER_WIN";
+                    results.add(dto);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi lay win list cua bidder: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return results;
+    }
+
+    public List<UserAuctionResultDTO> getSoldListBySeller(Long sellerId) {
+        List<UserAuctionResultDTO> results = new ArrayList<>();
+
+        String sql = """
+                SELECT
+                    aw.winner_id,
+                    aw.auction_id,
+                    aw.item_id,
+                    aw.seller_id,
+                    aw.bidder_id,
+                    aw.final_price,
+                    aw.status,
+                    aw.created_at,
+                    i.name AS item_name,
+                    i.category,
+                    i.condition_status,
+                    i.image_url AS image_path,
+                    seller.username AS seller_username,
+                    bidder.username AS winner_username
+                FROM auction_winners aw
+                JOIN items i ON i.item_id = aw.item_id
+                JOIN users seller ON seller.user_id = aw.seller_id
+                JOIN users bidder ON bidder.user_id = aw.bidder_id
+                WHERE aw.seller_id = ?
+                ORDER BY aw.created_at DESC, aw.winner_id DESC
+                """;
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, sellerId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    UserAuctionResultDTO dto = mapUserAuctionResult(rs);
+                    dto.roleView = "SELLER_SOLD";
+                    results.add(dto);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi lay sold list cua seller: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return results;
+    }
+
+    private UserAuctionResultDTO mapUserAuctionResult(ResultSet rs) throws SQLException {
+        UserAuctionResultDTO dto = new UserAuctionResultDTO();
+
+        dto.winnerId = rs.getLong("winner_id");
+        dto.auctionId = rs.getLong("auction_id");
+        dto.itemId = rs.getLong("item_id");
+        dto.sellerId = rs.getLong("seller_id");
+        dto.bidderId = rs.getLong("bidder_id");
+        dto.sellerUsername = rs.getString("seller_username");
+        dto.winnerUsername = rs.getString("winner_username");
+        dto.itemName = rs.getString("item_name");
+        dto.category = rs.getString("category");
+        dto.condition = rs.getString("condition_status");
+        dto.imagePath = rs.getString("image_path");
+        dto.imageBase64 = new ImageStorageService().loadImageAsBase64(dto.imagePath);
+        dto.finalPrice = rs.getDouble("final_price");
+        dto.status = rs.getString("status");
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        dto.createdAt = createdAt == null ? null : createdAt.toLocalDateTime().toString();
+
+        return dto;
     }
 
     public List<SettlementResult> finishExpiredAuctionsAndGetResults() {

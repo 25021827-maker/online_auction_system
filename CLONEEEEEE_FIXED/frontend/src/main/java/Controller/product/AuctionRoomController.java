@@ -239,16 +239,37 @@ public class AuctionRoomController {
                 lblMessage.setText("You need to log in before bidding");
                 return;
             }
+
+            if (currentProduct == null) {
+                lblMessage.setText("Auction data is not ready");
+                return;
+            }
+
             if (!(currentProduct.getStatus().equals("OPEN") || currentProduct.getStatus().equals("RUNNING"))) {
                 lblMessage.setText("Auction is not open");
                 return;
             }
 
-            double bidAmount = Double.parseDouble(txtBid.getText());
-            if (bidAmount > Session.getCurrentUser().getAvailableBalance()) {
-                lblMessage.setText("Not enough available balance");
+            double bidAmount = Double.parseDouble(txtBid.getText().trim());
+
+            if (bidAmount <= currentProduct.getCurrentPrice()) {
+                lblMessage.setText("Bid must be higher than current price");
                 return;
             }
+
+            double availableBalance = Session.getCurrentUser().getAvailableBalance();
+            double requiredHold = calculateRequiredHoldForBid(bidAmount);
+
+            if (requiredHold > availableBalance) {
+                lblMessage.setText(
+                        "Not enough available balance. Need extra $"
+                                + String.format("%.2f", requiredHold)
+                                + ", available $"
+                                + String.format("%.2f", availableBalance)
+                );
+                return;
+            }
+
             lblMessage.setText("Sending bid...");
 
             BidRequest req = new BidRequest();
@@ -258,9 +279,41 @@ public class AuctionRoomController {
 
             RequestPayload payload = new RequestPayload("PLACE_BID", gson.toJson(req));
             SocketClient.getInstance().sendRequest(payload);
-        } catch (Exception e) {
+        } catch (NumberFormatException e) {
             lblMessage.setText("Invalid bid amount");
+        } catch (Exception e) {
+            lblMessage.setText("Cannot place bid: " + e.getMessage());
         }
+    }
+
+    private double calculateRequiredHoldForBid(double bidAmount) {
+        if (isCurrentUserHighestBidder()) {
+            return Math.max(0, bidAmount - currentProduct.getCurrentPrice());
+        }
+
+        return bidAmount;
+    }
+
+    private boolean isCurrentUserHighestBidder() {
+        if (Session.getCurrentUser() == null || currentProduct == null) {
+            return false;
+        }
+
+        String highestBidder = currentProduct.getHighestBidder();
+        if (highestBidder == null || highestBidder.isBlank()) {
+            return false;
+        }
+
+        String normalized = highestBidder
+                .replace(" ", "")
+                .replace("(AUTO)", "")
+                .trim()
+                .toLowerCase();
+
+        String currentUser1 = ("User#" + Session.getCurrentUser().getId()).toLowerCase();
+        String currentUser2 = ("User" + Session.getCurrentUser().getId()).toLowerCase();
+
+        return normalized.equals(currentUser1) || normalized.equals(currentUser2);
     }
 
 

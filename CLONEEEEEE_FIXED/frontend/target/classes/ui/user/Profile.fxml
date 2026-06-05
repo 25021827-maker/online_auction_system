@@ -27,11 +27,11 @@
         <StackPane alignment="CENTER" style="-fx-background-color: #000000;">
 
             <VBox alignment="TOP_CENTER"
-                  minHeight="1700"
+                  minHeight="2100"
                   prefWidth="1280.0"
                   maxWidth="1280.0"
                   spacing="20"
-                  style="-fx-padding: 30 30 220 30; -fx-background-color: #000000;">
+                  style="-fx-padding: 30 30 260 30; -fx-background-color: #000000;">
 
                 <Label text="PROFILE" textFill="#ffdd00">
                     <font>
@@ -159,6 +159,71 @@
                         <Separator />
 
                         <VBox fx:id="myProductsBox" spacing="10" />
+                    </children>
+                </VBox>
+
+                <VBox fx:id="auctionResultsSection"
+                      maxWidth="1150"
+                      spacing="10"
+                      style="-fx-background-color: #ffdd00; -fx-padding: 20; -fx-background-radius: 8;">
+                    <children>
+                        <Label fx:id="auctionResultsTitleLabel" text="AUCTION RESULTS">
+                            <font>
+                                <Font name="System Bold" size="18" />
+                            </font>
+                        </Label>
+
+                        <Separator />
+
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <children>
+                                <Label fx:id="auctionResultsStatusLabel"
+                                       style="-fx-text-fill: #000000; -fx-font-weight: bold;"
+                                       text="Loading auction results..." />
+
+                                <Button onAction="#handleRefreshAuctionResults"
+                                        prefWidth="160"
+                                        style="-fx-background-color: #000000; -fx-text-fill: #ffdd00; -fx-background-radius: 8;"
+                                        text="REFRESH RESULTS">
+                                    <font>
+                                        <Font name="System Bold" size="11.0" />
+                                    </font>
+                                </Button>
+                            </children>
+                        </HBox>
+
+                        <TableView fx:id="auctionResultsTable"
+                                   prefHeight="320"
+                                   minHeight="320"
+                                   maxHeight="320"
+                                   fixedCellSize="42"
+                                   style="-fx-background-color: #ffffff; -fx-control-inner-background: #fff8c6; -fx-table-cell-border-color: #d9c600; -fx-font-size: 12px;">
+                            <columns>
+                                <TableColumn fx:id="resultTimeColumn"
+                                             text="Time"
+                                             prefWidth="150" />
+
+                                <TableColumn fx:id="resultItemColumn"
+                                             text="Item"
+                                             prefWidth="220" />
+
+                                <TableColumn fx:id="resultOtherUserColumn"
+                                             text="Seller / Winner"
+                                             prefWidth="160" />
+
+                                <TableColumn fx:id="resultPriceColumn"
+                                             text="Final Price"
+                                             prefWidth="120" />
+
+                                <TableColumn fx:id="resultStatusColumn"
+                                             text="Status"
+                                             prefWidth="100" />
+
+                                <TableColumn fx:id="resultNoteColumn"
+                                             text="Note"
+                                             prefWidth="380" />
+                            </columns>
+                        </TableView>
                     </children>
                 </VBox>
 

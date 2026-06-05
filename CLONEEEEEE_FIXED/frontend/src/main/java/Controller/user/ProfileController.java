@@ -9,6 +9,7 @@ import com.google.gson.reflect.TypeToken;
 import dto.DepositRequest;
 import dto.RequestPayload;
 import dto.ResponsePayload;
+import dto.UserAuctionResultDTO;
 import dto.WalletTransactionDTO;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
@@ -23,6 +24,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import network.SocketClient;
 
@@ -41,8 +43,18 @@ public class ProfileController {
     @FXML private Label lblHeldBalance;
     @FXML private Label proofLabel;
     @FXML private Label walletHistoryStatusLabel;
+    @FXML private Label auctionResultsTitleLabel;
+    @FXML private Label auctionResultsStatusLabel;
     @FXML private ImageView qrImageView;
     @FXML private ImageView imgProfileAvatar;
+    @FXML private VBox auctionResultsSection;
+    @FXML private TableView<UserAuctionResultDTO> auctionResultsTable;
+    @FXML private TableColumn<UserAuctionResultDTO, String> resultTimeColumn;
+    @FXML private TableColumn<UserAuctionResultDTO, String> resultItemColumn;
+    @FXML private TableColumn<UserAuctionResultDTO, String> resultOtherUserColumn;
+    @FXML private TableColumn<UserAuctionResultDTO, String> resultPriceColumn;
+    @FXML private TableColumn<UserAuctionResultDTO, String> resultStatusColumn;
+    @FXML private TableColumn<UserAuctionResultDTO, String> resultNoteColumn;
     @FXML private TableView<WalletTransactionDTO> walletTransactionsTable;
     @FXML private TableColumn<WalletTransactionDTO, String> txTimeColumn;
     @FXML private TableColumn<WalletTransactionDTO, String> txTypeColumn;
@@ -65,13 +77,20 @@ public class ProfileController {
         socketClient.clearListeners("GET_BALANCE_RESPONSE");
         socketClient.clearListeners("GET_WALLET_TRANSACTIONS_RESPONSE");
         socketClient.clearListeners("WALLET_HISTORY_CHANGED");
+        socketClient.clearListeners("GET_MY_WIN_LIST_RESPONSE");
+        socketClient.clearListeners("GET_MY_SOLD_LIST_RESPONSE");
+        socketClient.clearListeners("USER_AUCTION_RESULTS_CHANGED");
         socketClient.on("SUBMIT_DEPOSIT_RESPONSE", this::handleDepositSubmitResponse);
         socketClient.on("BALANCE_UPDATE", this::handleBalanceUpdate);
         socketClient.on("GET_BALANCE_RESPONSE", this::handleBalanceUpdate);
         socketClient.on("GET_WALLET_TRANSACTIONS_RESPONSE", this::handleWalletTransactions);
         socketClient.on("WALLET_HISTORY_CHANGED", response -> fetchWalletTransactions());
+        socketClient.on("GET_MY_WIN_LIST_RESPONSE", this::handleAuctionResultsResponse);
+        socketClient.on("GET_MY_SOLD_LIST_RESPONSE", this::handleAuctionResultsResponse);
+        socketClient.on("USER_AUCTION_RESULTS_CHANGED", response -> fetchAuctionResults());
 
         setupWalletTransactionTable();
+        setupAuctionResultsTable();
 
         if (Session.getCurrentUser() != null) {
             lblUsername.setText(Session.getCurrentUser().getUsername());
@@ -80,6 +99,7 @@ public class ProfileController {
         }
         requestBalanceRefresh();
         fetchWalletTransactions();
+        fetchAuctionResults();
 
         try (InputStream qrStream = getClass().getResourceAsStream("/images/myqr.png")) {
             if (qrStream != null) {
@@ -172,6 +192,51 @@ public class ProfileController {
         walletTransactionsTable.setPlaceholder(new Label("No transaction history yet."));
     }
 
+    private void setupAuctionResultsTable() {
+        if (auctionResultsTable == null) {
+            return;
+        }
+
+        resultTimeColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatTime(cell.getValue().createdAt)));
+
+        resultItemColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(nullToEmpty(cell.getValue().itemName)));
+
+        resultOtherUserColumn.setCellValueFactory(cell -> {
+            UserAuctionResultDTO dto = cell.getValue();
+
+            if (isSeller()) {
+                return new SimpleStringProperty("Winner: " + nullToEmpty(dto.winnerUsername));
+            }
+
+            return new SimpleStringProperty("Seller: " + nullToEmpty(dto.sellerUsername));
+        });
+
+        resultPriceColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatMoney(cell.getValue().finalPrice)));
+
+        resultStatusColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(nullToEmpty(cell.getValue().status)));
+
+        resultNoteColumn.setCellValueFactory(cell -> {
+            UserAuctionResultDTO dto = cell.getValue();
+
+            if (isSeller()) {
+                return new SimpleStringProperty(
+                        "Da ban cho " + nullToEmpty(dto.winnerUsername)
+                                + " voi gia " + formatMoney(dto.finalPrice)
+                );
+            }
+
+            return new SimpleStringProperty(
+                    "Ban da thang san pham nay voi gia " + formatMoney(dto.finalPrice)
+            );
+        });
+
+        auctionResultsTable.setPlaceholder(new Label("No auction results yet."));
+    }
+
     private void updateBalanceUI() {
         if (Session.getCurrentUser() == null) {
             return;
@@ -203,6 +268,39 @@ public class ProfileController {
                 "GET_WALLET_TRANSACTIONS",
                 "{\"userId\":" + Session.getCurrentUser().getId() + "}"
         ));
+    }
+
+    private void fetchAuctionResults() {
+        if (Session.getCurrentUser() == null) {
+            return;
+        }
+
+        Long userId = Session.getCurrentUser().getId();
+
+        if (auctionResultsStatusLabel != null) {
+            auctionResultsStatusLabel.setText("Loading auction results...");
+        }
+
+        if (isSeller()) {
+            if (auctionResultsTitleLabel != null) {
+                auctionResultsTitleLabel.setText("SOLD LIST");
+            }
+
+            SocketClient.getInstance().sendRequest(new RequestPayload(
+                    "GET_MY_SOLD_LIST",
+                    "{\"userId\":" + userId + "}"
+            ));
+
+        } else {
+            if (auctionResultsTitleLabel != null) {
+                auctionResultsTitleLabel.setText("WIN LIST");
+            }
+
+            SocketClient.getInstance().sendRequest(new RequestPayload(
+                    "GET_MY_WIN_LIST",
+                    "{\"userId\":" + userId + "}"
+            ));
+        }
     }
 
     private void setWalletHistoryStatus(String message) {
@@ -383,9 +481,72 @@ public class ProfileController {
         });
     }
 
+    private void handleAuctionResultsResponse(ResponsePayload response) {
+        Platform.runLater(() -> {
+            if (auctionResultsTable == null) {
+                return;
+            }
+
+            if (!"SUCCESS".equalsIgnoreCase(response.getStatus())) {
+                auctionResultsTable.setItems(FXCollections.observableArrayList());
+                auctionResultsTable.refresh();
+
+                if (auctionResultsStatusLabel != null) {
+                    auctionResultsStatusLabel.setText("Cannot load auction results: " + response.getMessage());
+                }
+                return;
+            }
+
+            try {
+                Type listType = new TypeToken<List<UserAuctionResultDTO>>() {}.getType();
+
+                List<UserAuctionResultDTO> results =
+                        gson.fromJson(gson.toJson(response.getData()), listType);
+
+                List<UserAuctionResultDTO> safeResults =
+                        results == null ? List.of() : results;
+
+                auctionResultsTable.setItems(FXCollections.observableArrayList(safeResults));
+                auctionResultsTable.refresh();
+
+                if (auctionResultsStatusLabel != null) {
+                    if (safeResults.isEmpty()) {
+                        auctionResultsStatusLabel.setText(
+                                isSeller()
+                                        ? "No sold auctions yet."
+                                        : "No winning auctions yet."
+                        );
+                    } else {
+                        auctionResultsStatusLabel.setText(
+                                safeResults.size()
+                                        + (isSeller()
+                                        ? " sold auction(s) loaded."
+                                        : " winning auction(s) loaded.")
+                        );
+                    }
+                }
+
+            } catch (Exception e) {
+                auctionResultsTable.setItems(FXCollections.observableArrayList());
+                auctionResultsTable.refresh();
+
+                if (auctionResultsStatusLabel != null) {
+                    auctionResultsStatusLabel.setText("Cannot parse auction results: " + e.getMessage());
+                }
+
+                e.printStackTrace();
+            }
+        });
+    }
+
     @FXML
     private void handleRefreshWalletHistory(ActionEvent event) {
         fetchWalletTransactions();
+    }
+
+    @FXML
+    private void handleRefreshAuctionResults() {
+        fetchAuctionResults();
     }
 
     private String displayType(String type) {
@@ -436,6 +597,12 @@ public class ProfileController {
 
     private String nullToEmpty(String value) {
         return value == null ? "" : value;
+    }
+
+    private boolean isSeller() {
+        return Session.getCurrentUser() != null
+                && Session.getCurrentUser().getRole() != null
+                && Session.getCurrentUser().getRole().equalsIgnoreCase("SELLER");
     }
 
     @FXML

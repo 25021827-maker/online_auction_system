@@ -5,6 +5,7 @@ Controller\product\AuctionController.class
 dto\AutoBidRequest.class
 Controller\user\AdminController$5.class
 Controller\user\AdminController$1.class
+dto\UserAuctionResultDTO.class
 Controller\auth\RegisterController$1.class
 Controller\product\WatchlistController$1.class
 Controller\user\AdminController$8.class
@@ -28,6 +29,7 @@ util\NotificationToast.class
 Main\Launcher.class
 ui\product\ProductCard.class
 dto\AdminProductDTO.class
+Controller\user\ProfileController$4.class
 dto\RegisterRequest.class
 Service\UserService.class
 dto\AuctionDTO$ItemDTO.class

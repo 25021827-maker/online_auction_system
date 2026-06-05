@@ -121,6 +121,8 @@ public class ClientHandler implements Runnable {
                 case "GET_UNREAD_NOTIFICATION_COUNT" -> processGetUnreadNotificationCount();
                 case "MARK_NOTIFICATION_READ" -> processMarkNotificationRead(request.getData());
                 case "GET_WALLET_TRANSACTIONS" -> processGetWalletTransactions(request.getData());
+                case "GET_MY_WIN_LIST" -> processGetMyWinList(request.getData());
+                case "GET_MY_SOLD_LIST" -> processGetMySoldList(request.getData());
                 case "GET_BID_HISTORY" -> processGetBidHistory(request.getData());
                 case "JOIN_AUCTION_ROOM" -> processJoinAuctionRoom(request.getData());
                 case "LEAVE_AUCTION_ROOM" -> processLeaveAuctionRoom(request.getData());
@@ -758,6 +760,58 @@ public class ClientHandler implements Runnable {
             sendResponse(ResponsePayload.fail(
                     "GET_WALLET_TRANSACTIONS_RESPONSE",
                     "Khong the lay lich su giao dich: " + e.getMessage()
+            ));
+        }
+    }
+
+    private void processGetMyWinList(String dataJson) {
+        try {
+            JsonObject json = parseObject(dataJson);
+            Long userId = json.get("userId").getAsLong();
+
+            if (!requireSameUser(userId, "GET_MY_WIN_LIST_RESPONSE")) {
+                return;
+            }
+
+            List<UserAuctionResultDTO> results = new AuctionDAO()
+                    .getWinListByBidder(userId);
+
+            sendResponse(ResponsePayload.success(
+                    "GET_MY_WIN_LIST_RESPONSE",
+                    "Win list loaded.",
+                    results
+            ));
+
+        } catch (Exception e) {
+            sendResponse(ResponsePayload.fail(
+                    "GET_MY_WIN_LIST_RESPONSE",
+                    "Khong the lay danh sach da thang: " + e.getMessage()
+            ));
+        }
+    }
+
+    private void processGetMySoldList(String dataJson) {
+        try {
+            JsonObject json = parseObject(dataJson);
+            Long userId = json.get("userId").getAsLong();
+
+            if (!requireSameUser(userId, "GET_MY_SOLD_LIST_RESPONSE")) {
+                return;
+            }
+
+            List<UserAuctionResultDTO> results = new AuctionDAO()
+                    .getSoldListBySeller(userId);
+
+            sendResponse(ResponsePayload.success(
+                    "GET_MY_SOLD_LIST_RESPONSE",
+                    "Sold list loaded.",
+                    results
+            ));
+
+        } catch (Exception e) {
+            sendResponse(ResponsePayload.fail(
+                    "GET_MY_SOLD_LIST_RESPONSE",
+                    "Khong the lay danh sach da ban: " + e.getMessage()
             ));
         }
     }

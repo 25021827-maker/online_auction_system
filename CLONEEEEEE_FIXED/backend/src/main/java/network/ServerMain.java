@@ -111,6 +111,24 @@ public class ServerMain {
                 pushWalletHistory(result.winnerId);
                 sendBalanceUpdate(result.sellerId);
                 pushWalletHistory(result.sellerId);
+
+                sendToUser(
+                        result.winnerId,
+                        ResponsePayload.success(
+                                "USER_AUCTION_RESULTS_CHANGED",
+                                "Win list changed.",
+                                null
+                        )
+                );
+
+                sendToUser(
+                        result.sellerId,
+                        ResponsePayload.success(
+                                "USER_AUCTION_RESULTS_CHANGED",
+                                "Sold list changed.",
+                                null
+                        )
+                );
             }
         }
     }
