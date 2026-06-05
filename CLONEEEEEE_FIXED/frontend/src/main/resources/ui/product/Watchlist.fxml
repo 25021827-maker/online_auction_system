@@ -6,15 +6,15 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.FlowPane?>
 
-<AnchorPane prefHeight="750.0" prefWidth="1280.0" style="-fx-background-color: #1a1a1a;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://fxml.com/fxml/1" fx:controller="Controller.product.WatchlistController">
+<AnchorPane prefHeight="750.0" prefWidth="1280.0" styleClass="watchlist-root" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" stylesheets="@../../style/pages/watch-list.css" fx:controller="Controller.product.WatchlistController">
     <children>
-        <Label layoutX="40.0" layoutY="30.0" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" text="My Watchlist (Sản phẩm đang theo dõi)" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="30.0" />
+        <Label styleClass="watchlist-title" text="My Watchlist" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="30.0" />
 
-        <Button fx:id="btnBack" layoutX="1150.0" layoutY="30.0" mnemonicParsing="false" onAction="#goBack" prefHeight="35.0" prefWidth="90.0" text="Back" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="30.0" />
+        <Button fx:id="btnBack" mnemonicParsing="false" onAction="#goBack" prefHeight="35.0" prefWidth="90.0" styleClass="watchlist-back-btn" text="Back" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="30.0" />
 
-        <ScrollPane layoutX="40.0" layoutY="90.0" prefHeight="620.0" prefWidth="1200.0" style="-fx-background-color: transparent; -fx-background-insets: 0;" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="90.0">
+        <ScrollPane fitToWidth="true" styleClass="watchlist-scroll" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="40.0" AnchorPane.rightAnchor="40.0" AnchorPane.topAnchor="90.0">
             <content>
-                <FlowPane fx:id="watchlistContainer" hgap="20.0" vgap="20.0" style="-fx-background-color: transparent;" />
+                <FlowPane fx:id="watchlistContainer" hgap="20.0" vgap="20.0" styleClass="watchlist-grid" />
             </content>
         </ScrollPane>
     </children>

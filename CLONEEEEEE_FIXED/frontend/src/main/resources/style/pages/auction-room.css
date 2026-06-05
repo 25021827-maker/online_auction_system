@@ -314,8 +314,46 @@
 }
 
 .room-wallet-text {
-    -fx-text-fill: #ffffff;
+    -fx-text-fill: #ffdd00;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-text-alignment: center;
+}
+.yellow-button {
+    -fx-background-color: #ffdd00;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 20; /* Bo góc tròn trịa hơn nhìn sẽ hiện đại hơn */
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+
+    /* Bóng đổ nhẹ tạo độ nổi (Elevation) */
+    -fx-effect: drop-shadow(two-pass-box, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+}
+
+/* Hiệu ứng khi di chuột vào nút */
+.yellow-button:hover {
+    -fx-background-color: #ffe44d; /* Vàng sáng hơn một chút thay vì tối đi */
+
+    /* Tạo hiệu ứng phát sáng nhẹ (Glow) màu vàng bao quanh nút */
+    -fx-effect: drop-shadow(two-pass-box, rgba(255, 221, 0, 0.5), 10, 0, 0, 0);
+
+    /* Hiệu ứng phóng to nhẹ khi hover để tăng tương tác phản hồi */
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+.search-field {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #ffdd00;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-color: #2a2a2a;
+    -fx-border-width: 1.5;
+    -fx-padding: 0 15 0 15;
+}
+.search-field:focused {
+    -fx-background-color: #222222;
+    -fx-border-color: #ffdd00; /* Viền vàng rực khi click vào */
 }

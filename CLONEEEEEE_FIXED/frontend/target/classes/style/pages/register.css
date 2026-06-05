@@ -36,7 +36,7 @@
 .login-input {
     -fx-background-color: rgba(40, 40, 40, 0.7);
     -fx-text-fill: #ffffff;                      /* ĐỒNG BỘ: Chữ gõ vào màu trắng */
-    -fx-prompt-text-fill: #aaaaaa;               /* ĐỒNG BỘ: Chữ gợi ý màu xám */
+    -fx-prompt-text-fill: white;               /* ĐỒNG BỘ: Chữ gợi ý màu xám */
     -fx-background-radius: 10;
     -fx-border-radius: 10;
     -fx-border-color: #ffdd00;                   /* ĐỒNG BỘ: Viền vàng mặc định */
@@ -168,13 +168,5 @@
 -fx-text-fill: #ff4444;
 
 -fx-font-size: 13px;
-
--fx-font-weight: bold;
-
--fx-text-alignment: center;
-
--fx-alignment: center;
-
--fx-padding: 6 8 6 8;
 
 }

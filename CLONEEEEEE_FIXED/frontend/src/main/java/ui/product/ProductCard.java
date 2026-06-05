@@ -8,14 +8,16 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 
 import java.util.Objects;
 
@@ -29,7 +31,7 @@ public class ProductCard {
     private Label statusLabel;
     private Label timerLabel;
     private ImageView imageView;
-    private Button watchBtn; // 🎯 MỚI BỔ SUNG: Nút bấm theo dõi sản phẩm
+    private Button watchBtn;
     private Timeline refreshTimeline;
     private String loadedImagePath = "";
 
@@ -56,72 +58,91 @@ public class ProductCard {
 
     private void buildUI() {
         root = new VBox();
-        root.setSpacing(10);
-        root.setPrefWidth(220);
-        root.getStyleClass().add("auction-card");
+        root.setSpacing(12);
+        root.setPrefWidth(260); // Độ rộng 260px giúp bố cục card thoáng và đẹp mắt hơn
+        root.setPadding(new Insets(16));
 
-        // =========================
-        // IMAGE
-        // =========================
+        // 🔥 ÉP ĐỒNG BỘ CSS: Tự động nạp file css dành riêng cho card ngay khi component được khởi tạo
+        try {
+            root.getStylesheets().add(getClass().getResource("/style/pages/product-card.css").toExternalForm());
+        } catch (Exception e) {
+            System.out.println("Cảnh báo: Chưa tìm thấy file product-card.css tại thư mục resources/style/pages/");
+        }
+
+        // Gán class định danh chính cho Card
+        root.getStyleClass().add("product-card");
+
+        // =====================================================
+        // IMAGE CONTAINER (Khung chứa ảnh bo góc chống lộ viền thô)
+        // =====================================================
         imageView = new ImageView();
-        imageView.setFitWidth(180);
-        imageView.setFitHeight(140);
+        imageView.setFitWidth(220);
+        imageView.setFitHeight(150);
         imageView.setPreserveRatio(true);
 
-        // =========================
-        // LABELS
-        // =========================
+        StackPane imageContainer = new StackPane(imageView);
+        imageContainer.getStyleClass().add("image-container");
+        imageContainer.setPrefHeight(160);
+        imageContainer.setAlignment(Pos.CENTER);
+
+        // =====================================================
+        // LABELS & STYLE CLASSES (Chuyển hoàn toàn sang CSS)
+        // =====================================================
         idLabel = new Label();
-        idLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px; -fx-font-weight: bold;");
+        idLabel.getStyleClass().add("product-id");
 
         titleLabel = new Label();
+        titleLabel.getStyleClass().add("product-name");
+        titleLabel.setWrapText(true);
+
         priceLabel = new Label();
+        priceLabel.getStyleClass().add("product-price");
+
         statusLabel = new Label();
+        statusLabel.getStyleClass().add("product-status");
+
         timerLabel = new Label();
+        timerLabel.getStyleClass().add("product-countdown");
+
+        // Nhóm các nhãn chữ thông tin lại thành một block gọn gàng
+        VBox infoContainer = new VBox(6);
+        infoContainer.getChildren().addAll(idLabel, titleLabel, priceLabel, statusLabel, timerLabel);
 
         // =====================================================
-        // 🎯 MỚI BỔ SUNG: KHỞI TẠO NÚT WATCHLIST & BẮT SỰ KIỆN
+        // 🎯 NÚT WATCHLIST & BẮT SỰ KIỆN
         // =====================================================
         watchBtn = new Button();
-        watchBtn.getStyleClass().add("secondary-button"); // Bạn có thể thêm css riêng cho nút này
+        watchBtn.setMaxWidth(Double.MAX_VALUE); // Cho nút kéo dãn full chiều rộng card nhìn vuông vắn và hiện đại
+        watchBtn.getStyleClass().add("watch-button");
 
         watchBtn.setOnAction(e -> {
-            // Ngăn chặn sự kiện click lan ra ngoài làm mở màn hình đấu giá (Mẹo JavaFX)
-            e.consume();
+            e.consume(); // Ngăn chặn sự kiện click lan ra ngoài làm mở màn hình chi tiết đấu giá
 
             if (Session.getCurrentUser() != null) {
                 int pId = product.getId();
                 if (Session.getCurrentUser().isWatching(pId)) {
-                    // Nếu đang theo dõi thì bấm vào sẽ hủy theo dõi
                     Session.getCurrentUser().removeFromWatchlist(pId);
                 } else {
-                    // Nếu chưa theo dõi thì bấm vào sẽ thêm vào danh sách
                     Session.getCurrentUser().addToWatchlist(pId);
                 }
-                // Cập nhật giao diện nút bấm ngay lập tức
                 updateWatchButtonState();
             }
         });
 
-        // =========================
-        // ADD UI (Đã thêm nút watchBtn vào cuối card)
-        // =========================
+        // =====================================================
+        // ADD CÁC THÀNH PHẦN VÀO ROOT
+        // =====================================================
         root.getChildren().addAll(
-                imageView,
-                idLabel,
-                titleLabel,
-                priceLabel,
-                statusLabel,
-                timerLabel,
+                imageContainer,
+                infoContainer,
                 watchBtn
         );
 
-        // =========================
-        // CLICK EVENT
-        // =========================
+        // =====================================================
+        // CLICK EVENT - MỞ PHÒNG ĐẤU GIÁ CHI TIẾT
+        // =====================================================
         root.setOnMouseClicked(e -> {
             try {
-                // Trước khi chuyển màn hình, dừng bộ đếm ngầm của chiếc Card này để tránh rò rỉ bộ nhớ
                 if (refreshTimeline != null) {
                     refreshTimeline.stop();
                 }
@@ -144,19 +165,20 @@ public class ProductCard {
     }
 
     /**
-     * Hàm này chỉ chịu trách nhiệm cập nhật các thông tin ĐỘNG thay đổi theo thời gian
+     * Hàm chịu trách nhiệm cập nhật các thông tin ĐỘNG thay đổi theo thời gian
      */
     public void update() {
         if (idLabel != null) {
             idLabel.setText("ID: #" + product.getId());
         }
 
+        // 🔥 ĐÃ SỬA CHUẨN: Lấy chính xác getTitle() theo đúng Model gốc của bạn
         if (titleLabel != null) {
             titleLabel.setText(product.getTitle());
         }
 
         if (priceLabel != null) {
-            priceLabel.setText(product.getCurrentPrice() + " VND");
+            priceLabel.setText(String.format("%,.1f VND", product.getCurrentPrice()));
         }
 
         if (statusLabel != null) {
@@ -167,14 +189,11 @@ public class ProductCard {
             timerLabel.setText(product.getTimeRemaining());
         }
 
-        // Đồng bộ trạng thái giao diện nút bấm theo dõi mỗi giây theo nhịp Timeline
         updateWatchButtonState();
     }
 
     public void updateProduct(Product product) {
-        if (product == null) {
-            return;
-        }
+        if (product == null) return;
         this.product = product;
         loadImageIfChanged();
         update();
@@ -200,24 +219,26 @@ public class ProductCard {
     }
 
     /**
-     * 🎯 MỚI BỔ SUNG: Hàm cập nhật trạng thái màu sắc, chữ hiển thị của nút Watch
+     * Cập nhật trạng thái màu sắc, chữ hiển thị của nút Watch bằng cách thay đổi class CSS động
      */
     private void updateWatchButtonState() {
         if (watchBtn == null || Session.getCurrentUser() == null) return;
 
         if (Session.getCurrentUser().isWatching(product.getId())) {
             watchBtn.setText("★ Watching");
-            // Gắn mã màu đỏ rực rỡ trực tiếp nếu css nhóm chưa khai báo kịp
-            watchBtn.setStyle("-fx-text-fill: #ff3b30; -fx-font-weight: bold;");
+            watchBtn.getStyleClass().removeAll("watch-button");
+            if (!watchBtn.getStyleClass().contains("watching-active-button")) {
+                watchBtn.getStyleClass().add("watching-active-button"); // Đổi sang trạng thái đỏ hoạt động khi nhấn
+            }
         } else {
             watchBtn.setText("☆ Watch");
-            watchBtn.setStyle(""); // Trả về style mặc định của hệ thống
+            watchBtn.getStyleClass().removeAll("watching-active-button");
+            if (!watchBtn.getStyleClass().contains("watch-button")) {
+                watchBtn.getStyleClass().add("watch-button"); // Trả lại viền vàng outline mặc định
+            }
         }
     }
 
-    /**
-     * Hàm tiện ích giúp giải phóng bộ đếm thời gian khi tắt màn hình chính
-     */
     public void stopTimeline() {
         if (refreshTimeline != null) {
             refreshTimeline.stop();

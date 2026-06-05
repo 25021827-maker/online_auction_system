@@ -78,20 +78,20 @@
 
                         <Label fx:id="priceLabel" styleClass="hero-price-label" />
 
-                        <Label styleClass="small-section-label" text="TIME REMAINING" textFill="#ffdd00" />
+                        <Label styleClass="small-section-label" text="TIME REMAINING" textFill="#ffdd00">
+                     <font>
+                        <Font name="System Bold" size="12.0" />
+                     </font></Label>
 
                         <Label fx:id="countdownLabel" styleClass="hero-countdown-label" />
 
                         <HBox alignment="CENTER" spacing="8" styleClass="room-wallet-line">
-                            <Label fx:id="balanceLabel"
-                                   text="BALANCE: $0.00 | AVAILABLE: $0.00 | HELD: $0.00"
-                                   styleClass="room-wallet-text"
-                                   wrapText="true" />
+                            <Label fx:id="balanceLabel" styleClass="room-wallet-text" text="BALANCE: $0.00 | AVAILABLE: $0.00 | HELD: $0.00" wrapText="true" />
                         </HBox>
 
                         <Separator />
 
-                        <TextField fx:id="txtBid" maxWidth="300" prefHeight="45" promptText="Enter your bid..." styleClass="main-input hero-bid-input" />
+                        <TextField fx:id="txtBid" maxWidth="300" prefHeight="49.0" prefWidth="286.0" promptText="Enter your bid..." styleClass="search-field" />
 
                         <HBox alignment="CENTER" spacing="10">
                             <Button onAction="#handleQuickBid" styleClass="quick-bid-button" text="+10" />
@@ -101,13 +101,16 @@
                             <Button onAction="#handleQuickBid" styleClass="quick-bid-button" text="+1000" />
                         </HBox>
 
-                        <Button fx:id="bidButton" onAction="#handleBid" prefWidth="240" styleClass="primary-button hero-bid-button" text="PLACE BID" />
+                        <Button fx:id="bidButton" onAction="#handleBid" prefWidth="240" styleClass="auto-bid-button" text="PLACE BID" />
 
                         <VBox alignment="CENTER" maxWidth="320" spacing="8" styleClass="auto-bid-box">
-                            <Label styleClass="small-section-label" text="AUTO BID" textFill="#ffdd00" />
+                            <Label styleClass="small-section-label" text="AUTO BID" textFill="#ffdd00">
+                        <font>
+                           <Font name="System Bold" size="12.0" />
+                        </font></Label>
                             <HBox alignment="CENTER" spacing="8">
-                                <TextField fx:id="txtAutoMax" prefHeight="38" prefWidth="145" promptText="Max bid" styleClass="main-input hero-bid-input" />
-                                <TextField fx:id="txtAutoStep" prefHeight="38" prefWidth="145" promptText="Step" styleClass="main-input hero-bid-input" />
+                                <TextField fx:id="txtAutoMax" prefHeight="38" prefWidth="145" promptText="Max bid" styleClass="search-field" />
+                                <TextField fx:id="txtAutoStep" prefHeight="38" prefWidth="145" promptText="Step" styleClass="search-field" />
                             </HBox>
                             <Button onAction="#handleAutoBid" prefWidth="220" styleClass="auto-bid-button" text="SET AUTO BID" />
                         </VBox>
@@ -116,7 +119,7 @@
 
                         <Region VBox.vgrow="ALWAYS" />
 
-                        <Button onAction="#goBack" prefWidth="180" styleClass="secondary-button" text="BACK" />
+                        <Button onAction="#goBack" prefWidth="180" styleClass="yellow-button" text="BACK" />
                     </VBox>
 
                     <VBox maxWidth="420" minWidth="260" prefHeight="606.0" prefWidth="295.0" spacing="16" styleClass="auction-room-card">

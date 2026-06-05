@@ -1,0 +1,94 @@
+/* ==========================================================================
+   1. SCROLLPANE & VIEWPORT (Xử lý nền tối và loại bỏ viền xám mặc định)
+   ========================================================================== */
+.main-scroll {
+    -fx-background-color: #121212; /* Đen thẳm thay vì đen tuyệt đối để dịu mắt */
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+/* Quan trọng: Làm trong suốt lớp viewport để lộ nền content-container */
+.main-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Tùy chỉnh thanh cuộn (Scrollbar) chuẩn theme tối */
+.main-scroll .scroll-bar:vertical {
+    -fx-background-color: #1e1e1e;
+    -fx-background-radius: 4px;
+}
+
+.main-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #444444;
+    -fx-background-radius: 4px;
+}
+
+.main-scroll .scroll-bar:vertical .thumb:hover {
+    -fx-background-color: #ffdd00; /* Hover vào thanh cuộn sáng lên màu vàng */
+}
+
+/* ==========================================================================
+   2. CONTAINERS (Khung chứa nội dung)
+   ========================================================================== */
+.content-container {
+    -fx-background-color: #121212;
+}
+
+/* Định dạng cho vùng chứa các item sản phẩm */
+#productsContainer {
+    -fx-background-color: transparent;
+}
+
+
+/* ==========================================================================
+   3. COMPONENTS (Tiêu đề và Nút bấm)
+   ========================================================================== */
+
+/* Tiêu đề chính "MY PRODUCTS" */
+.main-title {
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-weight: 900; /* Siêu đậm tạo cảm giác hiện đại */
+    -fx-font-size: 30px;  /* Tăng nhẹ kích thước */
+
+    /* Hiệu ứng gạch chân màu vàng */
+    -fx-border-color: transparent transparent #ffdd00 transparent;
+    -fx-border-width: 3;
+    -fx-padding: 0 0 8 0;
+
+    /* Tạo hiệu ứng bóng đổ chữ nhẹ cho sang trọng */
+    -fx-effect: drop-shadow(two-pass-box, rgba(0, 0, 0, 0.5), 4, 0, 0, 2);
+}
+
+/* Nút bấm màu vàng thương hiệu */
+.yellow-button {
+    -fx-background-color: #ffdd00;
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 20; /* Bo góc tròn trịa hơn nhìn sẽ hiện đại hơn */
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+
+    /* Bóng đổ nhẹ tạo độ nổi (Elevation) */
+    -fx-effect: drop-shadow(two-pass-box, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+}
+
+/* Hiệu ứng khi di chuột vào nút */
+.yellow-button:hover {
+    -fx-background-color: #ffe44d; /* Vàng sáng hơn một chút thay vì tối đi */
+
+    /* Tạo hiệu ứng phát sáng nhẹ (Glow) màu vàng bao quanh nút */
+    -fx-effect: drop-shadow(two-pass-box, rgba(255, 221, 0, 0.5), 10, 0, 0, 0);
+
+    /* Hiệu ứng phóng to nhẹ khi hover để tăng tương tác phản hồi */
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
+/* Hiệu ứng khi click chuột vào nút */
+.yellow-button:pressed {
+    -fx-background-color: #ccb100; /* Khựng lại và tối đi một chút */
+    -fx-scale-x: 0.98;             /* Thu nhỏ nhẹ tạo cảm giác như nút bị lún xuống */
+    -fx-scale-y: 0.98;
+}
