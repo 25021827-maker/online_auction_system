@@ -15,6 +15,7 @@ import util.VietnamTime;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -242,15 +243,15 @@ public class AuctionController {
         }
 
         if (statusBox != null) {
-            statusBox.setValue("STATUS");
+            statusBox.setValue("All");
         }
 
         if (categoryFilterBox != null) {
-            categoryFilterBox.setValue("CATEGORY");
+            categoryFilterBox.setValue("All");
         }
 
         if (conditionFilterBox != null) {
-            conditionFilterBox.setValue("CONDITION");
+            conditionFilterBox.setValue("All");
         }
     }
 
@@ -285,20 +286,12 @@ public class AuctionController {
     }
 
     private void applyFilters() {
-        String status = (statusBox == null || statusBox.getValue() == null || "STATUS".equals(statusBox.getValue()))
-                ? "All"
-                : statusBox.getValue();
-
-        String category = (categoryFilterBox == null || categoryFilterBox.getValue() == null || "CATEGORY".equals(categoryFilterBox.getValue()))
-                ? "All"
-                : categoryFilterBox.getValue();
-
-        String condition = (conditionFilterBox == null || conditionFilterBox.getValue() == null || "CONDITION".equals(conditionFilterBox.getValue()))
-                ? "All"
-                : conditionFilterBox.getValue();
+        String status = getComboValue(statusBox, "All");
+        String category = getComboValue(categoryFilterBox, "All");
+        String condition = getComboValue(conditionFilterBox, "All");
+        String sortType = getComboValue(sortBox, "SORT");
 
         String keyword = searchField == null ? "" : searchField.getText();
-        String sortType = sortBox == null ? "SORT" : sortBox.getValue();
 
         Double minPrice = parseDouble(minPriceField == null ? null : minPriceField.getText());
         Double maxPrice = parseDouble(maxPriceField == null ? null : maxPriceField.getText());
@@ -316,6 +309,15 @@ public class AuctionController {
 
         loadProducts(filtered);
     }
+
+    private String getComboValue(ComboBox<String> comboBox, String defaultValue) {
+        if (comboBox == null || comboBox.getValue() == null || comboBox.getValue().trim().isEmpty()) {
+            return defaultValue;
+        }
+
+        return comboBox.getValue();
+    }
+
     private void fetchWatchlistIdsFromServer() {
         if (Session.getCurrentUser() == null) {
             return;
@@ -359,30 +361,37 @@ public class AuctionController {
 
     private void loadProducts(List<Product> products) {
         if (productsContainer == null) return;
+        if (products == null) products = List.of();
         if (lblResultCount != null) lblResultCount.setText(products.size() + " products found");
 
         Set<Integer> activeIds = new HashSet<>();
+        List<Node> orderedNodes = new ArrayList<>();
+
         for (Product p : products) {
             activeIds.add(p.getId());
-            if (cardMap.containsKey(p.getId())) {
-                cardMap.get(p.getId()).updateProduct(p);
+            ProductCard card = cardMap.get(p.getId());
+
+            if (card != null) {
+                card.updateProduct(p);
             } else {
-                ProductCard card = new ProductCard(p);
+                card = new ProductCard(p);
                 cardMap.put(p.getId(), card);
-                productsContainer.getChildren().add(card.getRoot());
             }
+
+            orderedNodes.add(card.getRoot());
         }
 
         cardMap.entrySet().removeIf(entry -> {
             int id = entry.getKey();
             ProductCard card = entry.getValue();
             if (!activeIds.contains(id)) {
-                productsContainer.getChildren().remove(card.getRoot());
                 card.stopTimeline();
                 return true;
             }
             return false;
         });
+
+        productsContainer.getChildren().setAll(orderedNodes);
     }
 
     private Double parseDouble(String text) {

@@ -37,5 +37,5 @@ CREATE TABLE bid_history (
 -- Tạo một số dữ liệu mẫu (Mock data) để test đăng nhập
 INSERT INTO users (id, username, password, role) VALUES
                                                      ('U1', 'admin', 'admin123', 'ADMIN'),
-                                                     ('U2', 'seller_nghia', '123456', 'SELLER'),
-                                                     ('U3', 'bidder_tuan', '123456', 'BIDDER');
+                                                     ('U2', 'seller_2', '123456', 'SELLER'),
+                                                     ('U3', 'bidder_1', '123456', 'BIDDER');

@@ -25,9 +25,7 @@ public class ProductFilterService {
 
         List<Product> filtered = products;
 
-        // =====================================================
-        // SEARCH: tim theo ten, mo ta, seller, category, condition hoac ID
-        // =====================================================
+        // SEARCH
         if (keyword != null && !keyword.trim().isEmpty()) {
             String query = normalize(keyword);
 
@@ -42,11 +40,7 @@ public class ProductFilterService {
                     .collect(Collectors.toList());
         }
 
-        // =====================================================
-        // STATUS FILTER
-        // Chi loc status that: OPEN, RUNNING, SCHEDULED, FINISHED...
-        // Khong xu ly Newest / Ending Soon o day.
-        // =====================================================
+        // STATUS FILTER: chi loc status that
         if (isRealFilter(status)) {
             String normalizedStatus = normalize(status);
 
@@ -55,9 +49,7 @@ public class ProductFilterService {
                     .collect(Collectors.toList());
         }
 
-        // =====================================================
         // CATEGORY FILTER
-        // =====================================================
         if (isRealFilter(category)) {
             String normalizedCategory = normalize(category);
 
@@ -66,9 +58,7 @@ public class ProductFilterService {
                     .collect(Collectors.toList());
         }
 
-        // =====================================================
         // CONDITION FILTER
-        // =====================================================
         if (isRealFilter(condition)) {
             String normalizedCondition = normalize(condition);
 
@@ -77,10 +67,7 @@ public class ProductFilterService {
                     .collect(Collectors.toList());
         }
 
-        // =====================================================
         // PRICE FILTER
-        // Neu min > max thi doi cho de khong tra ve rong vo ly
-        // =====================================================
         if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
             double temp = minPrice;
             minPrice = maxPrice;
@@ -101,30 +88,25 @@ public class ProductFilterService {
                     .collect(Collectors.toList());
         }
 
-        // =====================================================
         // SORT
-        // =====================================================
-        if (isRealFilter(sortType)) {
-            switch (sortType) {
-                case "Price: Low to High":
+        if (isRealSort(sortType)) {
+            String normalizedSort = normalize(sortType);
+
+            switch (normalizedSort) {
+                case "price: low to high":
                     filtered = filtered.stream()
                             .sorted(Comparator.comparingDouble(Product::getCurrentPrice))
                             .collect(Collectors.toList());
                     break;
 
-                case "Price: High to Low":
+                case "price: high to low":
                     filtered = filtered.stream()
                             .sorted(Comparator.comparingDouble(Product::getCurrentPrice).reversed())
                             .collect(Collectors.toList());
                     break;
 
-                case "Newest":
-                case "Newest First":
-                    /*
-                     * Tam thoi sort theo Product.createdAt.
-                     * Luu y: createdAt hien la gio frontend tao object,
-                     * chua phai created_at that tu database.
-                     */
+                case "newest":
+                case "newest first":
                     filtered = filtered.stream()
                             .sorted(Comparator.comparing(
                                     Product::getCreatedAt,
@@ -133,11 +115,7 @@ public class ProductFilterService {
                             .collect(Collectors.toList());
                     break;
 
-                case "Ending Soon":
-                    /*
-                     * Sap het han: chi nen sap xep cac phien dang mo/chay,
-                     * dua endTime gan nhat len truoc.
-                     */
+                case "ending soon":
                     filtered = filtered.stream()
                             .filter(ProductFilterService::isOpenOrRunning)
                             .sorted(Comparator.comparing(
@@ -181,6 +159,18 @@ public class ProductFilterService {
                 && !"CATEGORY".equalsIgnoreCase(v)
                 && !"CONDITION".equalsIgnoreCase(v)
                 && !"SORT".equalsIgnoreCase(v);
+    }
+
+    private static boolean isRealSort(String value) {
+        if (value == null) {
+            return false;
+        }
+
+        String v = value.trim();
+
+        return !v.isEmpty()
+                && !"SORT".equalsIgnoreCase(v)
+                && !"All".equalsIgnoreCase(v);
     }
 
     private static String normalize(String value) {

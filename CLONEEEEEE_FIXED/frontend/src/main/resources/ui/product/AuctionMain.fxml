@@ -84,9 +84,10 @@
                                             </items>
                                         </ComboBox>
 
-                                        <ComboBox fx:id="sortBox" prefHeight="46.0" prefWidth="130.0" promptText="SORT" styleClass="yellow-combo">
+                                        <ComboBox fx:id="sortBox" prefHeight="46.0" prefWidth="150.0" promptText="SORT" styleClass="yellow-combo">
                                             <items>
                                                 <FXCollections fx:factory="observableArrayList">
+                                                    <String fx:value="SORT" />
                                                     <String fx:value="Price: Low to High" />
                                                     <String fx:value="Price: High to Low" />
                                                     <String fx:value="Ending Soon" />
