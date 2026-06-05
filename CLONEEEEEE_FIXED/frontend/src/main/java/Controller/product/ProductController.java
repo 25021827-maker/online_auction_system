@@ -20,6 +20,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
+import util.ImageUtil;
 
 public class ProductController {
 
@@ -74,9 +75,7 @@ public class ProductController {
             }
         }
 
-        if (p.getImagePath() != null && !p.getImagePath().isEmpty()) {
-            try { imageView.setImage(new Image(p.getImagePath())); } catch (Exception e) {}
-        }
+        imageView.setImage(ImageUtil.loadImage(p.getImageBase64(), p.getImagePath(), false));
     }
 
     private void updateBalanceLabel() {
@@ -165,4 +164,3 @@ public class ProductController {
         SceneNavigator.showFixedFullScreen(stage, root, "San dau gia");
     }
 }
-

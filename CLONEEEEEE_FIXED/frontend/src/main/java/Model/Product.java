@@ -11,6 +11,7 @@ public class Product {
     private String title;
     private double currentPrice;
     private String imagePath;
+    private String imageBase64;
     private static int nextId = 1;
     private int id;
     private String seller;
@@ -29,6 +30,7 @@ public class Product {
         this.title = title;
         this.currentPrice = currentPrice;
         this.imagePath = imagePath;
+        this.imageBase64 = "";
         this.seller = seller;
         this.highestBidder = "";
         this.startTime = startTime;
@@ -44,6 +46,7 @@ public class Product {
         this.title = title;
         this.currentPrice = currentPrice;
         this.imagePath = "";
+        this.imageBase64 = "";
         this.seller = "Unknown";
         this.highestBidder = "";
         this.startTime = VietnamTime.now();
@@ -117,6 +120,14 @@ public class Product {
 
     public void setImagePath(String imagePath) {
         this.imagePath = imagePath;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
     }
 
     public String getSeller() {

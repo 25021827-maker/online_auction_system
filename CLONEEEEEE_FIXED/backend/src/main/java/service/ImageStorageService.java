@@ -1,6 +1,7 @@
 package service;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,7 +36,7 @@ public class ImageStorageService {
                 return null;
             }
 
-            Path path = Paths.get(imagePath);
+            Path path = resolveImagePath(imagePath);
 
             if (!Files.exists(path)) {
                 return null;
@@ -48,6 +49,13 @@ public class ImageStorageService {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private Path resolveImagePath(String imagePath) {
+        if (imagePath.startsWith("file:")) {
+            return Paths.get(URI.create(imagePath));
+        }
+        return Paths.get(imagePath);
     }
 
     private String getSafeExtension(String originalFileName) {

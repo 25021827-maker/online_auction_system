@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken;
 import dto.AuctionDTO;
 import dto.RequestPayload;
 import dto.ResponsePayload;
+import util.ImageUtil;
 import util.VietnamTime;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -159,6 +160,9 @@ public class MyProductsController {
         LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now();
 
         Product product = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
+        if (dto.item != null) {
+            product.setImageBase64(dto.item.imageBase64);
+        }
         try {
             java.lang.reflect.Field idField = Product.class.getDeclaredField("id");
             idField.setAccessible(true);
@@ -286,19 +290,13 @@ public class MyProductsController {
 
         private void loadImageIfNeeded() {
             String imagePath = product.getImagePath() == null ? "" : product.getImagePath();
-            if (loadedImagePath.equals(imagePath)) {
+            String imageKey = ImageUtil.imageKey(product.getImageBase64(), imagePath);
+            if (loadedImagePath.equals(imageKey)) {
                 return;
             }
 
-            loadedImagePath = imagePath;
-            if (imagePath.isEmpty()) {
-                imageView.setImage(null);
-                return;
-            }
-
-            try {
-                imageView.setImage(new Image(imagePath, true));
-            } catch (Exception ignored) {}
+            loadedImagePath = imageKey;
+            imageView.setImage(ImageUtil.loadImage(product.getImageBase64(), imagePath, true));
         }
 
         private void updateActionButtonState() {

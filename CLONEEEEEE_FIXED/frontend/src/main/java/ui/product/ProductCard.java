@@ -18,6 +18,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import util.ImageUtil;
 
 import java.util.Objects;
 
@@ -201,21 +202,13 @@ public class ProductCard {
 
     private void loadImageIfChanged() {
         String imagePath = product.getImagePath() == null ? "" : product.getImagePath();
-        if (Objects.equals(loadedImagePath, imagePath)) {
+        String imageKey = ImageUtil.imageKey(product.getImageBase64(), imagePath);
+        if (Objects.equals(loadedImagePath, imageKey)) {
             return;
         }
 
-        loadedImagePath = imagePath;
-        if (imagePath.isEmpty()) {
-            imageView.setImage(null);
-            return;
-        }
-
-        try {
-            imageView.setImage(new Image(imagePath, true));
-        } catch (Exception e) {
-            System.out.println("Không nạp được ảnh cho sản phẩm ID: " + product.getId());
-        }
+        loadedImagePath = imageKey;
+        imageView.setImage(ImageUtil.loadImage(product.getImageBase64(), imagePath, true));
     }
 
     /**

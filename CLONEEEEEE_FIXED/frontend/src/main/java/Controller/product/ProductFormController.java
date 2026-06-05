@@ -11,6 +11,9 @@ import util.VietnamTime;
 
 import javafx.stage.FileChooser;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Base64;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -91,6 +94,7 @@ public class ProductFormController {
         File file = fileChooser.showOpenDialog(null);
 
         if (file != null) {
+            selectedImageFile = file;
             selectedImagePath = file.toURI().toString(); // Lưu dạng URI để JavaFX đọc được
             showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã nạp ảnh thành công!");
         }
@@ -161,7 +165,20 @@ public class ProductFormController {
         req.condition = conditionBox.getValue() != null ? conditionBox.getValue() : "New";
         req.startTime = startDateTime.toString();
         req.endTime = endDateTime.toString();
-        req.imagePath = selectedImagePath; // Gắn ảnh vào gói tin
+        req.imagePath = selectedImagePath;
+
+        if (selectedImageFile != null) {
+            try {
+                req.imageBase64 = Base64.getEncoder().encodeToString(Files.readAllBytes(selectedImageFile.toPath()));
+                req.imageFileName = selectedImageFile.getName();
+                req.imagePath = "";
+            } catch (IOException e) {
+                btnSubmit.setDisable(false);
+                btnSubmit.setText(editingProduct != null ? "UPDATE PRODUCT" : "CREATE");
+                showAlert(Alert.AlertType.ERROR, "Lỗi ảnh", "Không thể đọc file ảnh đã chọn.");
+                return;
+            }
+        }
 
         String actionName = (editingProduct != null) ? "UPDATE_AUCTION" : "CREATE_AUCTION";
         RequestPayload payload = new RequestPayload(actionName, gson.toJson(req));

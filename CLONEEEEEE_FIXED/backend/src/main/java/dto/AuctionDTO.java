@@ -2,6 +2,7 @@ package dto;
 
 import model.Auction;
 import model.Item;
+import service.ImageStorageService;
 
 public class AuctionDTO {
     public Long id;
@@ -34,6 +35,7 @@ public class AuctionDTO {
         public String category;
         public String condition;
         public String imagePath;
+        public String imageBase64;
         public String itemStatus;
         public String approvalStatus;
 
@@ -50,6 +52,7 @@ public class AuctionDTO {
             dto.category = item.getCategory();
             dto.condition = item.getCondition();
             dto.imagePath = item.getImagePath();
+            dto.imageBase64 = new ImageStorageService().loadImageAsBase64(dto.imagePath);
             dto.itemStatus = item.getItemStatus();
             dto.approvalStatus = item.getApprovalStatus();
             return dto;

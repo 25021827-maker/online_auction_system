@@ -13,6 +13,7 @@ import dto.BidRequest;
 import dto.AutoBidRequest;
 import com.google.gson.Gson;
 import util.VietnamTime;
+import util.ImageUtil;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -93,9 +94,7 @@ public class AuctionRoomController {
     }
     public void setData(Product p) {
         currentProduct = p;
-        if (p.getImagePath() != null && !p.getImagePath().isEmpty()) {
-            try { imageView.setImage(new Image(p.getImagePath())); } catch (Exception e) {}
-        }
+        imageView.setImage(ImageUtil.loadImage(p.getImageBase64(), p.getImagePath(), false));
 
         setupChart();
         loadChartHistory();
@@ -401,14 +400,8 @@ public class AuctionRoomController {
             currentProduct.setCategory(auction.item.category);
             currentProduct.setCondition(auction.item.condition);
             currentProduct.setImagePath(auction.item.imagePath);
-
-            if (auction.item.imagePath == null || auction.item.imagePath.isEmpty()) {
-                imageView.setImage(null);
-            } else {
-                try {
-                    imageView.setImage(new Image(auction.item.imagePath, true));
-                } catch (Exception ignored) {}
-            }
+            currentProduct.setImageBase64(auction.item.imageBase64);
+            imageView.setImage(ImageUtil.loadImage(auction.item.imageBase64, auction.item.imagePath, true));
         }
 
         currentProduct.setCurrentPrice(auction.currentPrice);

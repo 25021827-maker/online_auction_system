@@ -18,6 +18,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 
 import javafx.stage.Stage;
+import util.ImageUtil;
 
 public class ProductCardFactory {
 
@@ -80,16 +81,10 @@ public class ProductCardFactory {
 
         try {
 
-            if (p.getImagePath() != null
-                    && !p.getImagePath().isEmpty()) {
+            Image productImage = ImageUtil.loadImage(p.getImageBase64(), p.getImagePath(), true);
+            if (productImage != null) {
 
-                img.setImage(
-
-                        new Image(
-                                p.getImagePath(),
-                                true
-                        )
-                );
+                img.setImage(productImage);
 
             } else {
 

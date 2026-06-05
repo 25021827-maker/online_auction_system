@@ -19,6 +19,7 @@ public class AuctionDTO {
         public String category;
         public String condition;
         public String imagePath;
+        public String imageBase64;
         public String itemStatus;
         public String approvalStatus;
     }

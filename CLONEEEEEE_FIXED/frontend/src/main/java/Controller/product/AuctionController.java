@@ -178,6 +178,9 @@ public class AuctionController {
         LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now().plusHours(1);
 
         Product p = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
+        if (dto.item != null) {
+            p.setImageBase64(dto.item.imageBase64);
+        }
         // Ép kiểu ID từ Long xuống int cho khớp Frontend
         try {
             java.lang.reflect.Field idField = Product.class.getDeclaredField("id");

@@ -371,14 +371,7 @@ public class ClientHandler implements Runnable {
             validateAuctionSchedule(start, end);
             ImageStorageService imageStorageService = new ImageStorageService();
 
-            String serverImagePath = req.imagePath;
-
-            if (req.imageBase64 != null && !req.imageBase64.isBlank()) {
-                serverImagePath = imageStorageService.saveProductImage(
-                        req.imageBase64,
-                        req.imageFileName
-                );
-            }
+            String serverImagePath = resolveServerImagePath(req, imageStorageService);
 
             boolean isSuccess = auctionManager.createAuction(
                     req.sellerId,
@@ -417,14 +410,7 @@ public class ClientHandler implements Runnable {
 
             ImageStorageService imageStorageService = new ImageStorageService();
 
-            String serverImagePath = req.imagePath;
-
-            if (req.imageBase64 != null && !req.imageBase64.isBlank()) {
-                serverImagePath = imageStorageService.saveProductImage(
-                        req.imageBase64,
-                        req.imageFileName
-                );
-            }
+            String serverImagePath = resolveServerImagePath(req, imageStorageService);
 
             boolean isSuccess = new AuctionDAO().updateAuction(
                     req.auctionId,
@@ -465,6 +451,31 @@ public class ClientHandler implements Runnable {
                     "Du lieu cap nhat khong hop le: " + e.getMessage()
             ));
         }
+    }
+
+    private String resolveServerImagePath(CreateAuctionRequest req, ImageStorageService imageStorageService) throws java.io.IOException {
+        if (req.imageBase64 != null && !req.imageBase64.isBlank()) {
+            return imageStorageService.saveProductImage(req.imageBase64, req.imageFileName);
+        }
+
+        if (req.imagePath != null && req.imagePath.startsWith("file:")) {
+            String localImageBase64 = imageStorageService.loadImageAsBase64(req.imagePath);
+            if (localImageBase64 != null && !localImageBase64.isBlank()) {
+                return imageStorageService.saveProductImage(localImageBase64, imageFileNameFromPath(req.imagePath));
+            }
+        }
+
+        return req.imagePath;
+    }
+
+    private String imageFileNameFromPath(String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            return null;
+        }
+
+        String normalized = imagePath.replace("\\", "/");
+        int lastSlash = normalized.lastIndexOf('/');
+        return lastSlash >= 0 ? normalized.substring(lastSlash + 1) : normalized;
     }
 
     private void validateAuctionSchedule(LocalDateTime start, LocalDateTime end) {
@@ -691,4 +702,3 @@ public class ClientHandler implements Runnable {
         sendResponse(ResponsePayload.success("GET_BID_HISTORY_RESPONSE", "Thanh cong", result));
     }
 }
-

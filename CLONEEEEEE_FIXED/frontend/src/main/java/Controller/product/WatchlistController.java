@@ -99,6 +99,9 @@ public class WatchlistController {
         LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now();
 
         Product p = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
+        if (dto.item != null) {
+            p.setImageBase64(dto.item.imageBase64);
+        }
         try {
             java.lang.reflect.Field idField = Product.class.getDeclaredField("id");
             idField.setAccessible(true);
