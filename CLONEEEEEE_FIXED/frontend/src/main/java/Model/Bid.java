@@ -3,6 +3,7 @@ package Model;
 import util.VietnamTime;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Bid {
 
@@ -19,12 +20,19 @@ public class Bid {
             String bidder,
             double amount
     ) {
+        this(bidder, amount, VietnamTime.now());
+    }
 
+    public Bid(
+            String bidder,
+            double amount,
+            LocalDateTime bidTime
+    ) {
         this.bidder = bidder;
 
         this.amount = amount;
 
-        this.bidTime = VietnamTime.now();
+        this.bidTime = bidTime != null ? bidTime : VietnamTime.now();
     }
 
     // =========================
@@ -53,10 +61,9 @@ public class Bid {
 
         return bidder
                 + " bid $"
-                + amount
+                + String.format("%.2f", amount)
                 + " | "
-                + bidTime.toLocalTime()
-                .withNano(0);
+                + bidTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
     }
 }
 

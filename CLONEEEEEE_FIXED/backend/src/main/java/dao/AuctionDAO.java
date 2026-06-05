@@ -28,6 +28,10 @@ public class AuctionDAO {
     }
 
     public boolean placeBid(Long auctionId, Long bidderId, double bidAmount, boolean isAutoBid) throws SQLException {
+        return placeBid(auctionId, bidderId, bidAmount, isAutoBid, VietnamTime.now());
+    }
+
+    public boolean placeBid(Long auctionId, Long bidderId, double bidAmount, boolean isAutoBid, LocalDateTime bidTimestamp) throws SQLException {
         String lockAuctionSql = """
                 SELECT a.auction_id,
                        a.current_price,
@@ -67,8 +71,8 @@ public class AuctionDAO {
                 """;
 
         String insertBidSql = """
-                INSERT INTO bids (auction_id, bidder_id, bid_amount, is_auto_bid)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_time, is_auto_bid)
+                VALUES (?, ?, ?, ?, ?)
                 """;
 
         String updateAuctionSql = """
@@ -138,7 +142,8 @@ public class AuctionDAO {
                 }
             }
 
-            Timestamp now = Timestamp.valueOf(VietnamTime.now());
+            LocalDateTime safeBidTimestamp = bidTimestamp == null ? VietnamTime.now() : bidTimestamp;
+            Timestamp now = Timestamp.valueOf(safeBidTimestamp);
 
             if (!"OPEN".equals(status) && !"RUNNING".equals(status)) {
                 conn.rollback();
@@ -259,7 +264,8 @@ public class AuctionDAO {
                 stmt.setLong(1, auctionId);
                 stmt.setLong(2, bidderId);
                 stmt.setDouble(3, bidAmount);
-                stmt.setBoolean(4, isAutoBid);
+                stmt.setTimestamp(4, now);
+                stmt.setBoolean(5, isAutoBid);
                 stmt.executeUpdate();
 
                 try (ResultSet keys = stmt.getGeneratedKeys()) {
@@ -1167,7 +1173,7 @@ public class AuctionDAO {
     // THÃŠM Láº I HÃ€M NÃ€Y NHÆ¯ Má»˜T Cáº¦U Ná»I Äá»‚ AUCTION_SERVICE KHÃ”NG Bá»Š Lá»–I
     public boolean saveBidTransaction(Long auctionId, model.BidTransaction bid) throws SQLException {
         // Truyá»n ID vÃ  Sá»‘ tiá»n sang hÃ m placeBid
-        return placeBid(auctionId, bid.getBidderId(), bid.getAmount(), bid.isAutoBid());
+        return placeBid(auctionId, bid.getBidderId(), bid.getAmount(), bid.isAutoBid(), bid.getTimestamp());
     }
 
     public boolean createAuction(Long sellerId, String itemName, String description, double startingPrice, String category, String condition, String imagePath, java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
@@ -1324,16 +1330,19 @@ public class AuctionDAO {
 
     public List<BidTransaction> getBidHistory(Long auctionId) {
         List<BidTransaction> history = new ArrayList<>();
-        String sql = "SELECT bid_id, bidder_id, bid_amount, is_auto_bid FROM bids WHERE auction_id = ? ORDER BY bid_time ASC, bid_id ASC";
+        String sql = "SELECT bid_id, bidder_id, bid_amount, bid_time, is_auto_bid " +
+                "FROM bids WHERE auction_id = ? ORDER BY bid_time ASC, bid_id ASC";
         try (Connection conn = DatabaseConnection.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setLong(1, auctionId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
+                    Timestamp bidTime = rs.getTimestamp("bid_time");
                     history.add(new BidTransaction(
                             rs.getLong("bid_id"),
                             rs.getLong("bidder_id"),
                             rs.getDouble("bid_amount"),
+                            bidTime == null ? null : bidTime.toLocalDateTime(),
                             rs.getBoolean("is_auto_bid")
                     ));
                 }

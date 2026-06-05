@@ -82,7 +82,7 @@ public class AuctionManager {
 
         try {
             BidTransaction autoBid =
-                    new BidTransaction(null, decision.bidderId, decision.amount, true);
+                    new BidTransaction(null, decision.bidderId, decision.amount, util.VietnamTime.now(), true);
 
             targetService.placeBidInternal(autoBid);
 
@@ -91,6 +91,7 @@ public class AuctionManager {
             event.bidderId = decision.bidderId;
             event.amount = decision.amount;
             event.autoBid = true;
+            event.bidTime = autoBid.getTimestamp() == null ? null : autoBid.getTimestamp().toString();
 
             generatedBids.add(event);
 

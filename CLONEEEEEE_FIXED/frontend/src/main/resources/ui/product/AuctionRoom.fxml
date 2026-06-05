@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
@@ -149,10 +148,10 @@
 
                     <Label styleClass="section-title" text="LIVE PRICE TREND" />
 
-                    <LineChart fx:id="priceChart" animated="false" createSymbols="false" legendVisible="false" prefHeight="280">
+                    <LineChart fx:id="priceChart" animated="false" createSymbols="true" legendVisible="false" prefHeight="280">
 
                         <xAxis>
-                            <CategoryAxis label="Time (hh:mm:ss)" />
+                            <NumberAxis forceZeroInRange="false" label="Time" />
                         </xAxis>
 
                         <yAxis>

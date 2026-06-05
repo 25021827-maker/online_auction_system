@@ -12,15 +12,19 @@ public class BidTransaction implements Entity {
     private boolean autoBid;
 
     public BidTransaction(Long id, Long bidderId, double amount) {
-        this(id, bidderId, amount, false);
+        this(id, bidderId, amount, VietnamTime.now(), false);
     }
 
     public BidTransaction(Long id, Long bidderId, double amount, boolean autoBid) {
+        this(id, bidderId, amount, VietnamTime.now(), autoBid);
+    }
+
+    public BidTransaction(Long id, Long bidderId, double amount, LocalDateTime timestamp, boolean autoBid) {
         this.id = id;
         this.bidderId = bidderId;
         this.amount = amount;
         this.autoBid = autoBid;
-        this.timestamp = VietnamTime.now();
+        this.timestamp = timestamp != null ? timestamp : VietnamTime.now();
     }
 
     @Override
@@ -30,6 +34,10 @@ public class BidTransaction implements Entity {
     public double getAmount() { return amount; }
     public LocalDateTime getTimestamp() { return timestamp; }
     public boolean isAutoBid() { return autoBid; }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
 
     @Override
     public String toString() {

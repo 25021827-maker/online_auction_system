@@ -25,17 +25,19 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 
 public class AuctionRoomController {
@@ -48,15 +50,19 @@ public class AuctionRoomController {
     @FXML private Button bidButton;
     @FXML private ListView<String> bidHistoryList;
     @FXML private ImageView imageView;
-    @FXML private LineChart<String, Number> priceChart;
+    @FXML private LineChart<Number, Number> priceChart;
 
     private Product currentProduct;
     private Timeline refreshTimeline;
-    private XYChart.Series<String, Number> bidSeries;
+    private XYChart.Series<Number, Number> bidSeries;
+    private NumberAxis chartXAxis;
+    private NumberAxis chartYAxis;
     private int lastBidCount = 0;
     private boolean roomJoined = false;
     private final Gson gson = new Gson();
     private String lastRealtimeBidKey = "";
+    private static final DateTimeFormatter CHART_TIME_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm:ss");
 
     @FXML
     public void initialize() {
@@ -400,7 +406,8 @@ public class AuctionRoomController {
              * Phòng đấu giá chỉ nghe BID_UPDATE, nhưng vẫn giữ key này để an toàn
              * nếu backend hoặc socket gửi lặp lại cùng payload.
              */
-            String bidKey = newBid.auctionId + "-" + newBid.bidderId + "-" + newBid.amount + "-" + newBid.autoBid;
+            String bidKey = newBid.auctionId + "-" + newBid.bidderId + "-"
+                    + newBid.amount + "-" + newBid.autoBid + "-" + newBid.bidTime;
 
             if (bidKey.equals(lastRealtimeBidKey)) {
                 return;
@@ -419,10 +426,14 @@ public class AuctionRoomController {
                  * Không gọi GET_BID_HISTORY ngay tại đây nữa, vì sẽ làm UI bị reload
                  * và dễ tạo cảm giác auto bid nhảy nhiều lần.
                  */
-                currentProduct.addBid(new Bid(bidderName, newBid.amount));
+                currentProduct.addBid(new Bid(
+                        bidderName,
+                        newBid.amount,
+                        parseBidTime(newBid.bidTime)
+                ));
 
                 updateAllUI();
-                updateChartIfNeeded();
+                loadChartHistory();
 
                 SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
             });
@@ -501,32 +512,118 @@ public class AuctionRoomController {
         priceChart.getData().clear();
         priceChart.getData().add(bidSeries);
         priceChart.setAnimated(false);
-        CategoryAxis xAxis = (CategoryAxis) priceChart.getXAxis();
-        NumberAxis yAxis = (NumberAxis) priceChart.getYAxis();
-        yAxis.setForceZeroInRange(false);
-        yAxis.setAutoRanging(true);
+        priceChart.setCreateSymbols(true);
+
+        chartXAxis = (NumberAxis) priceChart.getXAxis();
+        chartYAxis = (NumberAxis) priceChart.getYAxis();
+
+        chartXAxis.setForceZeroInRange(false);
+        chartXAxis.setAutoRanging(false);
+        chartXAxis.setTickLabelFormatter(new StringConverter<>() {
+            @Override
+            public String toString(Number value) {
+                long millis = value.longValue();
+                return Instant.ofEpochMilli(millis)
+                        .atZone(VietnamTime.ZONE)
+                        .toLocalDateTime()
+                        .format(CHART_TIME_FORMAT);
+            }
+
+            @Override
+            public Number fromString(String string) {
+                return 0;
+            }
+        });
+
+        chartYAxis.setForceZeroInRange(false);
+        chartYAxis.setAutoRanging(false);
     }
 
     private void loadChartHistory() {
         bidSeries.getData().clear();
-        int count = 1;
-        for (Bid bid : currentProduct.getBidHistory()) {
-            bidSeries.getData().add(new XYChart.Data<>("Bid #" + (count++), bid.getAmount()));
+
+        List<Bid> history = currentProduct.getBidHistory();
+        if (history == null || history.isEmpty()) {
+            lastBidCount = 0;
+            return;
         }
-        lastBidCount = currentProduct.getBidHistory().size();
+
+        history.sort(Comparator.comparing(Bid::getBidTime));
+
+        long minX = Long.MAX_VALUE;
+        long maxX = Long.MIN_VALUE;
+        double minY = Double.MAX_VALUE;
+        double maxY = -Double.MAX_VALUE;
+
+        for (Bid bid : history) {
+            long x = toEpochMillis(bid.getBidTime());
+            double y = bid.getAmount();
+
+            XYChart.Data<Number, Number> point = new XYChart.Data<>(x, y);
+            bidSeries.getData().add(point);
+            attachBidTooltip(point, bid);
+
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        }
+
+        applyAxisBounds(minX, maxX, minY, maxY);
+        lastBidCount = history.size();
     }
 
-    private void updateChartIfNeeded() {
-        int currentSize = currentProduct.getBidHistory().size();
-        if (currentSize > lastBidCount) {
-            Bid latest = currentProduct.getBidHistory().get(currentSize - 1);
-            String timestamp = VietnamTime.timeNow().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
-            Platform.runLater(() -> {
-                bidSeries.getData().add(new XYChart.Data<>(timestamp, latest.getAmount()));
-                if (bidSeries.getData().size() > 10) bidSeries.getData().remove(0);
-            });
-            lastBidCount = currentSize;
+    private long toEpochMillis(LocalDateTime time) {
+        LocalDateTime safe = time != null ? time : VietnamTime.now();
+        return safe.atZone(VietnamTime.ZONE).toInstant().toEpochMilli();
+    }
+
+    private LocalDateTime parseBidTime(String value) {
+        try {
+            if (value == null || value.isBlank()) {
+                return VietnamTime.now();
+            }
+            return LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (Exception e) {
+            return VietnamTime.now();
         }
+    }
+
+    private void attachBidTooltip(XYChart.Data<Number, Number> point, Bid bid) {
+        point.nodeProperty().addListener((obs, oldNode, newNode) -> {
+            if (newNode != null) {
+                Tooltip tooltip = new Tooltip(
+                        "Bidder: " + bid.getBidder()
+                                + "\nTime: " + bid.getBidTime().format(CHART_TIME_FORMAT)
+                                + "\nBid: $" + String.format("%.2f", bid.getAmount())
+                );
+                Tooltip.install(newNode, tooltip);
+            }
+        });
+    }
+
+    private void applyAxisBounds(long minX, long maxX, double minY, double maxY) {
+        double xRange = Math.max(1000, maxX - minX);
+        double yRange = Math.max(1, maxY - minY);
+
+        double xPadding = Math.max(1000, xRange * 0.08);
+        double yPadding = Math.max(1, yRange * 0.10);
+
+        if (minX == maxX) {
+            xPadding = 5000;
+        }
+
+        if (Double.compare(minY, maxY) == 0) {
+            yPadding = Math.max(1, maxY * 0.05);
+        }
+
+        chartXAxis.setLowerBound(minX - xPadding);
+        chartXAxis.setUpperBound(maxX + xPadding);
+        chartXAxis.setTickUnit(Math.max(1000, (chartXAxis.getUpperBound() - chartXAxis.getLowerBound()) / 6.0));
+
+        chartYAxis.setLowerBound(Math.max(0, minY - yPadding));
+        chartYAxis.setUpperBound(maxY + yPadding);
+        chartYAxis.setTickUnit(Math.max(1, (chartYAxis.getUpperBound() - chartYAxis.getLowerBound()) / 6.0));
     }
 
     @FXML
@@ -573,7 +670,11 @@ public class AuctionRoomController {
 
                         for (dto.BidRequest b : history) {
                             String bidderName = "User#" + b.bidderId + (b.autoBid ? " (AUTO)" : "");
-                            currentProduct.addBid(new Bid(bidderName, b.amount));
+                            currentProduct.addBid(new Bid(
+                                    bidderName,
+                                    b.amount,
+                                    parseBidTime(b.bidTime)
+                            ));
                         }
 
                         updateBidHistory();

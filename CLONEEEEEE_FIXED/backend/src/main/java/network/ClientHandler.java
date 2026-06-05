@@ -352,6 +352,7 @@ public class ClientHandler implements Runnable {
 
             boolean ok = auctionManager.processBid(bidReq.auctionId, newBid);
             bidReq.autoBid = false;
+            bidReq.bidTime = newBid.getTimestamp() == null ? null : newBid.getTimestamp().toString();
 
             if (!ok) {
                 sendResponse(ResponsePayload.fail("PLACE_BID_RESPONSE", "Gia dat khong hop le hoac phien da dong."));
@@ -944,6 +945,7 @@ public class ClientHandler implements Runnable {
             dto.bidderId = bid.getBidderId();
             dto.amount = bid.getAmount();
             dto.autoBid = bid.isAutoBid();
+            dto.bidTime = bid.getTimestamp() == null ? null : bid.getTimestamp().toString();
             result.add(dto);
         }
 
