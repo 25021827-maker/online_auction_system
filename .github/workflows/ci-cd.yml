@@ -1,0 +1,40 @@
+name: Java CI/CD Pipeline for Auction System
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build and Test Backend
+      run: mvn -B clean package --file backend/pom.xml
+
+    - name: Build and Test Frontend
+      run: mvn -B clean package --file frontend/pom.xml
+
+    - name: Upload Backend Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Backend-App
+        path: backend/target/*.jar
+
+    - name: Upload Frontend Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Frontend-App
+        path: frontend/target/*.jar
