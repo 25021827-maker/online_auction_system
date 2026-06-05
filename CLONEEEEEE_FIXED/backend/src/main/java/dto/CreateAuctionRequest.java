@@ -10,5 +10,11 @@ public class CreateAuctionRequest {
     public String condition;
     public String startTime;
     public String endTime;
-    public String imagePath; // ĐÃ THÊM DÒNG NÀY
+
+    // Đường dẫn ảnh đã lưu trên server, ví dụ: uploads/products/xxx.jpg
+    public String imagePath;
+
+    // Ảnh client gửi lên server
+    public String imageBase64;
+    public String imageFileName;
 }

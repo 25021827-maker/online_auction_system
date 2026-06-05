@@ -10,6 +10,7 @@ import model.User;
 import service.AuctionManager;
 import service.UserService;
 import util.VietnamTime;
+import service.ImageStorageService;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -241,16 +242,16 @@ public class ClientHandler implements Runnable {
         User loggedInUser = userService.login(loginReq.username, loginReq.password);
         authenticatedUser = loggedInUser;
         sendResponse(loggedInUser != null
-                ? ResponsePayload.success("LOGIN_RESPONSE", "Äï¿½Æ’ng nháº­p thÃ nh cÃ´ng", loggedInUser)
-                : ResponsePayload.fail("LOGIN_RESPONSE", "Sai tÃªn ï¿½â€˜ï¿½Æ’ng nháº­p hoáº·c máº­t kháº©u"));
+                ? ResponsePayload.success("LOGIN_RESPONSE", "Dang nhap thanh cong", loggedInUser)
+                : ResponsePayload.fail("LOGIN_RESPONSE", "Sai ten dang nhap hoac mat khau"));
     }
 
     private void processRegister(String jsonData) {
         RegisterRequest req = gson.fromJson(jsonData, RegisterRequest.class);
         boolean isSuccess = userService.register(req.username, req.password, req.email, req.role);
         sendResponse(isSuccess
-                ? ResponsePayload.success("REGISTER_RESPONSE", "Äï¿½Æ’ng kÃ½ thÃ nh cÃ´ng!", null)
-                : ResponsePayload.fail("REGISTER_RESPONSE", "Äï¿½Æ’ng kÃ½ tháº¥t báº¡i. TÃªn ï¿½â€˜ï¿½Æ’ng nháº­p/email cÃ³ thï¿½Æ’ ï¿½â€˜Ã£ tï¿½â€œn táº¡i."));
+                ? ResponsePayload.success("REGISTER_RESPONSE", "Dang ky thanh cong", null)
+                : ResponsePayload.fail("REGISTER_RESPONSE", "Dang ky that bai. Ten dang nhap hoac email co the da ton tai."));
     }
 
     private void processBid(String jsonData) {
@@ -356,7 +357,7 @@ public class ClientHandler implements Runnable {
 
     private void processGetActiveAuctions() {
         List<Auction> activeAuctions = auctionManager.getActiveAuctionsList();
-        sendResponse(ResponsePayload.success("GET_ACTIVE_AUCTIONS_RESPONSE", "ThÃ nh cÃ´ng", toAuctionDTOs(activeAuctions)));
+        sendResponse(ResponsePayload.success("GET_ACTIVE_AUCTIONS_RESPONSE", "Thanh cong", toAuctionDTOs(activeAuctions)));
     }
 
     private void processCreateAuction(String dataJson) {
@@ -368,41 +369,101 @@ public class ClientHandler implements Runnable {
             LocalDateTime start = LocalDateTime.parse(req.startTime);
             LocalDateTime end = LocalDateTime.parse(req.endTime);
             validateAuctionSchedule(start, end);
-            boolean isSuccess = auctionManager.createAuction(req.sellerId, req.itemName, req.description,
-                    req.startingPrice, req.category, req.condition, req.imagePath, start, end);
+            ImageStorageService imageStorageService = new ImageStorageService();
+
+            String serverImagePath = req.imagePath;
+
+            if (req.imageBase64 != null && !req.imageBase64.isBlank()) {
+                serverImagePath = imageStorageService.saveProductImage(
+                        req.imageBase64,
+                        req.imageFileName
+                );
+            }
+
+            boolean isSuccess = auctionManager.createAuction(
+                    req.sellerId,
+                    req.itemName,
+                    req.description,
+                    req.startingPrice,
+                    req.category,
+                    req.condition,
+                    serverImagePath,
+                    start,
+                    end
+            );
 
             if (isSuccess) {
-                sendResponse(ResponsePayload.success("CREATE_AUCTION_RESPONSE", "Táº¡o phiÃªn ï¿½â€˜áº¥u giÃ¡ thÃ nh cÃ´ng", null));
-                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "CÃ³ sáº£n pháº©m mï¿½â€ºi", null));
+                sendResponse(ResponsePayload.success("CREATE_AUCTION_RESPONSE", "Tao phien dau gia thanh cong", null));
+                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Co san pham moi", null));
             } else {
-                sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "KhÃ´ng thï¿½Æ’ táº¡o phiÃªn ï¿½â€˜áº¥u giÃ¡."));
+                sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "Khong the tao phien dau gia"));
             }
         } catch (Exception e) {
-            sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "Dá»¯ liï¿½â€¡u táº¡o phiÃªn khÃ´ng há»£p lï¿½â€¡: " + e.getMessage()));
+            sendResponse(ResponsePayload.fail("CREATE_AUCTION_RESPONSE", "Du lieu tao phien khong hop le: " + e.getMessage()));
         }
     }
 
     private void processUpdateAuction(String dataJson) {
         try {
             CreateAuctionRequest req = gson.fromJson(dataJson, CreateAuctionRequest.class);
+
             if (req == null || !requireSeller(req.sellerId, "UPDATE_AUCTION_RESPONSE")) {
                 return;
             }
+
             LocalDateTime start = LocalDateTime.parse(req.startTime);
             LocalDateTime end = LocalDateTime.parse(req.endTime);
             validateAuctionSchedule(start, end);
-            boolean isSuccess = new AuctionDAO().updateAuction(req.auctionId, req.sellerId, req.itemName, req.description,
-                    req.startingPrice, req.category, req.condition, req.imagePath, start, end);
+
+            ImageStorageService imageStorageService = new ImageStorageService();
+
+            String serverImagePath = req.imagePath;
+
+            if (req.imageBase64 != null && !req.imageBase64.isBlank()) {
+                serverImagePath = imageStorageService.saveProductImage(
+                        req.imageBase64,
+                        req.imageFileName
+                );
+            }
+
+            boolean isSuccess = new AuctionDAO().updateAuction(
+                    req.auctionId,
+                    req.sellerId,
+                    req.itemName,
+                    req.description,
+                    req.startingPrice,
+                    req.category,
+                    req.condition,
+                    serverImagePath,
+                    start,
+                    end
+            );
 
             if (isSuccess) {
                 auctionManager.reloadActiveAuctions();
-                sendResponse(ResponsePayload.success("UPDATE_AUCTION_RESPONSE", "Cáº­p nháº­t thÃ nh cÃ´ng!", null));
-                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m ï¿½â€˜Æ°á»£c cáº­p nháº­t", req.auctionId));
+                sendResponse(ResponsePayload.success(
+                        "UPDATE_AUCTION_RESPONSE",
+                        "Cap nhat phien dau gia thanh cong",
+                        null
+                ));
+                ServerMain.broadcast(ResponsePayload.success(
+                        "NEW_AUCTION_EVENT",
+                        "San pham duoc cap nhat",
+                        req.auctionId
+                ));
             } else {
-                sendResponse(ResponsePayload.fail("UPDATE_AUCTION_RESPONSE", "KhÃ´ng thï¿½Æ’ cáº­p nháº­t phiÃªn ï¿½â€˜áº¥u giÃ¡."));
+                sendResponse(ResponsePayload.fail(
+                        "UPDATE_AUCTION_RESPONSE",
+                        "Khong the cap nhat phien dau gia."
+                ));
             }
+
         } catch (Exception e) {
-            sendResponse(ResponsePayload.fail("UPDATE_AUCTION_RESPONSE", "Dá»¯ liï¿½â€¡u cáº­p nháº­t khÃ´ng há»£p lï¿½â€¡: " + e.getMessage()));
+            e.printStackTrace();
+            sendResponse(ResponsePayload.fail(
+                    "UPDATE_AUCTION_RESPONSE",
+                    "Du lieu cap nhat khong hop le: " + e.getMessage()
+            ));
         }
     }
 
@@ -428,7 +489,7 @@ public class ClientHandler implements Runnable {
         if (!requireSeller(sellerId, "GET_MY_PRODUCTS_RESPONSE")) {
             return;
         }
-        sendResponse(ResponsePayload.success("GET_MY_PRODUCTS_RESPONSE", "ThÃ nh cÃ´ng", toAuctionDTOs(new AuctionDAO().getAuctionsBySeller(sellerId))));
+        sendResponse(ResponsePayload.success("GET_MY_PRODUCTS_RESPONSE", "Thanh cong", toAuctionDTOs(new AuctionDAO().getAuctionsBySeller(sellerId))));
     }
 
     private void processDeleteProduct(String dataJson) {
@@ -439,10 +500,10 @@ public class ClientHandler implements Runnable {
             return;
         }
         if (new AuctionDAO().deleteAuction(auctionId, sellerId)) {
-            sendResponse(ResponsePayload.success("DELETE_PRODUCT_RESPONSE", "ÄÃ£ xÃ³a", null));
-            ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Sáº£n pháº©m bï¿½â€¹ xÃ³a", null));
+            sendResponse(ResponsePayload.success("DELETE_PRODUCT_RESPONSE", "Da xoa", null));
+            ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "San pham bi xoa", null));
         } else {
-            sendResponse(ResponsePayload.fail("DELETE_PRODUCT_RESPONSE", "KhÃ´ng thï¿½Æ’ xÃ³a sáº£n pháº©m."));
+            sendResponse(ResponsePayload.fail("DELETE_PRODUCT_RESPONSE", "Khong the xoa san pham."));
         }
     }
 
@@ -452,7 +513,7 @@ public class ClientHandler implements Runnable {
         if (!requireSameUser(userId, "GET_WATCHLIST_RESPONSE")) {
             return;
         }
-        sendResponse(ResponsePayload.success("GET_WATCHLIST_RESPONSE", "ThÃ nh cÃ´ng", toAuctionDTOs(new AuctionDAO().getWatchlist(userId))));
+        sendResponse(ResponsePayload.success("GET_WATCHLIST_RESPONSE", "Thanh cong", toAuctionDTOs(new AuctionDAO().getWatchlist(userId))));
     }
 
     private List<AuctionDTO> toAuctionDTOs(List<Auction> auctions) {

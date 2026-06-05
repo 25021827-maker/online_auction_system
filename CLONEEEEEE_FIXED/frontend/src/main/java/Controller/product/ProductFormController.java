@@ -26,26 +26,39 @@ public class ProductFormController {
     private static final long MIN_AUCTION_DURATION_MINUTES = 5;
 
     // Khớp 100% với fx:id trong ProductForm.fxml
-    @FXML private TextField txtName;
-    @FXML private TextArea txtDesc;
-    @FXML private TextField txtPrice;
+    @FXML
+    private TextField txtName;
+    @FXML
+    private TextArea txtDesc;
+    @FXML
+    private TextField txtPrice;
 
-    @FXML private ComboBox<String> categoryBox;
-    @FXML private ComboBox<String> conditionBox;
+    @FXML
+    private ComboBox<String> categoryBox;
+    @FXML
+    private ComboBox<String> conditionBox;
 
-    @FXML private DatePicker startDatePicker;
-    @FXML private TextField startHourField;
-    @FXML private TextField startMinuteField;
+    @FXML
+    private DatePicker startDatePicker;
+    @FXML
+    private TextField startHourField;
+    @FXML
+    private TextField startMinuteField;
 
-    @FXML private DatePicker endDatePicker;
-    @FXML private TextField endHourField;
-    @FXML private TextField endMinuteField;
+    @FXML
+    private DatePicker endDatePicker;
+    @FXML
+    private TextField endHourField;
+    @FXML
+    private TextField endMinuteField;
 
-    @FXML private Button btnSubmit;
+    @FXML
+    private Button btnSubmit;
 
     private final Gson gson = new Gson();
     private Model.Product editingProduct = null;
     private String selectedImagePath = "";
+    private File selectedImageFile = null;
 
 
     @FXML
@@ -82,6 +95,7 @@ public class ProductFormController {
             showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã nạp ảnh thành công!");
         }
     }
+
     // Hàm gắn với onAction="#saveProduct" trong FXML
     @FXML
     private void saveProduct(ActionEvent event) {
@@ -183,7 +197,8 @@ public class ProductFormController {
                 }
                 try {
                     SceneNavigator.loadFromNode(txtName, "/ui/product/AuctionMain.fxml", "Sàn đấu giá");
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             } else {
                 showAlert(Alert.AlertType.ERROR, "Lỗi Server", response.getMessage());
             }
@@ -203,16 +218,25 @@ public class ProductFormController {
         alert.setContentText(content);
         alert.show();
     }
+
     public void setEditData(Model.Product p) {
         this.editingProduct = p;
+
         this.selectedImagePath = p.getImagePath() == null ? "" : p.getImagePath();
+        this.selectedImageFile = null;
+
         txtName.setText(p.getTitle());
         txtDesc.setText(p.getDescription());
         txtPrice.setText(String.valueOf(p.getCurrentPrice()));
-        if (categoryBox != null) categoryBox.setValue(p.getCategory());
-        if (conditionBox != null) conditionBox.setValue(p.getCondition());
 
-        // Điền ngày giờ
+        if (categoryBox != null) {
+            categoryBox.setValue(p.getCategory());
+        }
+
+        if (conditionBox != null) {
+            conditionBox.setValue(p.getCondition());
+        }
+
         startDatePicker.setValue(p.getStartTime().toLocalDate());
         startHourField.setText(String.valueOf(p.getStartTime().getHour()));
         startMinuteField.setText(String.valueOf(p.getStartTime().getMinute()));
@@ -223,7 +247,6 @@ public class ProductFormController {
 
         btnSubmit.setText("UPDATE PRODUCT");
 
-        // Nghe thêm luồng phản hồi UPDATE
         SocketClient.getInstance().on("UPDATE_AUCTION_RESPONSE", this::handleCreateResponse);
     }
 }

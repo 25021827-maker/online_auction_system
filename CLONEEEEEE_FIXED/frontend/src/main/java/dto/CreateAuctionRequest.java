@@ -10,5 +10,9 @@ public class CreateAuctionRequest {
     public String condition;
     public String startTime;
     public String endTime;
-    public String imagePath; // ĐÃ THÊM DÒNG NÀY
+
+    public String imagePath;
+
+    public String imageBase64;
+    public String imageFileName;
 }
