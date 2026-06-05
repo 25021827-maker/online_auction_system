@@ -28,6 +28,7 @@ import java.util.List;
 public class WatchlistController {
 
     @FXML private FlowPane watchlistContainer;
+
     private Timeline liveTimeline;
     private final List<ProductCard> activeCards = new ArrayList<>();
     private final Gson gson = new Gson();
@@ -39,66 +40,155 @@ public class WatchlistController {
         }
 
         SocketClient socketClient = SocketClient.getInstance();
-        socketClient.clearListeners("GET_ACTIVE_AUCTIONS_RESPONSE");
-        socketClient.clearListeners("NEW_BID_EVENT");
+
         socketClient.clearListeners("GET_WATCHLIST_RESPONSE");
+        socketClient.clearListeners("NEW_BID_EVENT");
+        socketClient.clearListeners("AUCTION_PRICE_CHANGED");
+        socketClient.clearListeners("AUCTION_TIME_EXTENDED");
         socketClient.clearListeners("NEW_AUCTION_EVENT");
+        socketClient.clearListeners("ADD_WATCHLIST_RESPONSE");
+        socketClient.clearListeners("REMOVE_WATCHLIST_RESPONSE");
+
         socketClient.on("GET_WATCHLIST_RESPONSE", this::handleLoadWatchlist);
         socketClient.on("NEW_BID_EVENT", response -> fetchWatchlistFromServer());
+        socketClient.on("AUCTION_PRICE_CHANGED", response -> fetchWatchlistFromServer());
+        socketClient.on("AUCTION_TIME_EXTENDED", response -> fetchWatchlistFromServer());
         socketClient.on("NEW_AUCTION_EVENT", response -> fetchWatchlistFromServer());
 
-        // Phát lệnh lấy danh sách Watchlist
+        /*
+         * Khi user bấm Watch/Unwatch ngay trong màn Watchlist,
+         * reload lại danh sách để nếu đã Unwatch thì card biến mất khỏi My Watchlist.
+         */
+        socketClient.on("ADD_WATCHLIST_RESPONSE", response -> {
+            if ("SUCCESS".equals(response.getStatus())) {
+                fetchWatchlistFromServer();
+            }
+        });
+
+        socketClient.on("REMOVE_WATCHLIST_RESPONSE", response -> {
+            if ("SUCCESS".equals(response.getStatus())) {
+                fetchWatchlistFromServer();
+            }
+        });
+
         fetchWatchlistFromServer();
 
-        // Chạy đồng hồ lùi giây liên tục
         liveTimeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> {
-            for (ProductCard card : activeCards) { card.update(); }
+            for (ProductCard card : activeCards) {
+                card.update();
+            }
         }));
         liveTimeline.setCycleCount(Timeline.INDEFINITE);
         liveTimeline.play();
     }
 
     private void fetchWatchlistFromServer() {
-        if (Session.getCurrentUser() == null) return;
-        RequestPayload req = new RequestPayload("GET_WATCHLIST", "{\"userId\":" + Session.getCurrentUser().getId() + "}");
+        if (Session.getCurrentUser() == null) {
+            return;
+        }
+
+        RequestPayload req = new RequestPayload(
+                "GET_WATCHLIST",
+                "{\"userId\":" + Session.getCurrentUser().getId() + "}"
+        );
+
         SocketClient.getInstance().sendRequest(req);
     }
 
     private void handleLoadWatchlist(ResponsePayload response) {
-        if ("SUCCESS".equals(response.getStatus())) {
-            Platform.runLater(() -> {
-                try {
-                    for (ProductCard card : activeCards) { card.stopTimeline(); }
-                    activeCards.clear();
-                    watchlistContainer.getChildren().clear();
-
-                    Type listType = new TypeToken<List<AuctionDTO>>(){}.getType();
-                    List<AuctionDTO> dtos = gson.fromJson(gson.toJson(response.getData()), listType);
-
-                    if (dtos != null) {
-                        for (AuctionDTO dto : dtos) {
-                            Product p = mapToProduct(dto);
-                            ProductCard card = new ProductCard(p);
-                            activeCards.add(card);
-                            watchlistContainer.getChildren().add(card.getRoot());
-                        }
-                    }
-                } catch (Exception e) { e.printStackTrace(); }
-            });
+        if (!"SUCCESS".equals(response.getStatus())) {
+            return;
         }
+
+        Platform.runLater(() -> {
+            try {
+                for (ProductCard card : activeCards) {
+                    card.stopTimeline();
+                }
+
+                activeCards.clear();
+
+                if (watchlistContainer != null) {
+                    watchlistContainer.getChildren().clear();
+                }
+
+                Type listType = new TypeToken<List<AuctionDTO>>() {}.getType();
+                List<AuctionDTO> dtos = gson.fromJson(gson.toJson(response.getData()), listType);
+
+                /*
+                 * Reset local watchlist theo đúng dữ liệu server.
+                 * Sau đó mapToProduct sẽ add lại từng ID đang có trong Watchlist.
+                 */
+                if (Session.getCurrentUser() != null) {
+                    Session.getCurrentUser().setWatchlistProductIds(new ArrayList<>());
+                }
+
+                if (dtos == null || dtos.isEmpty()) {
+                    return;
+                }
+
+                for (AuctionDTO dto : dtos) {
+                    Product p = mapToProduct(dto);
+                    ProductCard card = new ProductCard(p);
+
+                    activeCards.add(card);
+
+                    if (watchlistContainer != null) {
+                        watchlistContainer.getChildren().add(card.getRoot());
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private Product mapToProduct(AuctionDTO dto) {
-        String title = (dto.item != null) ? dto.item.name : "";
-        double price = dto.currentPrice;
-        String image = (dto.item != null) ? dto.item.imagePath : "";
-        String desc = (dto.item != null) ? dto.item.description : "";
+        String title = (dto.item != null && dto.item.name != null)
+                ? dto.item.name
+                : "Untitled product";
+
+        double price = dto.currentPrice > 0
+                ? dto.currentPrice
+                : (dto.item != null ? dto.item.startingPrice : 0);
+
+        String image = (dto.item != null && dto.item.imagePath != null)
+                ? dto.item.imagePath
+                : "";
+
+        String desc = (dto.item != null && dto.item.description != null)
+                ? dto.item.description
+                : "";
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : LocalDateTime.now();
-        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : LocalDateTime.now();
 
-        Product p = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
+        LocalDateTime st = dto.startTime != null
+                ? LocalDateTime.parse(dto.startTime, formatter)
+                : VietnamTime.now();
+
+        LocalDateTime et = dto.endTime != null
+                ? LocalDateTime.parse(dto.endTime, formatter)
+                : VietnamTime.now().plusHours(1);
+
+        Product p = new Product(
+                title,
+                price,
+                image,
+                "Seller#" + dto.sellerId,
+                st,
+                et,
+                desc
+        );
+
+        if (dto.serverTime != null && !dto.serverTime.isBlank()) {
+            try {
+                p.syncServerTime(
+                        LocalDateTime.parse(dto.serverTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                );
+            } catch (Exception ignored) {
+            }
+        }
 
         try {
             java.lang.reflect.Field idField = Product.class.getDeclaredField("id");
@@ -122,9 +212,6 @@ public class WatchlistController {
             p.setImageBase64(dto.item.imageBase64);
         }
 
-        /*
-         * Vì sản phẩm nằm trong Watchlist rồi nên đánh dấu local cho nút hiện ★ Watching.
-         */
         if (Session.getCurrentUser() != null) {
             Session.getCurrentUser().addToWatchlist(p.getId());
         }
@@ -134,8 +221,21 @@ public class WatchlistController {
 
     @FXML
     private void goBack() {
-        if (liveTimeline != null) liveTimeline.stop();
-        for (ProductCard card : activeCards) card.stopTimeline();
-        try { SceneNavigator.loadFromNode(watchlistContainer, "/ui/product/AuctionMain.fxml", "Sàn đấu giá"); } catch (Exception e) {}
+        if (liveTimeline != null) {
+            liveTimeline.stop();
+        }
+
+        for (ProductCard card : activeCards) {
+            card.stopTimeline();
+        }
+
+        try {
+            SceneNavigator.loadFromNode(
+                    watchlistContainer,
+                    "/ui/product/AuctionMain.fxml",
+                    "San dau gia"
+            );
+        } catch (Exception ignored) {
+        }
     }
 }

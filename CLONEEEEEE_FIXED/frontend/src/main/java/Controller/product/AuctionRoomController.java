@@ -94,6 +94,7 @@ public class AuctionRoomController {
     }
     public void setData(Product p) {
         currentProduct = p;
+        lastRealtimeBidKey = "";
         imageView.setImage(ImageUtil.loadImage(p.getImageBase64(), p.getImagePath(), false));
 
         setupChart();
@@ -177,11 +178,21 @@ public class AuctionRoomController {
                 return;
             }
 
-            String newEndTime = data.get("newEndTime").getAsString();
+            if (data.has("newEndTime") && !data.get("newEndTime").isJsonNull()) {
+                String newEndTime = data.get("newEndTime").getAsString();
+                currentProduct.setEndTime(
+                        LocalDateTime.parse(newEndTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                );
+            }
 
-            currentProduct.setEndTime(java.time.LocalDateTime.parse(newEndTime));
+            if (data.has("serverTime") && !data.get("serverTime").isJsonNull()) {
+                String serverTime = data.get("serverTime").getAsString();
+                currentProduct.syncServerTime(
+                        LocalDateTime.parse(serverTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                );
+            }
 
-            updateAllUI();
+            Platform.runLater(this::updateAllUI);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -292,6 +303,10 @@ public class AuctionRoomController {
             if (currentProduct != null) {
                 SocketClient.getInstance().sendRequest(
                         new RequestPayload("GET_BID_HISTORY", "{\"auctionId\":" + currentProduct.getId() + "}")
+                );
+
+                SocketClient.getInstance().sendRequest(
+                        new RequestPayload("GET_ACTIVE_AUCTIONS", "{}")
                 );
             }
         } else {
@@ -417,6 +432,14 @@ public class AuctionRoomController {
         }
         if (auction.endTime != null) {
             currentProduct.setEndTime(LocalDateTime.parse(auction.endTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        }
+        if (auction.serverTime != null && !auction.serverTime.isBlank()) {
+            try {
+                currentProduct.syncServerTime(
+                        LocalDateTime.parse(auction.serverTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                );
+            } catch (Exception ignored) {
+            }
         }
     }
 

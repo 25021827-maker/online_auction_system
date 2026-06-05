@@ -9,6 +9,12 @@ public class AuctionDTO {
     public double currentPrice;
     public Long highestBidderId;
 
+    /*
+     * Gio hien tai cua server.
+     * Frontend dung de dong bo countdown voi server.
+     */
+    public String serverTime;
+
     public ItemDTO item;
 
     public static class ItemDTO {

@@ -2,22 +2,27 @@ package ui.product;
 
 import Controller.product.AuctionRoomController;
 import Model.Product;
-import Model.User;
+import Service.core.SceneNavigator;
 import Session.Session;
-import dto.RequestPayload;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import dto.RequestPayload;
 import network.SocketClient;
+import util.ImageUtil;
+
+import java.util.Objects;
 
 public class ProductCard {
 
@@ -31,16 +36,24 @@ public class ProductCard {
     private ImageView imageView;
     private Button watchBtn;
     private Timeline refreshTimeline;
+    private String loadedImagePath = "";
 
     public ProductCard(Product product) {
         this.product = product;
 
         buildUI();
-        loadImage();
+
+        loadImageIfChanged();
+
+        // Cập nhật các thông tin bằng chữ lần đầu tiên
         update();
 
+        // REALTIME UPDATE - Giữ bộ đếm chạy nội bộ cho từng Card để tự nhảy giây đếm ngược
         refreshTimeline = new Timeline(
-                new KeyFrame(Duration.seconds(1), e -> update())
+                new KeyFrame(
+                        Duration.seconds(1),
+                        e -> update()
+                )
         );
         refreshTimeline.setCycleCount(Timeline.INDEFINITE);
         refreshTimeline.play();
@@ -48,72 +61,111 @@ public class ProductCard {
 
     private void buildUI() {
         root = new VBox();
-        root.setSpacing(10);
-        root.setPrefWidth(220);
-        root.getStyleClass().add("auction-card");
+        root.setSpacing(12);
+        root.setPrefWidth(260); // Độ rộng 260px giúp bố cục card thoáng và đẹp mắt hơn
+        root.setPadding(new Insets(16));
 
+        // 🔥 ÉP ĐỒNG BỘ CSS: Tự động nạp file css dành riêng cho card ngay khi component được khởi tạo
+        try {
+            root.getStylesheets().add(getClass().getResource("/style/pages/product-card.css").toExternalForm());
+        } catch (Exception e) {
+            System.out.println("Cảnh báo: Chưa tìm thấy file product-card.css tại thư mục resources/style/pages/");
+        }
+
+        // Gán class định danh chính cho Card
+        root.getStyleClass().add("product-card");
+
+        // =====================================================
+        // IMAGE CONTAINER (Khung chứa ảnh bo góc chống lộ viền thô)
+        // =====================================================
         imageView = new ImageView();
-        imageView.setFitWidth(180);
-        imageView.setFitHeight(140);
+        imageView.setFitWidth(220);
+        imageView.setFitHeight(150);
         imageView.setPreserveRatio(true);
 
+        StackPane imageContainer = new StackPane(imageView);
+        imageContainer.getStyleClass().add("image-container");
+        imageContainer.setPrefHeight(160);
+        imageContainer.setAlignment(Pos.CENTER);
+
+        // =====================================================
+        // LABELS & STYLE CLASSES (Chuyển hoàn toàn sang CSS)
+        // =====================================================
         idLabel = new Label();
-        idLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px; -fx-font-weight: bold;");
+        idLabel.getStyleClass().add("product-id");
 
         titleLabel = new Label();
-        priceLabel = new Label();
-        statusLabel = new Label();
-        timerLabel = new Label();
+        titleLabel.getStyleClass().add("product-name");
+        titleLabel.setWrapText(true);
 
+        priceLabel = new Label();
+        priceLabel.getStyleClass().add("product-price");
+
+        statusLabel = new Label();
+        statusLabel.getStyleClass().add("product-status");
+
+        timerLabel = new Label();
+        timerLabel.getStyleClass().add("product-countdown");
+
+        // Nhóm các nhãn chữ thông tin lại thành một block gọn gàng
+        VBox infoContainer = new VBox(6);
+        infoContainer.getChildren().addAll(idLabel, titleLabel, priceLabel, statusLabel, timerLabel);
+
+        // =====================================================
+        // 🎯 NÚT WATCHLIST & BẮT SỰ KIỆN
+        // =====================================================
         watchBtn = new Button();
-        watchBtn.getStyleClass().add("secondary-button");
+        watchBtn.setMaxWidth(Double.MAX_VALUE); // Cho nút kéo dãn full chiều rộng card nhìn vuông vắn và hiện đại
+        watchBtn.getStyleClass().add("watch-button");
 
         watchBtn.setOnAction(e -> {
             e.consume();
             handleWatchButtonClick();
         });
 
+        // =====================================================
+        // ADD CÁC THÀNH PHẦN VÀO ROOT
+        // =====================================================
         root.getChildren().addAll(
-                imageView,
-                idLabel,
-                titleLabel,
-                priceLabel,
-                statusLabel,
-                timerLabel,
+                imageContainer,
+                infoContainer,
                 watchBtn
         );
 
-        root.setOnMouseClicked(e -> openAuctionRoom());
-    }
+        // =====================================================
+        // CLICK EVENT - MỞ PHÒNG ĐẤU GIÁ CHI TIẾT
+        // =====================================================
+        root.setOnMouseClicked(e -> {
+            try {
+                if (refreshTimeline != null) {
+                    refreshTimeline.stop();
+                }
 
-    private void loadImage() {
-        try {
-            if (product == null) {
-                return;
+                FXMLLoader loader = new FXMLLoader(
+                        getClass().getResource("/ui/product/AuctionRoom.fxml")
+                );
+                Parent room = loader.load();
+
+                AuctionRoomController controller = loader.getController();
+                controller.setData(product);
+
+                Stage stage = (Stage) root.getScene().getWindow();
+                SceneNavigator.showFixedFullScreen(stage, room, "Auction Room");
+
+            } catch (Exception ex) {
+                System.out.println("Lỗi khi mở phòng đấu giá: " + ex.getMessage());
             }
-
-            String imagePath = product.getImagePath();
-
-            if (imagePath != null && !imagePath.isBlank()) {
-                imageView.setImage(new Image(imagePath, true));
-            }
-
-        } catch (Exception e) {
-            System.out.println("Khong nap duoc anh cho san pham ID: " + product.getId());
-        }
+        });
     }
-
     private void handleWatchButtonClick() {
-        User currentUser = Session.getCurrentUser();
-
-        if (currentUser == null || product == null) {
+        if (Session.getCurrentUser() == null || product == null) {
             return;
         }
 
         int auctionId = product.getId();
-        long userId = currentUser.getId();
+        long userId = Session.getCurrentUser().getId();
 
-        boolean currentlyWatching = currentUser.isWatching(auctionId);
+        boolean currentlyWatching = Session.getCurrentUser().isWatching(auctionId);
 
         String action = currentlyWatching ? "REMOVE_WATCHLIST" : "ADD_WATCHLIST";
 
@@ -126,68 +178,32 @@ public class ProductCard {
                 new RequestPayload(action, data)
         );
 
-        /*
-         * Cap nhat tam thoi tren UI cho muot.
-         * Server van la nguon du lieu chinh.
-         */
+        // Cap nhat tam thoi tren UI cho muot.
+        // Server/DB van la nguon du lieu chinh.
         if (currentlyWatching) {
-            currentUser.removeFromWatchlist(auctionId);
+            Session.getCurrentUser().removeFromWatchlist(auctionId);
         } else {
-            currentUser.addToWatchlist(auctionId);
+            Session.getCurrentUser().addToWatchlist(auctionId);
         }
 
         updateWatchButtonState();
     }
 
-    private void openAuctionRoom() {
-        try {
-            if (refreshTimeline != null) {
-                refreshTimeline.stop();
-            }
-
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/ui/product/AuctionRoom.fxml")
-            );
-
-            Parent room = loader.load();
-
-            AuctionRoomController controller = loader.getController();
-            controller.setData(product);
-
-            Stage stage = (Stage) root.getScene().getWindow();
-            Scene scene = new Scene(room);
-
-            if (getClass().getResource("/style/main.css") != null) {
-                scene.getStylesheets().add(
-                        getClass().getResource("/style/main.css").toExternalForm()
-                );
-            }
-
-            stage.setScene(scene);
-            stage.setResizable(true);
-            stage.centerOnScreen();
-
-        } catch (Exception ex) {
-            System.out.println("Loi khi mo phong dau gia: " + ex.getMessage());
-            ex.printStackTrace();
-        }
-    }
-
+    /**
+     * Hàm chịu trách nhiệm cập nhật các thông tin ĐỘNG thay đổi theo thời gian
+     */
     public void update() {
-        if (product == null) {
-            return;
-        }
-
         if (idLabel != null) {
             idLabel.setText("ID: #" + product.getId());
         }
 
+        // 🔥 ĐÃ SỬA CHUẨN: Lấy chính xác getTitle() theo đúng Model gốc của bạn
         if (titleLabel != null) {
             titleLabel.setText(product.getTitle());
         }
 
         if (priceLabel != null) {
-            priceLabel.setText(product.getCurrentPrice() + " VND");
+            priceLabel.setText(String.format("%,.1f VND", product.getCurrentPrice()));
         }
 
         if (statusLabel != null) {
@@ -201,34 +217,60 @@ public class ProductCard {
         updateWatchButtonState();
     }
 
-    private void updateWatchButtonState() {
-        if (watchBtn == null || product == null) {
+    public void updateProduct(Product product) {
+        if (product == null) return;
+        this.product = product;
+        loadImageIfChanged();
+        update();
+    }
+
+    private void loadImageIfChanged() {
+        if (product == null || imageView == null) {
             return;
         }
 
-        User currentUser = Session.getCurrentUser();
+        String imagePath = product.getImagePath() == null ? "" : product.getImagePath();
+        String imageBase64 = product.getImageBase64() == null ? "" : product.getImageBase64();
 
-        if (currentUser == null) {
+        String imageKey = ImageUtil.imageKey(imageBase64, imagePath);
+
+        if (Objects.equals(loadedImagePath, imageKey)) {
+            return;
+        }
+
+        loadedImagePath = imageKey;
+
+        imageView.setImage(
+                ImageUtil.loadImage(imageBase64, imagePath, true)
+        );
+    }
+
+    /**
+     * Cập nhật trạng thái màu sắc, chữ hiển thị của nút Watch bằng cách thay đổi class CSS động
+     */
+    private void updateWatchButtonState() {
+        if (watchBtn == null) {
+            return;
+        }
+
+        watchBtn.getStyleClass().removeAll("watch-button", "watching-active-button");
+
+        if (Session.getCurrentUser() == null || product == null) {
             watchBtn.setText("☆ Watch");
             watchBtn.setDisable(true);
+            watchBtn.getStyleClass().add("watch-button");
             return;
         }
 
         watchBtn.setDisable(false);
 
-        if (currentUser.isWatching(product.getId())) {
+        if (Session.getCurrentUser().isWatching(product.getId())) {
             watchBtn.setText("★ Watching");
-            watchBtn.setStyle("-fx-text-fill: #ff3b30; -fx-font-weight: bold;");
+            watchBtn.getStyleClass().add("watching-active-button");
         } else {
             watchBtn.setText("☆ Watch");
-            watchBtn.setStyle("");
+            watchBtn.getStyleClass().add("watch-button");
         }
-    }
-
-    public void updateProduct(Product product) {
-        this.product = product;
-        loadImage();
-        update();
     }
 
     public void stopTimeline() {
@@ -237,11 +279,6 @@ public class ProductCard {
         }
     }
 
-    public VBox getRoot() {
-        return root;
-    }
-
-    public Product getProduct() {
-        return product;
-    }
+    public VBox getRoot() { return root; }
+    public Product getProduct() { return product; }
 }

@@ -160,6 +160,16 @@ public class MyProductsController {
         LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now();
 
         Product product = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
+
+        if (dto.serverTime != null && !dto.serverTime.isBlank()) {
+            try {
+                product.syncServerTime(
+                        LocalDateTime.parse(dto.serverTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                );
+            } catch (Exception ignored) {
+            }
+        }
+
         if (dto.item != null) {
             product.setImageBase64(dto.item.imageBase64);
         }
@@ -300,11 +310,11 @@ public class MyProductsController {
         }
 
         private void updateActionButtonState() {
-            java.time.Duration untilStart = java.time.Duration.between(VietnamTime.now(), product.getStartTime());
-            boolean locked = product.getStatus().equals("RUNNING")
+            boolean locked = !product.canModify()
+                    || product.getStatus().equals("RUNNING")
                     || product.getStatus().equals("FINISHED")
-                    || product.getStatus().equals("SOLD")
-                    || untilStart.toMinutes() <= 20;
+                    || product.getStatus().equals("SOLD");
+
             editButton.setDisable(locked);
             deleteButton.setDisable(locked);
         }

@@ -71,6 +71,7 @@ public class AuctionController {
         }
 
         SocketClient socketClient = SocketClient.getInstance();
+
         socketClient.clearListeners("GET_ACTIVE_AUCTIONS_RESPONSE");
         socketClient.clearListeners("NEW_BID_EVENT");
         socketClient.clearListeners("AUCTION_PRICE_CHANGED");
@@ -78,22 +79,26 @@ public class AuctionController {
         socketClient.clearListeners("BALANCE_UPDATE");
         socketClient.clearListeners("GET_BALANCE_RESPONSE");
         socketClient.clearListeners("AUCTION_TIME_EXTENDED");
+        socketClient.clearListeners("GET_WATCHLIST_IDS_RESPONSE");
+        socketClient.clearListeners("ADD_WATCHLIST_RESPONSE");
+        socketClient.clearListeners("REMOVE_WATCHLIST_RESPONSE");
+
         socketClient.on("AUCTION_TIME_EXTENDED", e -> fetchAuctionsFromServer());
         socketClient.on("GET_ACTIVE_AUCTIONS_RESPONSE", this::handleLoadAuctions);
         socketClient.on("NEW_BID_EVENT", this::handleRealtimeBidUpdate);
-        SocketClient.getInstance().on("GET_WATCHLIST_IDS_RESPONSE", this::handleWatchlistIdsResponse);
-        SocketClient.getInstance().on("ADD_WATCHLIST_RESPONSE", this::handleWatchlistActionResponse);
-        SocketClient.getInstance().on("REMOVE_WATCHLIST_RESPONSE", this::handleWatchlistActionResponse);
         socketClient.on("AUCTION_PRICE_CHANGED", this::handleRealtimeBidUpdate);
         socketClient.on("NEW_AUCTION_EVENT", e -> fetchAuctionsFromServer());
         socketClient.on("BALANCE_UPDATE", this::handleBalanceUpdate);
         socketClient.on("GET_BALANCE_RESPONSE", this::handleBalanceUpdate);
 
-        fetchAuctionsFromServer();
-        requestBalanceRefresh();
-        updateHeaderBalance();
+        socketClient.on("GET_WATCHLIST_IDS_RESPONSE", this::handleWatchlistIdsResponse);
+        socketClient.on("ADD_WATCHLIST_RESPONSE", this::handleWatchlistActionResponse);
+        socketClient.on("REMOVE_WATCHLIST_RESPONSE", this::handleWatchlistActionResponse);
+
         fetchAuctionsFromServer();
         fetchWatchlistIdsFromServer();
+        requestBalanceRefresh();
+        updateHeaderBalance();
 
         // ---- ĐOẠN MỚI THÊM: ẨN NÚT VỚI BIDDER ----
         if (Session.getCurrentUser() != null && "BIDDER".equalsIgnoreCase(Session.getCurrentUser().getRole())) {
@@ -172,7 +177,6 @@ public class AuctionController {
 
     // Phiên dịch DTO (Backend) thành Product (Frontend)
     private Product mapToProduct(AuctionDTO dto) {
-        // Bóc dữ liệu an toàn
         String title = (dto.item != null && dto.item.name != null) ? dto.item.name : "Untitled product";
         double price = dto.currentPrice > 0 ? dto.currentPrice : (dto.item != null ? dto.item.startingPrice : 0);
         String image = (dto.item != null && dto.item.imagePath != null) ? dto.item.imagePath : "";
@@ -183,10 +187,18 @@ public class AuctionController {
         LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now().plusHours(1);
 
         Product p = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
+
+        if (dto.serverTime != null && !dto.serverTime.isBlank()) {
+            try {
+                p.syncServerTime(LocalDateTime.parse(dto.serverTime, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            } catch (Exception ignored) {
+            }
+        }
+
         if (dto.item != null) {
             p.setImageBase64(dto.item.imageBase64);
         }
-        // Ép kiểu ID từ Long xuống int cho khớp Frontend
+
         try {
             java.lang.reflect.Field idField = Product.class.getDeclaredField("id");
             idField.setAccessible(true);
@@ -194,15 +206,18 @@ public class AuctionController {
         } catch (Exception e) {}
 
         p.setStatus(dto.status);
+
         if (dto.highestBidderId != null && dto.highestBidderId > 0) {
             p.setHighestBidder("User #" + dto.highestBidderId);
         } else {
             p.setHighestBidder("");
         }
+
         if (dto.item != null) {
             p.setCategory(dto.item.category);
             p.setCondition(dto.item.condition);
         }
+
         return p;
     }
 
@@ -222,30 +237,81 @@ public class AuctionController {
     }
 
     private void setupDefaults() {
-        statusBox.setValue("STATUS");
-        categoryFilterBox.setValue("CATEGORY");
-        conditionFilterBox.setValue("CONDITION");
+        if (sortBox != null) {
+            sortBox.setValue("SORT");
+        }
+
+        if (statusBox != null) {
+            statusBox.setValue("STATUS");
+        }
+
+        if (categoryFilterBox != null) {
+            categoryFilterBox.setValue("CATEGORY");
+        }
+
+        if (conditionFilterBox != null) {
+            conditionFilterBox.setValue("CONDITION");
+        }
     }
 
     private void setupListeners() {
-        searchField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
-        minPriceField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
-        maxPriceField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
-        sortBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
-        statusBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
-        categoryFilterBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
-        conditionFilterBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        if (searchField != null) {
+            searchField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
+        }
+
+        if (minPriceField != null) {
+            minPriceField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
+        }
+
+        if (maxPriceField != null) {
+            maxPriceField.textProperty().addListener((obs, oldV, newV) -> applyFilters());
+        }
+
+        if (sortBox != null) {
+            sortBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        }
+
+        if (statusBox != null) {
+            statusBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        }
+
+        if (categoryFilterBox != null) {
+            categoryFilterBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        }
+
+        if (conditionFilterBox != null) {
+            conditionFilterBox.valueProperty().addListener((obs, oldV, newV) -> applyFilters());
+        }
     }
 
     private void applyFilters() {
-        String status = (statusBox.getValue() == null || "STATUS".equals(statusBox.getValue())) ? "All" : statusBox.getValue();
-        String category = (categoryFilterBox.getValue() == null || "CATEGORY".equals(categoryFilterBox.getValue())) ? "All" : categoryFilterBox.getValue();
-        String condition = (conditionFilterBox.getValue() == null || "CONDITION".equals(conditionFilterBox.getValue())) ? "All" : conditionFilterBox.getValue();
+        String status = (statusBox == null || statusBox.getValue() == null || "STATUS".equals(statusBox.getValue()))
+                ? "All"
+                : statusBox.getValue();
+
+        String category = (categoryFilterBox == null || categoryFilterBox.getValue() == null || "CATEGORY".equals(categoryFilterBox.getValue()))
+                ? "All"
+                : categoryFilterBox.getValue();
+
+        String condition = (conditionFilterBox == null || conditionFilterBox.getValue() == null || "CONDITION".equals(conditionFilterBox.getValue()))
+                ? "All"
+                : conditionFilterBox.getValue();
+
+        String keyword = searchField == null ? "" : searchField.getText();
+        String sortType = sortBox == null ? "SORT" : sortBox.getValue();
+
+        Double minPrice = parseDouble(minPriceField == null ? null : minPriceField.getText());
+        Double maxPrice = parseDouble(maxPriceField == null ? null : maxPriceField.getText());
 
         List<Product> filtered = ProductFilterService.filter(
-                serverProducts, // Dùng dữ liệu thật thay vì FakeDB
-                searchField.getText(), status, category, condition,
-                parseDouble(minPriceField.getText()), parseDouble(maxPriceField.getText()), sortBox.getValue()
+                serverProducts,
+                keyword,
+                status,
+                category,
+                condition,
+                minPrice,
+                maxPrice,
+                sortType
         );
 
         loadProducts(filtered);
@@ -321,9 +387,15 @@ public class AuctionController {
 
     private Double parseDouble(String text) {
         try {
-            if (text == null || text.isEmpty()) return null;
-            return Double.parseDouble(text);
-        } catch (Exception e) { return null; }
+            if (text == null || text.trim().isEmpty()) {
+                return null;
+            }
+
+            return Double.parseDouble(text.trim());
+
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // Các hàm chuyển trang

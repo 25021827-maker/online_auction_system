@@ -677,15 +677,16 @@ public class ClientHandler implements Runnable {
             com.google.gson.JsonObject data = new com.google.gson.JsonObject();
             data.addProperty("auctionId", auctionId);
             data.addProperty("newEndTime", state.endTime.toString());
+            data.addProperty("serverTime", VietnamTime.now().toString());
 
+            /*
+             * Broadcast to all clients once.
+             * Auction Main va Auction Room deu can cap nhat thoi gian.
+             * Khong broadcast rieng room nua de tranh client trong room nhan event 2 lan.
+             */
             ServerMain.broadcast(
                     ResponsePayload.success("AUCTION_TIME_EXTENDED", "Auction time updated", data)
             );
-
-            ResponsePayload roomEvent =
-                    ResponsePayload.success("AUCTION_TIME_EXTENDED", "Auction time updated", data);
-
-            AuctionRoomManager.broadcastToRoom(auctionId, gson.toJson(roomEvent));
 
         } catch (Exception e) {
             System.err.println("Loi broadcast thoi gian auction:");

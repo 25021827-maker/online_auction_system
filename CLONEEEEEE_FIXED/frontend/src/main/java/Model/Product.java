@@ -4,6 +4,7 @@ import util.VietnamTime;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,12 @@ public class Product {
     private String condition;
     private String description;
     private String backendStatus = "";
+
+    /*
+     * Do lech giua gio server va gio client.
+     * Neu client cham/nhanh hon server, countdown van tinh theo gio server.
+     */
+    private long serverTimeOffsetSeconds = 0;
 
     public Product(String title, double currentPrice, String imagePath, String seller,
                    LocalDateTime startTime, LocalDateTime endTime, String description) {
@@ -58,24 +65,43 @@ public class Product {
         this.createdAt = VietnamTime.now();
     }
 
+    /*
+     * Dong bo gio client theo gio server gui ve trong AuctionDTO.serverTime.
+     */
+    public void syncServerTime(LocalDateTime serverNow) {
+        if (serverNow == null) {
+            this.serverTimeOffsetSeconds = 0;
+            return;
+        }
+
+        LocalDateTime clientNow = VietnamTime.now();
+        this.serverTimeOffsetSeconds = ChronoUnit.SECONDS.between(clientNow, serverNow);
+    }
+
+    private LocalDateTime getSyncedNow() {
+        return VietnamTime.now().plusSeconds(serverTimeOffsetSeconds);
+    }
+
     public boolean canModify() {
-        LocalDateTime now = VietnamTime.now();
+        LocalDateTime now = getSyncedNow();
+
         if (!now.isBefore(startTime)) {
             return false;
         }
+
         Duration remaining = Duration.between(now, startTime);
         return remaining.toMinutes() > 20;
     }
 
     public String getTimeRemaining() {
-        LocalDateTime now = VietnamTime.now();
+        LocalDateTime now = getSyncedNow();
 
         if (now.isBefore(startTime)) {
             Duration untilStart = Duration.between(now, startTime);
             return "Starts in: " + formatDuration(untilStart);
         }
 
-        if (now.isAfter(endTime)) {
+        if (!now.isBefore(endTime)) {
             return "Ended";
         }
 
@@ -207,16 +233,20 @@ public class Product {
     }
 
     public String getStatus() {
-        LocalDateTime now = VietnamTime.now();
+        LocalDateTime now = getSyncedNow();
+
         if (now.isBefore(startTime)) {
             return "SCHEDULED";
         }
-        if (now.isAfter(endTime)) {
+
+        if (!now.isBefore(endTime)) {
             return "FINISHED";
         }
+
         if (backendStatus != null && !backendStatus.isEmpty()) {
             return backendStatus;
         }
+
         return "OPEN";
     }
 }

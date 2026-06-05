@@ -53,9 +53,8 @@
                                                     <String fx:value="All" />
                                                     <String fx:value="OPEN" />
                                                     <String fx:value="RUNNING" />
+                                                    <String fx:value="SCHEDULED" />
                                                     <String fx:value="FINISHED" />
-                                                    <String fx:value="Ending Soon" />
-                                                    <String fx:value="Newest" />
                                                 </FXCollections>
                                             </items>
                                         </ComboBox>
@@ -85,11 +84,13 @@
                                             </items>
                                         </ComboBox>
 
-                                        <ComboBox fx:id="sortBox" prefHeight="46.0" prefWidth="109.0" promptText="SORT" styleClass="yellow-combo">
+                                        <ComboBox fx:id="sortBox" prefHeight="46.0" prefWidth="130.0" promptText="SORT" styleClass="yellow-combo">
                                             <items>
                                                 <FXCollections fx:factory="observableArrayList">
                                                     <String fx:value="Price: Low to High" />
                                                     <String fx:value="Price: High to Low" />
+                                                    <String fx:value="Ending Soon" />
+                                                    <String fx:value="Newest" />
                                                 </FXCollections>
                                             </items>
                                         </ComboBox>

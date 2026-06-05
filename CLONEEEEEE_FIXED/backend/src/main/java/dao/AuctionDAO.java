@@ -630,38 +630,7 @@ public class AuctionDAO {
         } catch (SQLException e) { return false; }
     }
 
-    // Lấy danh sách Watchlist
-    public List<Auction> getWatchlist(Long userId) {
-        List<Auction> list = new ArrayList<>();
-        String sql = "SELECT a.*, i.seller_id, i.name, i.description, i.starting_price, i.category, i.condition_status, i.image_url, " +
-                "i.status AS item_status, i.approval_status " +
-                "FROM auctions a JOIN items i ON a.item_id = i.item_id " +
-                "JOIN watchlist w ON a.auction_id = w.auction_id " +
-                "WHERE w.user_id = ? " +
-                "AND i.status = 'ACTIVE' " +
-                "AND i.approval_status = 'APPROVED'";
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setLong(1, userId);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                while (rs.next()) {
-                    Item item = ItemFactory.createItem(rs.getString("category"), rs.getLong("item_id"),
-                            rs.getString("name"), rs.getString("description"), rs.getDouble("starting_price"), null);
-                    hydrateItemMetadata(item, rs);
-                    Auction auction = new Auction(rs.getLong("auction_id"), item, rs.getLong("seller_id"),
-                            rs.getTimestamp("start_time").toLocalDateTime(), rs.getTimestamp("end_time").toLocalDateTime());
-                    auction.setStatus(parseAuctionStatus(rs.getString("status")));
-                    auction.setCurrentPrice(rs.getDouble("current_price"));
-                    long leaderId = rs.getLong("current_leader_id");
-                    if (!rs.wasNull()) auction.setHighestBidderId(leaderId);
-                    list.add(auction);
-                }
-            }
-        } catch (SQLException e) {
-            System.err.println("Lá»—i khi láº¥y watchlist: " + e.getMessage());
-        }
-        return list;
-    }
+
     public boolean addToWatchlist(Long userId, Long auctionId) {
         String sql = "INSERT IGNORE INTO watchlist (user_id, auction_id) VALUES (?, ?)";
 
@@ -1031,6 +1000,65 @@ public class AuctionDAO {
             this.incrementStep = incrementStep;
         }
     }
+    // Lay danh sach Watchlist cua user
+    public List<Auction> getWatchlist(Long userId) {
+        List<Auction> list = new ArrayList<>();
+
+        String sql = "SELECT a.*, i.seller_id, i.name, i.description, i.starting_price, " +
+                "i.category, i.condition_status, i.image_url, " +
+                "i.status AS item_status, i.approval_status " +
+                "FROM watchlist w " +
+                "JOIN auctions a ON a.auction_id = w.auction_id " +
+                "JOIN items i ON a.item_id = i.item_id " +
+                "WHERE w.user_id = ? " +
+                "AND i.approval_status = 'APPROVED' " +
+                "ORDER BY w.created_at DESC";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, userId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    Item item = ItemFactory.createItem(
+                            rs.getString("category"),
+                            rs.getLong("item_id"),
+                            rs.getString("name"),
+                            rs.getString("description"),
+                            rs.getDouble("starting_price"),
+                            null
+                    );
+
+                    hydrateItemMetadata(item, rs);
+
+                    Auction auction = new Auction(
+                            rs.getLong("auction_id"),
+                            item,
+                            rs.getLong("seller_id"),
+                            rs.getTimestamp("start_time").toLocalDateTime(),
+                            rs.getTimestamp("end_time").toLocalDateTime()
+                    );
+
+                    auction.setStatus(parseAuctionStatus(rs.getString("status")));
+                    auction.setCurrentPrice(rs.getDouble("current_price"));
+
+                    long leaderId = rs.getLong("current_leader_id");
+                    if (!rs.wasNull()) {
+                        auction.setHighestBidderId(leaderId);
+                    }
+
+                    list.add(auction);
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Loi khi lay watchlist: " + e.getMessage());
+        }
+
+        return list;
+    }
+
 
 }
 

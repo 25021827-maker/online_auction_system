@@ -3,6 +3,7 @@ package dto;
 import model.Auction;
 import model.Item;
 import service.ImageStorageService;
+import util.VietnamTime;
 
 public class AuctionDTO {
     public Long id;
@@ -12,10 +13,19 @@ public class AuctionDTO {
     public String status;
     public double currentPrice;
     public Long highestBidderId;
+
+    /*
+     * Gio hien tai cua server.
+     * Frontend dung gia tri nay de dong bo countdown,
+     * khong phu thuoc vao gio may client.
+     */
+    public String serverTime;
+
     public ItemDTO item;
 
     public static AuctionDTO from(Auction auction) {
         AuctionDTO dto = new AuctionDTO();
+
         dto.id = auction.getId();
         dto.sellerId = auction.getSellerId();
         dto.startTime = auction.getStartTime() == null ? null : auction.getStartTime().toString();
@@ -23,7 +33,10 @@ public class AuctionDTO {
         dto.status = auction.getStatus() == null ? "" : auction.getStatus().name();
         dto.currentPrice = auction.getCurrentPrice();
         dto.highestBidderId = auction.getHighestBidderId();
+        dto.serverTime = VietnamTime.now().toString();
+
         dto.item = ItemDTO.from(auction.getItem());
+
         return dto;
     }
 
@@ -45,6 +58,7 @@ public class AuctionDTO {
             }
 
             ItemDTO dto = new ItemDTO();
+
             dto.id = item.getId();
             dto.name = item.getName();
             dto.description = item.getDescription();
@@ -55,6 +69,7 @@ public class AuctionDTO {
             dto.imageBase64 = new ImageStorageService().loadImageAsBase64(dto.imagePath);
             dto.itemStatus = item.getItemStatus();
             dto.approvalStatus = item.getApprovalStatus();
+
             return dto;
         }
     }

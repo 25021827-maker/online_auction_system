@@ -81,7 +81,8 @@ public class AutoBidService {
             }
         }
 
-        double minimumValidBid = state.currentPrice + state.minBidStep;
+        double effectiveStep = Math.max(state.minBidStep, best.incrementStep);
+        double minimumValidBid = state.currentPrice + effectiveStep;
         double targetAmount;
 
         /*

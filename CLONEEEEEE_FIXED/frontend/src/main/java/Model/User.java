@@ -89,10 +89,14 @@ public class User {
         }
     }
     public void setWatchlistProductIds(List<Integer> ids) {
-        if (ids == null) {
-            this.watchlistProductIds = new ArrayList<>();
-        } else {
-            this.watchlistProductIds = ids;
+        this.watchlistProductIds = new ArrayList<>();
+
+        if (ids != null) {
+            for (Integer id : ids) {
+                if (id != null && !this.watchlistProductIds.contains(id)) {
+                    this.watchlistProductIds.add(id);
+                }
+            }
         }
     }
 }
