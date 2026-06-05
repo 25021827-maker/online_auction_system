@@ -95,23 +95,40 @@ public class WatchlistController {
         String desc = (dto.item != null) ? dto.item.description : "";
 
         DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
-        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : VietnamTime.now();
-        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : VietnamTime.now();
+        LocalDateTime st = dto.startTime != null ? LocalDateTime.parse(dto.startTime, formatter) : LocalDateTime.now();
+        LocalDateTime et = dto.endTime != null ? LocalDateTime.parse(dto.endTime, formatter) : LocalDateTime.now();
 
         Product p = new Product(title, price, image, "Seller#" + dto.sellerId, st, et, desc);
-        if (dto.item != null) {
-            p.setImageBase64(dto.item.imageBase64);
-        }
+
         try {
             java.lang.reflect.Field idField = Product.class.getDeclaredField("id");
             idField.setAccessible(true);
             idField.set(p, dto.id.intValue());
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         p.setStatus(dto.status);
+
+        if (dto.highestBidderId != null && dto.highestBidderId > 0) {
+            p.setHighestBidder("User #" + dto.highestBidderId);
+        } else {
+            p.setHighestBidder("");
+        }
+
         if (dto.item != null) {
             p.setCategory(dto.item.category);
             p.setCondition(dto.item.condition);
+            p.setImageBase64(dto.item.imageBase64);
         }
+
+        /*
+         * Vì sản phẩm nằm trong Watchlist rồi nên đánh dấu local cho nút hiện ★ Watching.
+         */
+        if (Session.getCurrentUser() != null) {
+            Session.getCurrentUser().addToWatchlist(p.getId());
+        }
+
         return p;
     }
 

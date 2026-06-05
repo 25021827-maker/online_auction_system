@@ -103,6 +103,9 @@ public class ClientHandler implements Runnable {
                 case "GET_MY_PRODUCTS" -> processGetMyProducts(request.getData());
                 case "DELETE_PRODUCT" -> processDeleteProduct(request.getData());
                 case "GET_WATCHLIST" -> processGetWatchlist(request.getData());
+                case "ADD_WATCHLIST" -> processAddWatchlist(request.getData());
+                case "REMOVE_WATCHLIST" -> processRemoveWatchlist(request.getData());
+                case "GET_WATCHLIST_IDS" -> processGetWatchlistIds(request.getData());
                 case "SUBMIT_DEPOSIT" -> processSubmitDeposit(request.getData());
                 case "ADD_BALANCE" -> processAddBalance(request.getData());
                 case "GET_BALANCE" -> processGetBalance();
@@ -521,11 +524,19 @@ public class ClientHandler implements Runnable {
     private void processGetWatchlist(String dataJson) {
         JsonObject json = parseObject(dataJson);
         Long userId = json.get("userId").getAsLong();
+
         if (!requireSameUser(userId, "GET_WATCHLIST_RESPONSE")) {
             return;
         }
-        sendResponse(ResponsePayload.success("GET_WATCHLIST_RESPONSE", "Thanh cong", toAuctionDTOs(new AuctionDAO().getWatchlist(userId))));
+
+        sendResponse(ResponsePayload.success(
+                "GET_WATCHLIST_RESPONSE",
+                "Thanh cong",
+                toAuctionDTOs(new AuctionDAO().getWatchlist(userId))
+        ));
     }
+
+
 
     private List<AuctionDTO> toAuctionDTOs(List<Auction> auctions) {
         return auctions.stream().map(AuctionDTO::from).toList();
@@ -700,5 +711,98 @@ public class ClientHandler implements Runnable {
         }
 
         sendResponse(ResponsePayload.success("GET_BID_HISTORY_RESPONSE", "Thanh cong", result));
+    }
+    private void processAddWatchlist(String dataJson) {
+        try {
+            JsonObject json = parseObject(dataJson);
+
+            Long userId = json.get("userId").getAsLong();
+            Long auctionId = json.get("auctionId").getAsLong();
+
+            if (!requireSameUser(userId, "ADD_WATCHLIST_RESPONSE")) {
+                return;
+            }
+
+            boolean ok = new AuctionDAO().addToWatchlist(userId, auctionId);
+
+            if (ok) {
+                sendResponse(ResponsePayload.success(
+                        "ADD_WATCHLIST_RESPONSE",
+                        "Da them vao watchlist",
+                        auctionId
+                ));
+            } else {
+                sendResponse(ResponsePayload.fail(
+                        "ADD_WATCHLIST_RESPONSE",
+                        "Khong the them vao watchlist"
+                ));
+            }
+
+        } catch (Exception e) {
+            sendResponse(ResponsePayload.fail(
+                    "ADD_WATCHLIST_RESPONSE",
+                    "Du lieu watchlist khong hop le: " + e.getMessage()
+            ));
+        }
+    }
+
+    private void processRemoveWatchlist(String dataJson) {
+        try {
+            JsonObject json = parseObject(dataJson);
+
+            Long userId = json.get("userId").getAsLong();
+            Long auctionId = json.get("auctionId").getAsLong();
+
+            if (!requireSameUser(userId, "REMOVE_WATCHLIST_RESPONSE")) {
+                return;
+            }
+
+            boolean ok = new AuctionDAO().removeFromWatchlist(userId, auctionId);
+
+            if (ok) {
+                sendResponse(ResponsePayload.success(
+                        "REMOVE_WATCHLIST_RESPONSE",
+                        "Da xoa khoi watchlist",
+                        auctionId
+                ));
+            } else {
+                sendResponse(ResponsePayload.fail(
+                        "REMOVE_WATCHLIST_RESPONSE",
+                        "San pham khong co trong watchlist"
+                ));
+            }
+
+        } catch (Exception e) {
+            sendResponse(ResponsePayload.fail(
+                    "REMOVE_WATCHLIST_RESPONSE",
+                    "Du lieu watchlist khong hop le: " + e.getMessage()
+            ));
+        }
+    }
+
+    private void processGetWatchlistIds(String dataJson) {
+        try {
+            JsonObject json = parseObject(dataJson);
+
+            Long userId = json.get("userId").getAsLong();
+
+            if (!requireSameUser(userId, "GET_WATCHLIST_IDS_RESPONSE")) {
+                return;
+            }
+
+            List<Long> ids = new AuctionDAO().getWatchlistIds(userId);
+
+            sendResponse(ResponsePayload.success(
+                    "GET_WATCHLIST_IDS_RESPONSE",
+                    "Thanh cong",
+                    ids
+            ));
+
+        } catch (Exception e) {
+            sendResponse(ResponsePayload.fail(
+                    "GET_WATCHLIST_IDS_RESPONSE",
+                    "Khong the lay watchlist ids: " + e.getMessage()
+            ));
+        }
     }
 }

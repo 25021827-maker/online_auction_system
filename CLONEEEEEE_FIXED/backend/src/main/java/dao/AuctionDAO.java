@@ -630,7 +630,7 @@ public class AuctionDAO {
         } catch (SQLException e) { return false; }
     }
 
-    // Láº¥y danh sÃ¡ch Watchlist
+    // Lấy danh sách Watchlist
     public List<Auction> getWatchlist(Long userId) {
         List<Auction> list = new ArrayList<>();
         String sql = "SELECT a.*, i.seller_id, i.name, i.description, i.starting_price, i.category, i.condition_status, i.image_url, " +
@@ -661,6 +661,63 @@ public class AuctionDAO {
             System.err.println("Lá»—i khi láº¥y watchlist: " + e.getMessage());
         }
         return list;
+    }
+    public boolean addToWatchlist(Long userId, Long auctionId) {
+        String sql = "INSERT IGNORE INTO watchlist (user_id, auction_id) VALUES (?, ?)";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, userId);
+            pstmt.setLong(2, auctionId);
+
+            pstmt.executeUpdate();
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println("Loi them watchlist: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean removeFromWatchlist(Long userId, Long auctionId) {
+        String sql = "DELETE FROM watchlist WHERE user_id = ? AND auction_id = ?";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, userId);
+            pstmt.setLong(2, auctionId);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Loi xoa watchlist: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public List<Long> getWatchlistIds(Long userId) {
+        List<Long> ids = new ArrayList<>();
+
+        String sql = "SELECT auction_id FROM watchlist WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setLong(1, userId);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    ids.add(rs.getLong("auction_id"));
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Loi lay watchlist ids: " + e.getMessage());
+        }
+
+        return ids;
     }
 
     private void hydrateItemMetadata(Item item, ResultSet rs) throws SQLException {

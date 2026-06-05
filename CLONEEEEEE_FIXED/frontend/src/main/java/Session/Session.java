@@ -20,4 +20,6 @@ public class Session {
     public static void clear() {
         currentUser = null;
     }
+
+
 }

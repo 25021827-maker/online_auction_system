@@ -88,4 +88,11 @@ public class User {
             watchlistProductIds.remove(Integer.valueOf(productId));
         }
     }
+    public void setWatchlistProductIds(List<Integer> ids) {
+        if (ids == null) {
+            this.watchlistProductIds = new ArrayList<>();
+        } else {
+            this.watchlistProductIds = ids;
+        }
+    }
 }

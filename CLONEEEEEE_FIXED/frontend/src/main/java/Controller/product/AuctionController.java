@@ -81,6 +81,9 @@ public class AuctionController {
         socketClient.on("AUCTION_TIME_EXTENDED", e -> fetchAuctionsFromServer());
         socketClient.on("GET_ACTIVE_AUCTIONS_RESPONSE", this::handleLoadAuctions);
         socketClient.on("NEW_BID_EVENT", this::handleRealtimeBidUpdate);
+        SocketClient.getInstance().on("GET_WATCHLIST_IDS_RESPONSE", this::handleWatchlistIdsResponse);
+        SocketClient.getInstance().on("ADD_WATCHLIST_RESPONSE", this::handleWatchlistActionResponse);
+        SocketClient.getInstance().on("REMOVE_WATCHLIST_RESPONSE", this::handleWatchlistActionResponse);
         socketClient.on("AUCTION_PRICE_CHANGED", this::handleRealtimeBidUpdate);
         socketClient.on("NEW_AUCTION_EVENT", e -> fetchAuctionsFromServer());
         socketClient.on("BALANCE_UPDATE", this::handleBalanceUpdate);
@@ -89,6 +92,8 @@ public class AuctionController {
         fetchAuctionsFromServer();
         requestBalanceRefresh();
         updateHeaderBalance();
+        fetchAuctionsFromServer();
+        fetchWatchlistIdsFromServer();
 
         // ---- ĐOẠN MỚI THÊM: ẨN NÚT VỚI BIDDER ----
         if (Session.getCurrentUser() != null && "BIDDER".equalsIgnoreCase(Session.getCurrentUser().getRole())) {
@@ -244,6 +249,46 @@ public class AuctionController {
         );
 
         loadProducts(filtered);
+    }
+    private void fetchWatchlistIdsFromServer() {
+        if (Session.getCurrentUser() == null) {
+            return;
+        }
+
+        RequestPayload req = new RequestPayload(
+                "GET_WATCHLIST_IDS",
+                "{\"userId\":" + Session.getCurrentUser().getId() + "}"
+        );
+
+        SocketClient.getInstance().sendRequest(req);
+    }
+
+    private void handleWatchlistIdsResponse(ResponsePayload response) {
+        if (!"SUCCESS".equals(response.getStatus()) || Session.getCurrentUser() == null) {
+            return;
+        }
+
+        try {
+            Type listType = new TypeToken<List<Integer>>() {}.getType();
+            List<Integer> ids = gson.fromJson(gson.toJson(response.getData()), listType);
+
+            Session.getCurrentUser().setWatchlistProductIds(ids);
+
+            Platform.runLater(() -> {
+                for (ProductCard card : cardMap.values()) {
+                    card.update();
+                }
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void handleWatchlistActionResponse(ResponsePayload response) {
+        if ("SUCCESS".equals(response.getStatus())) {
+            fetchWatchlistIdsFromServer();
+        }
     }
 
     private void loadProducts(List<Product> products) {
