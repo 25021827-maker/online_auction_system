@@ -100,6 +100,15 @@ public class AutoBidService {
                 return null;
             }
 
+            /*
+             * Người auto-bid mạnh nhất đang dẫn đầu rồi.
+             * Chỉ cần tự nâng thêm nếu đối thủ còn có max đủ để vượt giá hiện tại.
+             * Nếu strongestOpponent.maxAmount <= currentPrice thì không được tự nâng giá chính mình.
+             */
+            if (strongestOpponent.maxAmount <= state.currentPrice) {
+                return null;
+            }
+
             targetAmount = Math.min(best.maxAmount, strongestOpponent.maxAmount);
 
             if (targetAmount < minimumValidBid) {

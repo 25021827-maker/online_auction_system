@@ -72,33 +72,30 @@ public class AuctionManager {
         List<BidRequest> generatedBids = new ArrayList<>();
 
         /*
-         * Auto bid tính thẳng giá cần đặt.
+         * Mỗi lần có người bid hoặc bật auto bid chỉ cho hệ thống sinh 1 auto bid.
          */
-        for (int i = 0; i < 3; i++) {
-            AutoBidService.AutoBidDecision decision =
-                    autoBidService.findNextBid(auctionId);
+        AutoBidService.AutoBidDecision decision = autoBidService.findNextBid(auctionId);
 
-            if (decision == null) {
-                break;
-            }
+        if (decision == null) {
+            return generatedBids;
+        }
 
-            try {
-                BidTransaction autoBid =
-                        new BidTransaction(null, decision.bidderId, decision.amount, true);
+        try {
+            BidTransaction autoBid =
+                    new BidTransaction(null, decision.bidderId, decision.amount, true);
 
-                targetService.placeBidInternal(autoBid);
+            targetService.placeBidInternal(autoBid);
 
-                BidRequest event = new BidRequest();
-                event.auctionId = auctionId;
-                event.bidderId = decision.bidderId;
-                event.amount = decision.amount;
-                event.autoBid = true;
+            BidRequest event = new BidRequest();
+            event.auctionId = auctionId;
+            event.bidderId = decision.bidderId;
+            event.amount = decision.amount;
+            event.autoBid = true;
 
-                generatedBids.add(event);
+            generatedBids.add(event);
 
-            } catch (exception.InvalidBidException | exception.AuctionClosedException e) {
-                autoBidService.deactivateAutoBid(auctionId, decision.bidderId);
-            }
+        } catch (exception.InvalidBidException | exception.AuctionClosedException e) {
+            autoBidService.deactivateAutoBid(auctionId, decision.bidderId);
         }
 
         return generatedBids;

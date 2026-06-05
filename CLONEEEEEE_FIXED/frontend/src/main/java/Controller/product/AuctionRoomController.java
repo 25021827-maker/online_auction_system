@@ -60,6 +60,7 @@ public class AuctionRoomController {
     @FXML
     public void initialize() {
         SocketClient socketClient = SocketClient.getInstance();
+
         for (String action : List.of(
                 "PLACE_BID_RESPONSE",
                 "BID_UPDATE",
@@ -69,15 +70,20 @@ public class AuctionRoomController {
                 "BALANCE_UPDATE",
                 "GET_BALANCE_RESPONSE",
                 "NEW_BID_EVENT",
-                "NEW_AUCTION_EVENT"
+                "NEW_AUCTION_EVENT",
+                "AUCTION_TIME_EXTENDED"
         )) {
             socketClient.clearListeners(action);
         }
-        socketClient.on("BID_UPDATE", this::handleRealtimeBid);
-        socketClient.on("NEW_BID_EVENT", this::handleRealtimeBid);
-        socketClient.clearListeners("AUCTION_TIME_EXTENDED");
-        socketClient.on("AUCTION_TIME_EXTENDED", this::handleAuctionTimeExtended);
 
+        /*
+         * AuctionRoomController chỉ xử lý BID_UPDATE.
+         * Không nghe NEW_BID_EVENT ở đây để tránh cùng một bid bị xử lý 2 lần.
+         */
+        socketClient.on("BID_UPDATE", this::handleRealtimeBid);
+        socketClient.on("PLACE_BID_RESPONSE", this::handleBidResponse);
+
+        socketClient.on("AUCTION_TIME_EXTENDED", this::handleAuctionTimeExtended);
         socketClient.on("SET_AUTO_BID_RESPONSE", this::handleAutoBidResponse);
         socketClient.on("BALANCE_UPDATE", response -> updateBalance());
         socketClient.on("GET_BALANCE_RESPONSE", response -> updateBalance());
@@ -308,13 +314,13 @@ public class AuctionRoomController {
 
     private void handleRealtimeBid(ResponsePayload response) {
         try {
-            if (currentProduct == null) {
+            if (currentProduct == null || response == null || response.getData() == null) {
                 return;
             }
 
             BidRequest newBid = gson.fromJson(gson.toJson(response.getData()), BidRequest.class);
 
-            if (newBid == null || newBid.auctionId == null) {
+            if (newBid == null || newBid.auctionId == null || newBid.bidderId == null) {
                 return;
             }
 
@@ -322,6 +328,11 @@ public class AuctionRoomController {
                 return;
             }
 
+            /*
+             * Chống xử lý trùng cùng một bid.
+             * Phòng đấu giá chỉ nghe BID_UPDATE, nhưng vẫn giữ key này để an toàn
+             * nếu backend hoặc socket gửi lặp lại cùng payload.
+             */
             String bidKey = newBid.auctionId + "-" + newBid.bidderId + "-" + newBid.amount + "-" + newBid.autoBid;
 
             if (bidKey.equals(lastRealtimeBidKey)) {
@@ -330,21 +341,24 @@ public class AuctionRoomController {
 
             lastRealtimeBidKey = bidKey;
 
-            currentProduct.setCurrentPrice(newBid.amount);
+            Platform.runLater(() -> {
+                currentProduct.setCurrentPrice(newBid.amount);
 
-            String bidderName = "User#" + newBid.bidderId + (newBid.autoBid ? " (AUTO)" : "");
-            currentProduct.setHighestBidder(bidderName);
+                String bidderName = "User#" + newBid.bidderId + (newBid.autoBid ? " (AUTO)" : "");
+                currentProduct.setHighestBidder(bidderName);
 
-            currentProduct.addBid(new Bid(bidderName, newBid.amount));
+                /*
+                 * Realtime đã tự thêm bid mới vào history.
+                 * Không gọi GET_BID_HISTORY ngay tại đây nữa, vì sẽ làm UI bị reload
+                 * và dễ tạo cảm giác auto bid nhảy nhiều lần.
+                 */
+                currentProduct.addBid(new Bid(bidderName, newBid.amount));
 
-            updateAllUI();
-            updateChartIfNeeded();
+                updateAllUI();
+                updateChartIfNeeded();
 
-            SocketClient.getInstance().sendRequest(
-                    new RequestPayload("GET_BID_HISTORY", "{\"auctionId\":" + currentProduct.getId() + "}")
-            );
-
-            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+                SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+            });
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -472,23 +486,33 @@ public class AuctionRoomController {
         } catch (Exception e) {}
     }
     private void handleLoadBidHistory(ResponsePayload response) {
+        if (currentProduct == null || response == null) {
+            return;
+        }
+
         if ("SUCCESS".equals(response.getStatus())) {
             Platform.runLater(() -> {
                 try {
+                    java.lang.reflect.Type listType =
+                            new com.google.gson.reflect.TypeToken<java.util.List<dto.BidRequest>>(){}.getType();
 
-                    java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<dto.BidRequest>>(){}.getType();
-                    java.util.List<dto.BidRequest> history = gson.fromJson(gson.toJson(response.getData()), listType);
+                    java.util.List<dto.BidRequest> history =
+                            gson.fromJson(gson.toJson(response.getData()), listType);
 
                     if (history != null) {
                         currentProduct.getBidHistory().clear();
+
                         for (dto.BidRequest b : history) {
                             String bidderName = "User#" + b.bidderId + (b.autoBid ? " (AUTO)" : "");
                             currentProduct.addBid(new Bid(bidderName, b.amount));
                         }
+
                         updateBidHistory();
                         loadChartHistory();
                     }
-                } catch (Exception e) { e.printStackTrace(); }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             });
         }
     }
