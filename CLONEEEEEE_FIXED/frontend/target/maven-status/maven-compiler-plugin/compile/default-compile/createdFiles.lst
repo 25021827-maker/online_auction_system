@@ -22,6 +22,7 @@ Controller\user\AdminController$2.class
 Controller\product\MyProductsController$MyProductCard.class
 dto\AdminDashboardDTO.class
 Controller\user\ProfileController.class
+util\NotificationToast.class
 Main\Launcher.class
 ui\product\ProductCard.class
 dto\AdminProductDTO.class

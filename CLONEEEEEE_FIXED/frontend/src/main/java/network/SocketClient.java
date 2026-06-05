@@ -5,6 +5,7 @@ import Session.Session;
 import dto.RequestPayload;
 import dto.ResponsePayload;
 import javafx.application.Platform;
+import util.NotificationToast;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -158,6 +159,7 @@ public class SocketClient {
                 ResponsePayload response = gson.fromJson(serverMessage, ResponsePayload.class);
                 String action = response.getAction();
                 updateSessionBalanceIfNeeded(response);
+                showNotificationToastIfNeeded(response);
 
                 if (action != null && eventListeners.containsKey(action)) {
                     List<Consumer<ResponsePayload>> callbacks = eventListeners.get(action);
@@ -219,6 +221,30 @@ public class SocketClient {
                         + " | available $"
                         + String.format("%.2f", availableBalance));
             }
+        } catch (Exception ignored) {}
+    }
+
+    private void showNotificationToastIfNeeded(ResponsePayload response) {
+        if (response == null
+                || !"NOTIFICATION_EVENT".equals(response.getAction())
+                || !"SUCCESS".equals(response.getStatus())) {
+            return;
+        }
+
+        try {
+            JsonElement element = JsonParser.parseString(gson.toJson(response.getData()));
+            JsonObject data = element != null && element.isJsonObject()
+                    ? element.getAsJsonObject()
+                    : new JsonObject();
+
+            String title = data.has("title") && !data.get("title").isJsonNull()
+                    ? data.get("title").getAsString()
+                    : response.getMessage();
+            String message = data.has("message") && !data.get("message").isJsonNull()
+                    ? data.get("message").getAsString()
+                    : response.getMessage();
+
+            NotificationToast.show(title, message);
         } catch (Exception ignored) {}
     }
 }

@@ -3,6 +3,7 @@ package network;
 import com.google.gson.*;
 import dao.AdminDAO;
 import dao.AuctionDAO;
+import dao.NotificationDAO;
 import dto.*;
 import model.Auction;
 import model.BidTransaction;
@@ -33,6 +34,7 @@ public class ClientHandler implements Runnable {
     private final AuctionManager auctionManager;
     private final UserService userService;
     private final AdminDAO adminDAO;
+    private final NotificationDAO notificationDAO;
     private final Gson gson;
     private PrintWriter out;
     private BufferedReader in;
@@ -51,6 +53,7 @@ public class ClientHandler implements Runnable {
         this.auctionManager = manager;
         this.userService = new UserService();
         this.adminDAO = new AdminDAO();
+        this.notificationDAO = new NotificationDAO();
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, (JsonDeserializer<LocalDateTime>)
                         (json, type, context) -> LocalDateTime.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE_TIME))
@@ -109,6 +112,9 @@ public class ClientHandler implements Runnable {
                 case "SUBMIT_DEPOSIT" -> processSubmitDeposit(request.getData());
                 case "ADD_BALANCE" -> processAddBalance(request.getData());
                 case "GET_BALANCE" -> processGetBalance();
+                case "GET_NOTIFICATIONS" -> processGetNotifications();
+                case "GET_UNREAD_NOTIFICATION_COUNT" -> processGetUnreadNotificationCount();
+                case "MARK_NOTIFICATION_READ" -> processMarkNotificationRead(request.getData());
                 case "GET_BID_HISTORY" -> processGetBidHistory(request.getData());
                 case "JOIN_AUCTION_ROOM" -> processJoinAuctionRoom(request.getData());
                 case "LEAVE_AUCTION_ROOM" -> processLeaveAuctionRoom(request.getData());
@@ -591,6 +597,55 @@ public class ClientHandler implements Runnable {
         sendBalanceResponse(authenticatedUser.getId(), "GET_BALANCE_RESPONSE");
     }
 
+    private void processGetNotifications() {
+        if (!requireLoggedIn("GET_NOTIFICATIONS_RESPONSE")) {
+            return;
+        }
+
+        sendResponse(ResponsePayload.success(
+                "GET_NOTIFICATIONS_RESPONSE",
+                "Notifications loaded.",
+                notificationDAO.getNotifications(authenticatedUser.getId())
+        ));
+    }
+
+    private void processGetUnreadNotificationCount() {
+        if (!requireLoggedIn("GET_UNREAD_NOTIFICATION_COUNT_RESPONSE")) {
+            return;
+        }
+
+        sendResponse(ResponsePayload.success(
+                "GET_UNREAD_NOTIFICATION_COUNT_RESPONSE",
+                "Unread count loaded.",
+                notificationDAO.getUnreadCount(authenticatedUser.getId())
+        ));
+    }
+
+    private void processMarkNotificationRead(String dataJson) {
+        if (!requireLoggedIn("MARK_NOTIFICATION_READ_RESPONSE")) {
+            return;
+        }
+
+        JsonObject json = parseObject(dataJson);
+        Long notificationId = json.has("notificationId")
+                ? json.get("notificationId").getAsLong()
+                : null;
+
+        boolean ok = notificationId != null
+                && notificationDAO.markAsRead(authenticatedUser.getId(), notificationId);
+
+        sendResponse(ok
+                ? ResponsePayload.success(
+                        "MARK_NOTIFICATION_READ_RESPONSE",
+                        "Notification marked as read.",
+                        notificationDAO.getUnreadCount(authenticatedUser.getId())
+                )
+                : ResponsePayload.fail(
+                        "MARK_NOTIFICATION_READ_RESPONSE",
+                        "Khong the cap nhat notification."
+                ));
+    }
+
     private void sendBalanceUpdate(Long userId) {
         sendBalanceToUser(userId, "BALANCE_UPDATE");
     }
@@ -648,12 +703,23 @@ public class ClientHandler implements Runnable {
         JsonObject json = parseObject(dataJson);
         Long auctionId = json.get("auctionId").getAsLong();
         String status = json.get("status").getAsString();
-        boolean ok = "FINISHED".equalsIgnoreCase(status)
-                ? new AuctionDAO().settleAuction(auctionId)
-                : adminDAO.updateAuctionStatus(auctionId, status);
+        AuctionDAO.SettlementResult settlementResult = null;
+        boolean ok;
+
+        if ("FINISHED".equalsIgnoreCase(status)) {
+            settlementResult = new AuctionDAO().settleAuctionAndGetResult(auctionId);
+            ok = settlementResult != null;
+        } else {
+            ok = adminDAO.updateAuctionStatus(auctionId, status);
+        }
+
         if (ok) {
             auctionManager.reloadActiveAuctions();
-            ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Admin da cap nhat phien dau gia", null));
+            if (settlementResult != null) {
+                ServerMain.publishSettlementResults(List.of(settlementResult));
+            } else {
+                ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Admin da cap nhat phien dau gia", null));
+            }
         }
         sendResponse(ok
                 ? ResponsePayload.success("ADMIN_UPDATE_AUCTION_STATUS_RESPONSE", "Da cap nhat phien dau gia.", adminDAO.getAuctions())

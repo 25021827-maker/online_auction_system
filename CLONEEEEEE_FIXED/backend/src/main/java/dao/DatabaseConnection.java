@@ -87,6 +87,7 @@ public class DatabaseConnection {
             ensureAuctionExtensionTable(conn);
             ensureDepositRequestTable(conn);
             ensureAuctionWinnerTable(conn);
+            ensureNotificationTable(conn);
             ensureDefaultAdmin(conn);
 
             try (Statement stmt = conn.createStatement()) {
@@ -288,6 +289,27 @@ public class DatabaseConnection {
                         FOREIGN KEY (seller_id) REFERENCES users(user_id),
                         FOREIGN KEY (bidder_id) REFERENCES users(user_id),
                         FOREIGN KEY (winning_bid_id) REFERENCES bids(bid_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """);
+        }
+    }
+
+    private void ensureNotificationTable(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS notifications (
+                        notification_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        user_id BIGINT NOT NULL,
+                        auction_id BIGINT NULL,
+                        type VARCHAR(50) NOT NULL,
+                        title VARCHAR(255) NOT NULL,
+                        message TEXT NOT NULL,
+                        is_read BOOLEAN NOT NULL DEFAULT FALSE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                        FOREIGN KEY (auction_id) REFERENCES auctions(auction_id) ON DELETE SET NULL,
+                        INDEX idx_notifications_user_read (user_id, is_read),
+                        INDEX idx_notifications_created_at (created_at)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                     """);
         }

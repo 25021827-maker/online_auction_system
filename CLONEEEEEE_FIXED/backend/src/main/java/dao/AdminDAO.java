@@ -36,7 +36,6 @@ public class AdminDAO {
     public AdminDashboardDTO getDashboard() {
         AdminDashboardDTO dto = new AdminDashboardDTO();
         try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
-            new AuctionDAO().finishExpiredAuctions();
             dto.totalUsers = count(conn, "SELECT COUNT(*) FROM users");
             dto.totalAuctions = count(conn, "SELECT COUNT(*) FROM auctions");
             dto.activeAuctions = count(conn, "SELECT COUNT(*) FROM auctions WHERE status IN ('OPEN','RUNNING')");
@@ -263,7 +262,6 @@ public class AdminDAO {
     }
 
     public List<AdminWinnerDTO> getWinners() {
-        new AuctionDAO().finishExpiredAuctions();
         List<AdminWinnerDTO> winners = new ArrayList<>();
         String sql = """
                 SELECT aw.auction_id, i.name AS item_name,
@@ -364,7 +362,6 @@ public class AdminDAO {
     }
 
     public List<AdminAuctionDTO> getAuctions() {
-        new AuctionDAO().finishExpiredAuctions();
         List<AdminAuctionDTO> auctions = new ArrayList<>();
         String sql = """
                 SELECT a.auction_id, i.name, u.username AS seller_username,

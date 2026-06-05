@@ -13,10 +13,12 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 public class AuctionDAO {
+    private final NotificationDAO notificationDAO = new NotificationDAO();
 
     public boolean placeBid(Long auctionId, Long bidderId, double bidAmount) throws SQLException {
         return placeBid(auctionId, bidderId, bidAmount, false);
@@ -297,8 +299,13 @@ public class AuctionDAO {
 
 
     public int finishExpiredAuctions() {
+        return finishExpiredAuctionsAndGetResults().size();
+    }
+
+    public List<SettlementResult> finishExpiredAuctionsAndGetResults() {
         String findExpiredSql = """
-                SELECT a.auction_id, a.item_id, i.seller_id, a.current_leader_id, a.current_price,
+                SELECT a.auction_id, a.item_id, i.seller_id, i.name AS item_name,
+                       a.current_leader_id, a.current_price,
                        (
                            SELECT b.bid_id
                            FROM bids b
@@ -315,7 +322,7 @@ public class AuctionDAO {
                 """;
 
         Connection conn = null;
-        int count = 0;
+        List<SettlementResult> results = new ArrayList<>();
         try {
             conn = DatabaseConnection.getInstance().getConnection();
             conn.setAutoCommit(false);
@@ -329,18 +336,17 @@ public class AuctionDAO {
             }
 
             for (SettlementAuction auction : expiredAuctions) {
-                settleAuction(conn, auction);
-                count++;
+                results.add(settleAuction(conn, auction));
             }
 
             conn.commit();
-            return count;
+            return results;
         } catch (SQLException e) {
             if (conn != null) {
                 try { conn.rollback(); } catch (Exception ignored) {}
             }
             System.err.println("Loi khi tu dong dong phien het han: " + e.getMessage());
-            return 0;
+            return List.of();
         } finally {
             if (conn != null) {
                 try { conn.setAutoCommit(true); conn.close(); } catch (Exception ignored) {}
@@ -349,8 +355,13 @@ public class AuctionDAO {
     }
 
     public boolean settleAuction(Long auctionId) {
+        return settleAuctionAndGetResult(auctionId) != null;
+    }
+
+    public SettlementResult settleAuctionAndGetResult(Long auctionId) {
         String findAuctionSql = """
-                SELECT a.auction_id, a.item_id, i.seller_id, a.current_leader_id, a.current_price,
+                SELECT a.auction_id, a.item_id, i.seller_id, i.name AS item_name,
+                       a.current_leader_id, a.current_price,
                        (
                            SELECT b.bid_id
                            FROM bids b
@@ -383,18 +394,18 @@ public class AuctionDAO {
 
             if (auction == null) {
                 conn.rollback();
-                return false;
+                return null;
             }
 
-            settleAuction(conn, auction);
+            SettlementResult result = settleAuction(conn, auction);
             conn.commit();
-            return true;
+            return result;
         } catch (SQLException e) {
             if (conn != null) {
                 try { conn.rollback(); } catch (Exception ignored) {}
             }
             System.err.println("Loi settle auction: " + e.getMessage());
-            return false;
+            return null;
         } finally {
             if (conn != null) {
                 try { conn.setAutoCommit(true); conn.close(); } catch (Exception ignored) {}
@@ -407,6 +418,7 @@ public class AuctionDAO {
         auction.auctionId = rs.getLong("auction_id");
         auction.itemId = rs.getLong("item_id");
         auction.sellerId = rs.getLong("seller_id");
+        auction.itemName = rs.getString("item_name");
         auction.finalPrice = rs.getDouble("current_price");
 
         long leader = rs.getLong("current_leader_id");
@@ -421,7 +433,7 @@ public class AuctionDAO {
         return auction;
     }
 
-    private void settleAuction(Connection conn, SettlementAuction auction) throws SQLException {
+    private SettlementResult settleAuction(Connection conn, SettlementAuction auction) throws SQLException {
         String insertWinnerSql = """
             INSERT INTO auction_winners (auction_id, item_id, seller_id, bidder_id, winning_bid_id, final_price, status)
             VALUES (?, ?, ?, ?, ?, ?, 'PAID')
@@ -474,7 +486,24 @@ public class AuctionDAO {
                 stmt.setLong(1, auction.auctionId);
                 stmt.executeUpdate();
             }
-            return;
+
+            SettlementResult result = buildBaseSettlementResult(auction);
+            result.hasWinner = false;
+            result.sellerNotificationType = "AUCTION_NO_WINNER";
+            result.sellerNotificationTitle = "Phien dau gia ket thuc khong co nguoi thang";
+            result.sellerNotificationMessage = productLabel(auction)
+                    + " da ket thuc nhung khong co luot bid hop le.";
+
+            notificationDAO.createNotification(
+                    conn,
+                    auction.sellerId,
+                    auction.auctionId,
+                    result.sellerNotificationType,
+                    result.sellerNotificationTitle,
+                    result.sellerNotificationMessage
+            );
+
+            return result;
         }
 
         try (PreparedStatement stmt = conn.prepareStatement(insertWinnerSql)) {
@@ -518,19 +547,90 @@ public class AuctionDAO {
             stmt.setLong(3, auction.auctionId);
             stmt.executeUpdate();
         }
+
+        SettlementResult result = buildBaseSettlementResult(auction);
+        result.hasWinner = true;
+        result.winnerId = auction.leaderId;
+        result.winnerNotificationType = "AUCTION_WON";
+        result.winnerNotificationTitle = "Ban da thang phien dau gia";
+        result.winnerNotificationMessage = "Ban da thang " + productLabel(auction)
+                + " voi gia " + formatCurrency(auction.finalPrice)
+                + ". So tien da duoc tru khoi tai khoan.";
+        result.sellerNotificationType = "AUCTION_SOLD";
+        result.sellerNotificationTitle = "San pham cua ban da duoc ban";
+        result.sellerNotificationMessage = productLabel(auction)
+                + " da ban thanh cong voi gia " + formatCurrency(auction.finalPrice)
+                + ". Tien da duoc cong vao tai khoan.";
+
+        notificationDAO.createNotification(
+                conn,
+                auction.leaderId,
+                auction.auctionId,
+                result.winnerNotificationType,
+                result.winnerNotificationTitle,
+                result.winnerNotificationMessage
+        );
+
+        notificationDAO.createNotification(
+                conn,
+                auction.sellerId,
+                auction.auctionId,
+                result.sellerNotificationType,
+                result.sellerNotificationTitle,
+                result.sellerNotificationMessage
+        );
+
+        return result;
+    }
+
+    private SettlementResult buildBaseSettlementResult(SettlementAuction auction) {
+        SettlementResult result = new SettlementResult();
+        result.auctionId = auction.auctionId;
+        result.itemId = auction.itemId;
+        result.itemName = auction.itemName;
+        result.sellerId = auction.sellerId;
+        result.finalPrice = auction.finalPrice;
+        return result;
+    }
+
+    private String productLabel(SettlementAuction auction) {
+        if (auction.itemName != null && !auction.itemName.isBlank()) {
+            return auction.itemName;
+        }
+        return "San pham #" + auction.itemId;
+    }
+
+    private String formatCurrency(double value) {
+        return "$" + String.format(Locale.US, "%.2f", value);
     }
 
     private static class SettlementAuction {
         Long auctionId;
         Long itemId;
+        String itemName;
         Long sellerId;
         Long leaderId;
         Long winningBidId;
         double finalPrice;
     }
 
+    public static class SettlementResult {
+        public Long auctionId;
+        public Long itemId;
+        public String itemName;
+        public Long sellerId;
+        public Long winnerId;
+        public double finalPrice;
+        public boolean hasWinner;
+        public String winnerNotificationType;
+        public String winnerNotificationTitle;
+        public String winnerNotificationMessage;
+        public String sellerNotificationType;
+        public String sellerNotificationTitle;
+        public String sellerNotificationMessage;
+    }
+
     public List<Auction> getActiveAuctions() {
-        finishExpiredAuctions();
         List<Auction> activeAuctions = new ArrayList<>();
         // JOIN báº£ng i Ä‘á»ƒ láº¥y seller_id
         String sql = "SELECT a.*, i.seller_id, i.name, i.description, i.starting_price, i.category, i.condition_status, i.image_url, " +
@@ -1061,5 +1161,3 @@ public class AuctionDAO {
 
 
 }
-
-
