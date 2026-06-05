@@ -88,6 +88,7 @@ public class DatabaseConnection {
             ensureDepositRequestTable(conn);
             ensureAuctionWinnerTable(conn);
             ensureNotificationTable(conn);
+            ensureWalletTransactionTable(conn);
             ensureDefaultAdmin(conn);
 
             try (Statement stmt = conn.createStatement()) {
@@ -312,6 +313,94 @@ public class DatabaseConnection {
                         INDEX idx_notifications_created_at (created_at)
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                     """);
+        }
+
+        /*
+         * CREATE TABLE IF NOT EXISTS does not migrate old tables.
+         * Some local databases already have notifications without type/title/is_read.
+         */
+        addColumnIfMissing(conn, "notifications", "auction_id", "BIGINT NULL AFTER user_id");
+        addColumnIfMissing(conn, "notifications", "type", "VARCHAR(50) NOT NULL DEFAULT 'GENERAL' AFTER auction_id");
+        addColumnIfMissing(conn, "notifications", "title", "VARCHAR(255) NOT NULL DEFAULT 'Notification' AFTER type");
+        addColumnIfMissing(conn, "notifications", "message", "TEXT NULL AFTER title");
+        addColumnIfMissing(conn, "notifications", "is_read", "BOOLEAN NOT NULL DEFAULT FALSE AFTER message");
+        addColumnIfMissing(conn, "notifications", "created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER is_read");
+        addIndexIfMissing(conn, "notifications", "idx_notifications_user_read", "user_id, is_read");
+        addIndexIfMissing(conn, "notifications", "idx_notifications_created_at", "created_at");
+    }
+
+    private void ensureWalletTransactionTable(Connection conn) throws SQLException {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS wallet_transactions (
+                        transaction_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                        user_id BIGINT NOT NULL,
+                        auction_id BIGINT NULL,
+                        type VARCHAR(50) NOT NULL DEFAULT 'ADJUSTMENT',
+                        amount DECIMAL(12,2) NOT NULL,
+                        balance_before DECIMAL(12,2) NOT NULL,
+                        balance_after DECIMAL(12,2) NOT NULL,
+                        available_before DECIMAL(12,2) NULL,
+                        available_after DECIMAL(12,2) NULL,
+                        note VARCHAR(255),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+                        FOREIGN KEY (auction_id) REFERENCES auctions(auction_id) ON DELETE SET NULL,
+                        INDEX idx_wallet_tx_user_time (user_id, created_at),
+                        INDEX idx_wallet_tx_auction (auction_id)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+                    """);
+        }
+
+        addColumnIfMissing(conn, "wallet_transactions", "auction_id", "BIGINT NULL AFTER user_id");
+        addColumnIfMissing(conn, "wallet_transactions", "type", "VARCHAR(50) NOT NULL DEFAULT 'ADJUSTMENT' AFTER auction_id");
+        addColumnIfMissing(conn, "wallet_transactions", "amount", "DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER type");
+        addColumnIfMissing(conn, "wallet_transactions", "balance_before", "DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER amount");
+        addColumnIfMissing(conn, "wallet_transactions", "balance_after", "DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER balance_before");
+        addColumnIfMissing(conn, "wallet_transactions", "available_before", "DECIMAL(12,2) NULL AFTER balance_after");
+        addColumnIfMissing(conn, "wallet_transactions", "available_after", "DECIMAL(12,2) NULL AFTER available_before");
+        addColumnIfMissing(conn, "wallet_transactions", "note", "VARCHAR(255) NULL AFTER available_after");
+        addColumnIfMissing(conn, "wallet_transactions", "created_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER note");
+        addIndexIfMissing(conn, "wallet_transactions", "idx_wallet_tx_user_time", "user_id, created_at");
+        addIndexIfMissing(conn, "wallet_transactions", "idx_wallet_tx_auction", "auction_id");
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate("""
+                    ALTER TABLE wallet_transactions
+                    MODIFY type VARCHAR(50) NOT NULL DEFAULT 'ADJUSTMENT'
+                    """);
+        }
+    }
+
+    private void addIndexIfMissing(
+            Connection conn,
+            String tableName,
+            String indexName,
+            String indexedColumns
+    ) throws SQLException {
+        String checkSql = """
+                SELECT COUNT(*)
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = ?
+                  AND INDEX_NAME = ?
+                """;
+
+        try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+            checkStmt.setString(1, tableName);
+            checkStmt.setString(2, indexName);
+
+            try (ResultSet rs = checkStmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    return;
+                }
+            }
+        }
+
+        String sql = "CREATE INDEX " + indexName + " ON " + tableName + " (" + indexedColumns + ")";
+        try (Statement stmt = conn.createStatement()) {
+            stmt.executeUpdate(sql);
+            System.out.println("Added missing index: " + tableName + "." + indexName);
         }
     }
 

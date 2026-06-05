@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 
 public class AuctionDAO {
     private final NotificationDAO notificationDAO = new NotificationDAO();
+    private final WalletTransactionDAO walletTransactionDAO = new WalletTransactionDAO();
 
     public boolean placeBid(Long auctionId, Long bidderId, double bidAmount) throws SQLException {
         return placeBid(auctionId, bidderId, bidAmount, false);
@@ -188,39 +189,67 @@ public class AuctionDAO {
                 throw new SQLException("Gia dat phai toi thieu " + minimumValidBid + ".");
             }
 
-            double availableBalance;
-            try (PreparedStatement stmt = conn.prepareStatement(lockUserSql)) {
-                stmt.setLong(1, bidderId);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (!rs.next()) {
-                        conn.rollback();
-                        return false;
-                    }
-                    availableBalance = rs.getDouble("available_balance");
-                }
+            UserWalletState bidderWallet = lockUserWallet(conn, lockUserSql, bidderId);
+            if (bidderWallet == null) {
+                conn.rollback();
+                return false;
             }
 
             double amountNeedToHold = oldLeaderId != null && oldLeaderId.equals(bidderId)
                     ? bidAmount - currentPrice
                     : bidAmount;
 
-            if (availableBalance < amountNeedToHold) {
+            if (bidderWallet.availableBalance < amountNeedToHold) {
                 conn.rollback();
                 throw new SQLException("Khong du so du kha dung de dat gia.");
             }
 
             if (oldLeaderId != null && !oldLeaderId.equals(bidderId)) {
+                UserWalletState oldLeaderWallet = lockUserWallet(conn, lockUserSql, oldLeaderId);
+                if (oldLeaderWallet == null) {
+                    conn.rollback();
+                    return false;
+                }
+
                 try (PreparedStatement stmt = conn.prepareStatement(refundOldLeaderSql)) {
                     stmt.setDouble(1, currentPrice);
                     stmt.setLong(2, oldLeaderId);
                     stmt.executeUpdate();
                 }
+
+                walletTransactionDAO.insertTransaction(
+                        conn,
+                        oldLeaderId,
+                        auctionId,
+                        "BID_RELEASE",
+                        currentPrice,
+                        oldLeaderWallet.balance,
+                        oldLeaderWallet.balance,
+                        oldLeaderWallet.availableBalance,
+                        oldLeaderWallet.availableBalance + currentPrice,
+                        "Hoan tien giu do bi vuot gia auction #" + auctionId
+                );
             }
 
             try (PreparedStatement stmt = conn.prepareStatement(holdNewBidderSql)) {
                 stmt.setDouble(1, amountNeedToHold);
                 stmt.setLong(2, bidderId);
                 stmt.executeUpdate();
+            }
+
+            if (amountNeedToHold > 0) {
+                walletTransactionDAO.insertTransaction(
+                        conn,
+                        bidderId,
+                        auctionId,
+                        "BID_HOLD",
+                        -amountNeedToHold,
+                        bidderWallet.balance,
+                        bidderWallet.balance,
+                        bidderWallet.availableBalance,
+                        bidderWallet.availableBalance - amountNeedToHold,
+                        "Giu tien khi dat gia auction #" + auctionId
+                );
             }
 
             long bidId;
@@ -434,6 +463,13 @@ public class AuctionDAO {
     }
 
     private SettlementResult settleAuction(Connection conn, SettlementAuction auction) throws SQLException {
+        String lockUserSql = """
+            SELECT balance, available_balance
+            FROM users
+            WHERE user_id = ?
+            FOR UPDATE
+            """;
+
         String insertWinnerSql = """
             INSERT INTO auction_winners (auction_id, item_id, seller_id, bidder_id, winning_bid_id, final_price, status)
             VALUES (?, ?, ?, ?, ?, ?, 'PAID')
@@ -467,7 +503,7 @@ public class AuctionDAO {
 
         String finishAuctionSql = """
             UPDATE auctions
-            SET status = 'FINISHED',
+            SET status = 'PAID',
                 final_price = ?,
                 winning_bid_id = ?
             WHERE auction_id = ?
@@ -479,6 +515,13 @@ public class AuctionDAO {
                 final_price = NULL,
                 winning_bid_id = NULL
             WHERE auction_id = ?
+            """;
+
+        String findLoserBidderIdsSql = """
+            SELECT DISTINCT bidder_id
+            FROM bids
+            WHERE auction_id = ?
+              AND bidder_id <> ?
             """;
 
         if (auction.leaderId == null) {
@@ -493,6 +536,12 @@ public class AuctionDAO {
             result.sellerNotificationTitle = "Phien dau gia ket thuc khong co nguoi thang";
             result.sellerNotificationMessage = productLabel(auction)
                     + " da ket thuc nhung khong co luot bid hop le.";
+            result.notifications.add(new SettlementNotification(
+                    auction.sellerId,
+                    result.sellerNotificationType,
+                    result.sellerNotificationTitle,
+                    result.sellerNotificationMessage
+            ));
 
             notificationDAO.createNotification(
                     conn,
@@ -504,6 +553,11 @@ public class AuctionDAO {
             );
 
             return result;
+        }
+
+        UserWalletState winnerWallet = lockUserWallet(conn, lockUserSql, auction.leaderId);
+        if (winnerWallet == null) {
+            throw new SQLException("Winner not found during settlement.");
         }
 
         try (PreparedStatement stmt = conn.prepareStatement(insertWinnerSql)) {
@@ -531,6 +585,25 @@ public class AuctionDAO {
             stmt.executeUpdate();
         }
 
+        double winnerBalanceAfter = winnerWallet.balance - auction.finalPrice;
+        walletTransactionDAO.insertTransaction(
+                conn,
+                auction.leaderId,
+                auction.auctionId,
+                "AUCTION_PAYMENT",
+                -auction.finalPrice,
+                winnerWallet.balance,
+                winnerBalanceAfter,
+                winnerWallet.availableBalance,
+                winnerBalanceAfter,
+                "Thanh toan thang auction #" + auction.auctionId
+        );
+
+        UserWalletState sellerWallet = lockUserWallet(conn, lockUserSql, auction.sellerId);
+        if (sellerWallet == null) {
+            throw new SQLException("Seller not found during settlement.");
+        }
+
         try (PreparedStatement stmt = conn.prepareStatement(creditSellerSql)) {
             stmt.setDouble(1, auction.finalPrice);
             stmt.setDouble(2, auction.finalPrice);
@@ -540,6 +613,19 @@ public class AuctionDAO {
                 throw new SQLException("Seller not found during settlement.");
             }
         }
+
+        walletTransactionDAO.insertTransaction(
+                conn,
+                auction.sellerId,
+                auction.auctionId,
+                "AUCTION_SALE_INCOME",
+                auction.finalPrice,
+                sellerWallet.balance,
+                sellerWallet.balance + auction.finalPrice,
+                sellerWallet.availableBalance,
+                sellerWallet.availableBalance + auction.finalPrice,
+                "Nhan tien ban auction #" + auction.auctionId
+        );
 
         try (PreparedStatement stmt = conn.prepareStatement(finishAuctionSql)) {
             stmt.setDouble(1, auction.finalPrice);
@@ -561,6 +647,18 @@ public class AuctionDAO {
         result.sellerNotificationMessage = productLabel(auction)
                 + " da ban thanh cong voi gia " + formatCurrency(auction.finalPrice)
                 + ". Tien da duoc cong vao tai khoan.";
+        result.notifications.add(new SettlementNotification(
+                auction.leaderId,
+                result.winnerNotificationType,
+                result.winnerNotificationTitle,
+                result.winnerNotificationMessage
+        ));
+        result.notifications.add(new SettlementNotification(
+                auction.sellerId,
+                result.sellerNotificationType,
+                result.sellerNotificationTitle,
+                result.sellerNotificationMessage
+        ));
 
         notificationDAO.createNotification(
                 conn,
@@ -580,7 +678,53 @@ public class AuctionDAO {
                 result.sellerNotificationMessage
         );
 
+        try (PreparedStatement stmt = conn.prepareStatement(findLoserBidderIdsSql)) {
+            stmt.setLong(1, auction.auctionId);
+            stmt.setLong(2, auction.leaderId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Long loserId = rs.getLong("bidder_id");
+                    String loserTitle = "Phien dau gia da ket thuc";
+                    String loserMessage = "Ban khong thang " + productLabel(auction)
+                            + ". So du kha dung cua ban da duoc cap nhat.";
+
+                    notificationDAO.createNotification(
+                            conn,
+                            loserId,
+                            auction.auctionId,
+                            "AUCTION_LOST",
+                            loserTitle,
+                            loserMessage
+                    );
+
+                    result.notifications.add(new SettlementNotification(
+                            loserId,
+                            "AUCTION_LOST",
+                            loserTitle,
+                            loserMessage
+                    ));
+                }
+            }
+        }
+
         return result;
+    }
+
+    private UserWalletState lockUserWallet(Connection conn, String sql, Long userId) throws SQLException {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+
+                UserWalletState state = new UserWalletState();
+                state.balance = rs.getDouble("balance");
+                state.availableBalance = rs.getDouble("available_balance");
+                return state;
+            }
+        }
     }
 
     private SettlementResult buildBaseSettlementResult(SettlementAuction auction) {
@@ -614,6 +758,11 @@ public class AuctionDAO {
         double finalPrice;
     }
 
+    private static class UserWalletState {
+        double balance;
+        double availableBalance;
+    }
+
     public static class SettlementResult {
         public Long auctionId;
         public Long itemId;
@@ -628,6 +777,21 @@ public class AuctionDAO {
         public String sellerNotificationType;
         public String sellerNotificationTitle;
         public String sellerNotificationMessage;
+        public List<SettlementNotification> notifications = new ArrayList<>();
+    }
+
+    public static class SettlementNotification {
+        public Long userId;
+        public String type;
+        public String title;
+        public String message;
+
+        public SettlementNotification(Long userId, String type, String title, String message) {
+            this.userId = userId;
+            this.type = type;
+            this.title = title;
+            this.message = message;
+        }
     }
 
     public List<Auction> getActiveAuctions() {

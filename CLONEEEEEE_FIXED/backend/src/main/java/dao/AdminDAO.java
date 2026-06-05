@@ -18,18 +18,42 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AdminDAO {
+    private final WalletTransactionDAO walletTransactionDAO = new WalletTransactionDAO();
 
     public boolean submitDepositRequest(DepositRequest request) {
-        String sql = "INSERT INTO deposit_requests (user_id, amount, proof_image_path, status) VALUES (?, ?, ?, 'PENDING')";
-        try (Connection conn = DatabaseConnection.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setLong(1, request.userId);
-            pstmt.setDouble(2, request.amount);
-            pstmt.setString(3, request.proofImagePath == null ? "" : request.proofImagePath);
-            return pstmt.executeUpdate() > 0;
+        String insertRequestSql = """
+                INSERT INTO deposit_requests (user_id, amount, proof_image_path, status)
+                VALUES (?, ?, ?, 'PENDING')
+                """;
+
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getInstance().getConnection();
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement pstmt = conn.prepareStatement(insertRequestSql)) {
+                pstmt.setLong(1, request.userId);
+                pstmt.setDouble(2, request.amount);
+                pstmt.setString(3, request.proofImagePath == null ? "" : request.proofImagePath);
+
+                if (pstmt.executeUpdate() == 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            conn.commit();
+            return true;
         } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
             System.err.println("Loi tao yeu cau nap tien: " + e.getMessage());
             return false;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
+            }
         }
     }
 
@@ -133,6 +157,7 @@ public class AdminDAO {
 
     private boolean reviewDeposit(Long requestId, Long adminId, boolean approve) {
         String selectSql = "SELECT user_id, amount FROM deposit_requests WHERE request_id = ? AND status = 'PENDING' FOR UPDATE";
+        String selectUserSql = "SELECT balance, available_balance FROM users WHERE user_id = ? FOR UPDATE";
         String updateUserSql = """
                 UPDATE users
                 SET balance = COALESCE(balance, 0) + ?,
@@ -161,6 +186,23 @@ public class AdminDAO {
             }
 
             if (approve) {
+                double balanceBefore;
+                double availableBefore;
+
+                try (PreparedStatement selectUserStmt = conn.prepareStatement(selectUserSql)) {
+                    selectUserStmt.setLong(1, userId);
+
+                    try (ResultSet rs = selectUserStmt.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return false;
+                        }
+
+                        balanceBefore = rs.getDouble("balance");
+                        availableBefore = rs.getDouble("available_balance");
+                    }
+                }
+
                 try (PreparedStatement updateUserStmt = conn.prepareStatement(updateUserSql)) {
                     updateUserStmt.setDouble(1, amount);
                     updateUserStmt.setDouble(2, amount);
@@ -170,6 +212,19 @@ public class AdminDAO {
                         return false;
                     }
                 }
+
+                walletTransactionDAO.insertTransaction(
+                        conn,
+                        userId,
+                        null,
+                        "DEPOSIT",
+                        amount,
+                        balanceBefore,
+                        balanceBefore + amount,
+                        availableBefore,
+                        availableBefore + amount,
+                        "Nap tien request #" + requestId + " da duoc duyet"
+                );
             }
 
             try (PreparedStatement updateRequestStmt = conn.prepareStatement(updateRequestSql)) {

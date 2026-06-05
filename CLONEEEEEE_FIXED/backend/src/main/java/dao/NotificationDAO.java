@@ -64,6 +64,33 @@ public class NotificationDAO {
         return notifications;
     }
 
+    public List<NotificationRecord> getUnreadNotifications(Long userId, int limit) {
+        List<NotificationRecord> notifications = new ArrayList<>();
+        String sql = """
+                SELECT notification_id, user_id, auction_id, type, title, message, is_read, created_at
+                FROM notifications
+                WHERE user_id = ? AND is_read = FALSE
+                ORDER BY created_at DESC, notification_id DESC
+                LIMIT ?
+                """;
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setInt(2, Math.max(1, limit));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    notifications.add(mapNotification(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi lay unread notifications: " + e.getMessage());
+        }
+
+        return notifications;
+    }
+
     public int getUnreadCount(Long userId) {
         String sql = "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = FALSE";
 
@@ -96,6 +123,62 @@ public class NotificationDAO {
             System.err.println("Loi mark notification read: " + e.getMessage());
             return false;
         }
+    }
+
+    public String resolveAuctionNotificationType(Long userId, Long auctionId, String fallbackType) {
+        if (userId == null || auctionId == null) {
+            return fallbackType;
+        }
+
+        String sql = """
+                SELECT i.seller_id,
+                       aw.bidder_id AS winner_id,
+                       EXISTS (
+                           SELECT 1
+                           FROM bids b
+                           WHERE b.auction_id = a.auction_id
+                             AND b.bidder_id = ?
+                       ) AS has_bid
+                FROM auctions a
+                JOIN items i ON i.item_id = a.item_id
+                LEFT JOIN auction_winners aw ON aw.auction_id = a.auction_id
+                WHERE a.auction_id = ?
+                """;
+
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setLong(1, userId);
+            stmt.setLong(2, auctionId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    return fallbackType;
+                }
+
+                long sellerId = rs.getLong("seller_id");
+                Long winnerId = rs.getLong("winner_id");
+                if (rs.wasNull()) {
+                    winnerId = null;
+                }
+                boolean hasBid = rs.getBoolean("has_bid");
+
+                if (winnerId != null && winnerId.equals(userId)) {
+                    return "AUCTION_WON";
+                }
+
+                if (sellerId == userId) {
+                    return winnerId == null ? "AUCTION_NO_WINNER" : "AUCTION_SOLD";
+                }
+
+                if (hasBid) {
+                    return "AUCTION_LOST";
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Loi resolve notification type: " + e.getMessage());
+        }
+
+        return fallbackType;
     }
 
     private NotificationRecord mapNotification(ResultSet rs) throws SQLException {

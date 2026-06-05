@@ -9,7 +9,9 @@ Controller\auth\RegisterController$1.class
 Controller\product\WatchlistController$1.class
 Controller\user\AdminController$8.class
 Service\product\ProductFilterService.class
+Controller\user\ProfileController$2.class
 dto\AuctionDTO.class
+Controller\user\ProfileController$1.class
 ui\product\ProductCardFactory.class
 Controller\user\AdminController$9.class
 Main\MainApp.class
@@ -33,6 +35,7 @@ Controller\product\MyProductsController$1.class
 Controller\user\AdminController$6.class
 dto\AdminWinnerDTO.class
 network\SocketClient.class
+dto\WalletTransactionDTO.class
 dto\CreateAuctionRequest.class
 dto\ResponsePayload.class
 Controller\user\AdminController$3.class
@@ -52,6 +55,7 @@ dto\AdminUserDTO.class
 Model\User.class
 Service\core\SceneNavigator.class
 Model\Bid.class
+Controller\user\ProfileController$3.class
 Controller\product\ProductFormController.class
 dto\BidRequest.class
 Controller\product\MyProductsController.class

@@ -244,6 +244,7 @@ public class SocketClient {
                     ? data.get("message").getAsString()
                     : response.getMessage();
 
+            System.out.println("[SocketClient] Notification received: " + title + " - " + message);
             NotificationToast.show(title, message);
         } catch (Exception ignored) {}
     }

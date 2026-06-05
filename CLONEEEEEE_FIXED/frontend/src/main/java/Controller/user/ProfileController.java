@@ -3,14 +3,23 @@ package Controller.user;
 import Service.core.SceneNavigator;
 import Session.Session;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.reflect.TypeToken;
 import dto.DepositRequest;
 import dto.RequestPayload;
 import dto.ResponsePayload;
+import dto.WalletTransactionDTO;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -18,6 +27,10 @@ import javafx.scene.shape.Rectangle;
 import network.SocketClient;
 
 import java.io.InputStream;
+import java.lang.reflect.Type;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 public class ProfileController {
@@ -27,8 +40,18 @@ public class ProfileController {
     @FXML private Label lblAvailableBalance;
     @FXML private Label lblHeldBalance;
     @FXML private Label proofLabel;
+    @FXML private Label walletHistoryStatusLabel;
     @FXML private ImageView qrImageView;
     @FXML private ImageView imgProfileAvatar;
+    @FXML private TableView<WalletTransactionDTO> walletTransactionsTable;
+    @FXML private TableColumn<WalletTransactionDTO, String> txTimeColumn;
+    @FXML private TableColumn<WalletTransactionDTO, String> txTypeColumn;
+    @FXML private TableColumn<WalletTransactionDTO, String> txAmountColumn;
+    @FXML private TableColumn<WalletTransactionDTO, String> txBalanceBeforeColumn;
+    @FXML private TableColumn<WalletTransactionDTO, String> txBalanceAfterColumn;
+    @FXML private TableColumn<WalletTransactionDTO, String> txAvailableBeforeColumn;
+    @FXML private TableColumn<WalletTransactionDTO, String> txAvailableAfterColumn;
+    @FXML private TableColumn<WalletTransactionDTO, String> txNoteColumn;
 
     private final Gson gson = new Gson();
     private String proofImagePath = "";
@@ -40,9 +63,15 @@ public class ProfileController {
         socketClient.clearListeners("SUBMIT_DEPOSIT_RESPONSE");
         socketClient.clearListeners("BALANCE_UPDATE");
         socketClient.clearListeners("GET_BALANCE_RESPONSE");
+        socketClient.clearListeners("GET_WALLET_TRANSACTIONS_RESPONSE");
+        socketClient.clearListeners("WALLET_HISTORY_CHANGED");
         socketClient.on("SUBMIT_DEPOSIT_RESPONSE", this::handleDepositSubmitResponse);
         socketClient.on("BALANCE_UPDATE", this::handleBalanceUpdate);
         socketClient.on("GET_BALANCE_RESPONSE", this::handleBalanceUpdate);
+        socketClient.on("GET_WALLET_TRANSACTIONS_RESPONSE", this::handleWalletTransactions);
+        socketClient.on("WALLET_HISTORY_CHANGED", response -> fetchWalletTransactions());
+
+        setupWalletTransactionTable();
 
         if (Session.getCurrentUser() != null) {
             lblUsername.setText(Session.getCurrentUser().getUsername());
@@ -50,6 +79,7 @@ public class ProfileController {
             setupProfileAvatar();
         }
         requestBalanceRefresh();
+        fetchWalletTransactions();
 
         try (InputStream qrStream = getClass().getResourceAsStream("/images/myqr.png")) {
             if (qrStream != null) {
@@ -58,6 +88,88 @@ public class ProfileController {
         } catch (Exception e) {
             System.out.println("Cannot load QR image: " + e.getMessage());
         }
+    }
+
+    private void setupWalletTransactionTable() {
+        if (walletTransactionsTable == null) {
+            return;
+        }
+
+        txTimeColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatTime(cell.getValue().createdAt)));
+
+        txTypeColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(displayType(cell.getValue().type)));
+
+        txAmountColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatSignedMoney(cell.getValue().amount)));
+
+        txBalanceBeforeColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatMoney(cell.getValue().balanceBefore)));
+
+        txBalanceAfterColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatMoney(cell.getValue().balanceAfter)));
+
+        txAvailableBeforeColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatMoney(cell.getValue().availableBefore)));
+
+        txAvailableAfterColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(formatMoney(cell.getValue().availableAfter)));
+
+        txNoteColumn.setCellValueFactory(cell ->
+                new SimpleStringProperty(nullToEmpty(cell.getValue().note)));
+
+        txAmountColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                    return;
+                }
+
+                setText(item);
+
+                WalletTransactionDTO tx = getIndex() >= 0 && getIndex() < getTableView().getItems().size()
+                        ? getTableView().getItems().get(getIndex())
+                        : null;
+
+                if (tx != null && tx.amount > 0) {
+                    setStyle("-fx-text-fill: #0f7a2a; -fx-font-weight: bold;");
+                } else if (tx != null && tx.amount < 0) {
+                    setStyle("-fx-text-fill: #b00020; -fx-font-weight: bold;");
+                } else {
+                    setStyle("-fx-text-fill: #000000;");
+                }
+            }
+        });
+
+        txNoteColumn.setCellFactory(column -> new TableCell<>() {
+            private final Label label = new Label();
+
+            {
+                label.setWrapText(true);
+                label.setStyle("-fx-text-fill: #000000;");
+            }
+
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setGraphic(null);
+                    return;
+                }
+
+                label.setText(item);
+                label.setMaxWidth(Math.max(0, txNoteColumn.getWidth() - 10));
+                setGraphic(label);
+            }
+        });
+
+        walletTransactionsTable.setPlaceholder(new Label("No transaction history yet."));
     }
 
     private void updateBalanceUI() {
@@ -78,6 +190,32 @@ public class ProfileController {
         if (Session.getCurrentUser() != null) {
             SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
         }
+    }
+
+    private void fetchWalletTransactions() {
+        if (Session.getCurrentUser() == null) {
+            return;
+        }
+
+        setWalletHistoryStatus("Loading transaction history...");
+
+        SocketClient.getInstance().sendRequest(new RequestPayload(
+                "GET_WALLET_TRANSACTIONS",
+                "{\"userId\":" + Session.getCurrentUser().getId() + "}"
+        ));
+    }
+
+    private void setWalletHistoryStatus(String message) {
+        if (walletHistoryStatusLabel == null) {
+            return;
+        }
+
+        if (Platform.isFxApplicationThread()) {
+            walletHistoryStatusLabel.setText(message);
+            return;
+        }
+
+        Platform.runLater(() -> walletHistoryStatusLabel.setText(message));
     }
 
     private void setupProfileAvatar() {
@@ -152,6 +290,7 @@ public class ProfileController {
                 proofLabel.setText("Deposit request is pending admin approval.");
                 pendingAmount = 0;
                 proofImagePath = "";
+                fetchWalletTransactions();
             } else {
                 proofLabel.setText("System error: " + response.getMessage());
             }
@@ -159,7 +298,144 @@ public class ProfileController {
     }
 
     private void handleBalanceUpdate(ResponsePayload response) {
-        Platform.runLater(this::updateBalanceUI);
+        Platform.runLater(() -> {
+            try {
+                if (!"SUCCESS".equalsIgnoreCase(response.getStatus())) {
+                    return;
+                }
+
+                JsonObject data = JsonParser.parseString(gson.toJson(response.getData())).getAsJsonObject();
+                Long userId = data.has("userId") ? data.get("userId").getAsLong() : null;
+
+                if (Session.getCurrentUser() != null
+                        && userId != null
+                        && Session.getCurrentUser().getId().equals(userId)) {
+                    double balance = data.get("balance").getAsDouble();
+                    double availableBalance = data.has("availableBalance")
+                            ? data.get("availableBalance").getAsDouble()
+                            : balance;
+
+                    Session.getCurrentUser().setBalance(balance);
+                    Session.getCurrentUser().setAvailableBalance(availableBalance);
+                }
+
+                updateBalanceUI();
+                fetchWalletTransactions();
+            } catch (Exception e) {
+                System.err.println("Cannot handle balance update: " + e.getMessage());
+                updateBalanceUI();
+                fetchWalletTransactions();
+            }
+        });
+    }
+
+    private void handleWalletTransactions(ResponsePayload response) {
+        Platform.runLater(() -> {
+            if (walletTransactionsTable == null) {
+                if (walletHistoryStatusLabel != null) {
+                    walletHistoryStatusLabel.setText("Wallet table is not found in FXML.");
+                }
+                return;
+            }
+
+            if (!"SUCCESS".equalsIgnoreCase(response.getStatus())) {
+                walletTransactionsTable.setItems(FXCollections.observableArrayList());
+                walletTransactionsTable.refresh();
+
+                if (walletHistoryStatusLabel != null) {
+                    walletHistoryStatusLabel.setText("Cannot load transaction history: " + response.getMessage());
+                }
+                return;
+            }
+
+            try {
+                Type listType = new TypeToken<List<WalletTransactionDTO>>() {}.getType();
+
+                List<WalletTransactionDTO> transactions =
+                        gson.fromJson(gson.toJson(response.getData()), listType);
+
+                List<WalletTransactionDTO> safeTransactions =
+                        transactions == null ? List.of() : transactions;
+
+                walletTransactionsTable.setItems(FXCollections.observableArrayList(safeTransactions));
+                walletTransactionsTable.refresh();
+
+                if (walletHistoryStatusLabel != null) {
+                    if (safeTransactions.isEmpty()) {
+                        walletHistoryStatusLabel.setText("No transaction history yet.");
+                    } else {
+                        walletHistoryStatusLabel.setText(safeTransactions.size() + " transaction(s) loaded.");
+                    }
+                }
+
+                System.out.println("Wallet transactions rendered in TableView: " + safeTransactions.size());
+
+            } catch (Exception e) {
+                walletTransactionsTable.setItems(FXCollections.observableArrayList());
+                walletTransactionsTable.refresh();
+
+                if (walletHistoryStatusLabel != null) {
+                    walletHistoryStatusLabel.setText("Cannot parse transaction history: " + e.getMessage());
+                }
+
+                e.printStackTrace();
+            }
+        });
+    }
+
+    @FXML
+    private void handleRefreshWalletHistory(ActionEvent event) {
+        fetchWalletTransactions();
+    }
+
+    private String displayType(String type) {
+        if (type == null) {
+            return "";
+        }
+
+        return switch (type) {
+            case "DEPOSIT_REQUEST" -> "Yeu cau nap tien";
+            case "BID_HOLD" -> "Giu tien dat gia";
+            case "BID_RELEASE" -> "Hoan tien giu";
+            case "AUCTION_PAYMENT" -> "Thanh toan dau gia";
+            case "AUCTION_SALE_INCOME" -> "Tien ban san pham";
+            case "DEPOSIT" -> "Nap tien da duyet";
+            case "REFUND" -> "Hoan tien";
+            case "ADJUSTMENT" -> "Dieu chinh";
+            default -> type;
+        };
+    }
+
+    private String formatSignedMoney(double amount) {
+        if (amount > 0) {
+            return "+$" + String.format("%.2f", amount);
+        }
+
+        if (amount < 0) {
+            return "-$" + String.format("%.2f", Math.abs(amount));
+        }
+
+        return "$0.00";
+    }
+
+    private String formatMoney(double amount) {
+        return "$" + String.format("%.2f", amount);
+    }
+
+    private String formatTime(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        try {
+            return LocalDateTime.parse(value).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        } catch (Exception e) {
+            return value.replace("T", " ");
+        }
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     @FXML

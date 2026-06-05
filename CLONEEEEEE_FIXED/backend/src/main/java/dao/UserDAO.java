@@ -96,31 +96,71 @@ public class UserDAO {
     }
 
     public double addBalance(Long userId, double amountToAdd) {
+        WalletTransactionDAO walletTransactionDAO = new WalletTransactionDAO();
+        String selectSql = "SELECT balance, available_balance FROM users WHERE user_id = ? FOR UPDATE";
         String updateSql = """
                 UPDATE users
                 SET balance = COALESCE(balance, 0) + ?,
                     available_balance = COALESCE(available_balance, 0) + ?
                 WHERE user_id = ?
                 """;
-        String selectSql = "SELECT available_balance FROM users WHERE user_id = ?";
 
-        try (Connection conn = DatabaseConnection.getInstance().getConnection()) {
+        Connection conn = null;
+        try {
+            conn = DatabaseConnection.getInstance().getConnection();
+            conn.setAutoCommit(false);
+
+            double balanceBefore;
+            double availableBefore;
+            try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+                selectStmt.setLong(1, userId);
+                try (ResultSet rs = selectStmt.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return -1;
+                    }
+
+                    balanceBefore = rs.getDouble("balance");
+                    availableBefore = rs.getDouble("available_balance");
+                }
+            }
+
             try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
                 updateStmt.setDouble(1, amountToAdd);
                 updateStmt.setDouble(2, amountToAdd);
                 updateStmt.setLong(3, userId);
-                updateStmt.executeUpdate();
-            }
-            try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
-                selectStmt.setLong(1, userId);
-                try (ResultSet rs = selectStmt.executeQuery()) {
-                    if (rs.next()) {
-                        return rs.getDouble("available_balance");
-                    }
+                if (updateStmt.executeUpdate() == 0) {
+                    conn.rollback();
+                    return -1;
                 }
             }
+
+            double balanceAfter = balanceBefore + amountToAdd;
+            double availableAfter = availableBefore + amountToAdd;
+            walletTransactionDAO.insertTransaction(
+                    conn,
+                    userId,
+                    null,
+                    "DEPOSIT",
+                    amountToAdd,
+                    balanceBefore,
+                    balanceAfter,
+                    availableBefore,
+                    availableAfter,
+                    "Nap tien truc tiep"
+            );
+
+            conn.commit();
+            return availableAfter;
         } catch (SQLException e) {
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+            }
             System.err.println("Loi cong tien user: " + e.getMessage());
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException ignored) {}
+            }
         }
         return -1;
     }
