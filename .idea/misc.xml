@@ -6,6 +6,8 @@
       <list>
         <option value="$PROJECT_DIR$/CLONEEEEEE_FIXED/backend/pom.xml" />
         <option value="$PROJECT_DIR$/CLONEEEEEE_FIXED/frontend/pom.xml" />
+        <option value="$PROJECT_DIR$/main_system/backend/pom.xml" />
+        <option value="$PROJECT_DIR$/main_system/frontend/pom.xml" />
       </list>
     </option>
   </component>
