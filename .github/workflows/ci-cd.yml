@@ -22,10 +22,10 @@ jobs:
         cache: maven
 
     - name: Build and Test Backend
-      run: mvn -B clean package --file CLONEEEEEE_FIXED/backend/pom.xml
+      run: mvn -B clean package --file main_system/backend/pom.xml
 
     - name: Build and Test Frontend
-      run: mvn -B clean package --file CLONEEEEEE_FIXED/frontend/pom.xml
+      run: mvn -B clean package --file main_system/frontend/pom.xml
 
     - name: Upload Backend Artifact
       uses: actions/upload-artifact@v4
