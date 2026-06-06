@@ -857,9 +857,32 @@ public class ClientHandler implements Runnable {
         }
         JsonObject json = parseObject(dataJson);
         Long auctionId = json.get("auctionId").getAsLong();
-        boolean ok = approve ? adminDAO.approveProduct(auctionId) : adminDAO.rejectProduct(auctionId);
+        AdminDAO.CancelAuctionResult cancelResult = null;
+        boolean ok;
+
+        if (approve) {
+            ok = adminDAO.approveProduct(auctionId);
+        } else {
+            cancelResult = adminDAO.rejectProduct(auctionId);
+            ok = cancelResult.success;
+        }
+
         if (ok) {
             auctionManager.reloadActiveAuctions();
+
+            if (cancelResult != null) {
+                for (Long userId : cancelResult.releasedUserIds) {
+                    sendBalanceUpdate(userId);
+                    ServerMain.pushWalletHistory(userId);
+                }
+
+                ServerMain.broadcast(ResponsePayload.success(
+                        "AUCTION_CANCELED_EVENT",
+                        "Admin da reject phien dau gia",
+                        auctionId
+                ));
+            }
+
             ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Admin da cap nhat san pham", null));
         }
         sendResponse(ok
@@ -875,11 +898,15 @@ public class ClientHandler implements Runnable {
         Long auctionId = json.get("auctionId").getAsLong();
         String status = json.get("status").getAsString();
         AuctionDAO.SettlementResult settlementResult = null;
+        AdminDAO.CancelAuctionResult cancelResult = null;
         boolean ok;
 
         if ("FINISHED".equalsIgnoreCase(status)) {
             settlementResult = auctionSettlementService.settleAuctionAndGetResult(auctionId);
             ok = settlementResult != null;
+        } else if ("CANCELED".equalsIgnoreCase(status)) {
+            cancelResult = adminDAO.cancelAuction(auctionId);
+            ok = cancelResult.success;
         } else {
             ok = adminDAO.updateAuctionStatus(auctionId, status);
         }
@@ -888,6 +915,23 @@ public class ClientHandler implements Runnable {
             auctionManager.reloadActiveAuctions();
             if (settlementResult != null) {
                 ServerMain.publishSettlementResults(List.of(settlementResult));
+            } else if (cancelResult != null) {
+                for (Long userId : cancelResult.releasedUserIds) {
+                    sendBalanceUpdate(userId);
+                    ServerMain.pushWalletHistory(userId);
+                }
+
+                ServerMain.broadcast(ResponsePayload.success(
+                        "AUCTION_CANCELED_EVENT",
+                        "Admin da huy phien dau gia",
+                        auctionId
+                ));
+
+                ServerMain.broadcast(ResponsePayload.success(
+                        "NEW_AUCTION_EVENT",
+                        "Admin da cap nhat phien dau gia",
+                        null
+                ));
             } else {
                 ServerMain.broadcast(ResponsePayload.success("NEW_AUCTION_EVENT", "Admin da cap nhat phien dau gia", null));
             }

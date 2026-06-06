@@ -12,6 +12,7 @@ import dto.ResponsePayload;
 import dto.BidRequest;
 import dto.AutoBidRequest;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import util.VietnamTime;
 import util.ImageUtil;
 
@@ -78,6 +79,7 @@ public class AuctionRoomController {
                 "GET_BALANCE_RESPONSE",
                 "NEW_BID_EVENT",
                 "NEW_AUCTION_EVENT",
+                "AUCTION_CANCELED_EVENT",
                 "AUCTION_TIME_EXTENDED"
         )) {
             socketClient.clearListeners(action);
@@ -96,6 +98,7 @@ public class AuctionRoomController {
         socketClient.on("GET_BALANCE_RESPONSE", response -> updateBalance());
         socketClient.on("GET_BID_HISTORY_RESPONSE", this::handleLoadBidHistory);
         socketClient.on("NEW_AUCTION_EVENT", this::handleAuctionCatalogChanged);
+        socketClient.on("AUCTION_CANCELED_EVENT", this::handleAuctionCanceled);
         socketClient.on("GET_ACTIVE_AUCTIONS_RESPONSE", this::handleAuctionRefreshResponse);
     }
     public void setData(Product p) {
@@ -214,6 +217,9 @@ public class AuctionRoomController {
 
         if (status.equals("SCHEDULED")) {
             lblMessage.setText("Auction has not started yet");
+        } else if (status.equals("CANCELED")) {
+            lblMessage.setText("Auction was canceled/rejected by admin. Held money has been released.");
+            winnerLabel.setText("Auction canceled");
         } else if (status.equals("FINISHED") || status.equals("SOLD")) {
             String winner = currentProduct.getHighestBidder();
             winnerLabel.setText((winner == null || winner.isEmpty()) ? "No winner" : "Winner: " + winner);
@@ -448,6 +454,45 @@ public class AuctionRoomController {
             return;
         }
         SocketClient.getInstance().sendRequest(new RequestPayload("GET_ACTIVE_AUCTIONS", "{}"));
+    }
+
+    private void handleAuctionCanceled(ResponsePayload response) {
+        if (currentProduct == null || response == null || response.getData() == null) {
+            return;
+        }
+
+        try {
+            Long canceledAuctionId = null;
+            Object data = response.getData();
+
+            if (data instanceof Number number) {
+                canceledAuctionId = number.longValue();
+            } else {
+                JsonElement json = gson.toJsonTree(data);
+
+                if (json.isJsonPrimitive()) {
+                    canceledAuctionId = json.getAsLong();
+                } else if (json.isJsonObject() && json.getAsJsonObject().has("auctionId")) {
+                    canceledAuctionId = json.getAsJsonObject().get("auctionId").getAsLong();
+                }
+            }
+
+            if (canceledAuctionId == null || canceledAuctionId.longValue() != currentProduct.getId()) {
+                return;
+            }
+
+            Platform.runLater(() -> {
+                currentProduct.setStatus("CANCELED");
+                lblMessage.setText("Auction was canceled/rejected by admin. Held money has been released.");
+                winnerLabel.setText("Auction canceled");
+                updateAllUI();
+            });
+
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+
+        } catch (Exception ignored) {
+            SocketClient.getInstance().sendRequest(new RequestPayload("GET_BALANCE", "{}"));
+        }
     }
 
     private void handleAuctionRefreshResponse(ResponsePayload response) {

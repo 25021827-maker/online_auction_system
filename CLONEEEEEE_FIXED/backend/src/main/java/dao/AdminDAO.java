@@ -406,14 +406,181 @@ public class AdminDAO {
         return executeSingleIdUpdate(sql, auctionId);
     }
 
-    public boolean rejectProduct(Long auctionId) {
-        String sql = """
+    public CancelAuctionResult rejectProduct(Long auctionId) {
+        return cancelAuctionAndReleaseHeldMoney(
+                auctionId,
+                true,
+                "San pham bi admin tu choi, hoan tien giu auction #" + auctionId
+        );
+    }
+
+    public CancelAuctionResult cancelAuction(Long auctionId) {
+        return cancelAuctionAndReleaseHeldMoney(
+                auctionId,
+                false,
+                "Phien dau gia bi admin huy, hoan tien giu auction #" + auctionId
+        );
+    }
+
+    private CancelAuctionResult cancelAuctionAndReleaseHeldMoney(Long auctionId, boolean rejectProduct, String note) {
+        String lockAuctionSql = """
+                SELECT a.auction_id, a.current_leader_id, a.current_price, a.status,
+                       i.item_id, i.seller_id
+                FROM auctions a
+                JOIN items i ON i.item_id = a.item_id
+                WHERE a.auction_id = ?
+                FOR UPDATE
+                """;
+
+        String lockUserSql = """
+                SELECT balance, available_balance
+                FROM users
+                WHERE user_id = ?
+                FOR UPDATE
+                """;
+
+        String releaseHeldSql = """
+                UPDATE users
+                SET available_balance = LEAST(balance, available_balance + ?)
+                WHERE user_id = ?
+                """;
+
+        String rejectProductSql = """
                 UPDATE items i
                 JOIN auctions a ON a.item_id = i.item_id
-                SET i.status = 'HIDDEN', i.approval_status = 'REJECTED', a.status = 'CANCELED'
+                SET i.status = 'HIDDEN',
+                    i.approval_status = 'REJECTED',
+                    a.status = 'CANCELED',
+                    a.current_leader_id = NULL,
+                    a.winning_bid_id = NULL,
+                    a.final_price = NULL
                 WHERE a.auction_id = ?
+                  AND a.status IN ('PENDING','OPEN','RUNNING')
                 """;
-        return executeSingleIdUpdate(sql, auctionId);
+
+        String cancelAuctionSql = """
+                UPDATE auctions
+                SET status = 'CANCELED',
+                    current_leader_id = NULL,
+                    winning_bid_id = NULL,
+                    final_price = NULL
+                WHERE auction_id = ?
+                  AND status IN ('PENDING','OPEN','RUNNING')
+                """;
+
+        Connection conn = null;
+
+        try {
+            conn = DatabaseConnection.getInstance().getConnection();
+            conn.setAutoCommit(false);
+
+            Long leaderId = null;
+            double heldAmount = 0;
+            String status = null;
+
+            try (PreparedStatement ps = conn.prepareStatement(lockAuctionSql)) {
+                ps.setLong(1, auctionId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return CancelAuctionResult.fail();
+                    }
+
+                    long rawLeaderId = rs.getLong("current_leader_id");
+                    if (!rs.wasNull()) {
+                        leaderId = rawLeaderId;
+                    }
+
+                    heldAmount = rs.getDouble("current_price");
+                    status = rs.getString("status");
+                }
+            }
+
+            if (!List.of("PENDING", "OPEN", "RUNNING").contains(status)) {
+                conn.rollback();
+                return CancelAuctionResult.fail();
+            }
+
+            if (leaderId != null && heldAmount > 0) {
+                double balanceBefore;
+                double availableBefore;
+
+                try (PreparedStatement ps = conn.prepareStatement(lockUserSql)) {
+                    ps.setLong(1, leaderId);
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next()) {
+                            conn.rollback();
+                            return CancelAuctionResult.fail();
+                        }
+
+                        balanceBefore = rs.getDouble("balance");
+                        availableBefore = rs.getDouble("available_balance");
+                    }
+                }
+
+                try (PreparedStatement ps = conn.prepareStatement(releaseHeldSql)) {
+                    ps.setDouble(1, heldAmount);
+                    ps.setLong(2, leaderId);
+                    ps.executeUpdate();
+                }
+
+                double availableAfter = Math.min(balanceBefore, availableBefore + heldAmount);
+
+                walletTransactionDAO.insertTransaction(
+                        conn,
+                        leaderId,
+                        auctionId,
+                        "BID_RELEASE",
+                        heldAmount,
+                        balanceBefore,
+                        balanceBefore,
+                        availableBefore,
+                        availableAfter,
+                        note
+                );
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(rejectProduct ? rejectProductSql : cancelAuctionSql)) {
+                ps.setLong(1, auctionId);
+
+                if (ps.executeUpdate() == 0) {
+                    conn.rollback();
+                    return CancelAuctionResult.fail();
+                }
+            }
+
+            conn.commit();
+
+            CancelAuctionResult result = CancelAuctionResult.success();
+
+            if (leaderId != null && heldAmount > 0) {
+                result.releasedUserIds.add(leaderId);
+            }
+
+            return result;
+
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (Exception ignored) {
+                }
+            }
+
+            System.err.println("Loi huy phien va hoan tien giu: " + e.getMessage());
+            return CancelAuctionResult.fail();
+
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception ignored) {
+                }
+            }
+        }
     }
 
     public List<AdminAuctionDTO> getAuctions() {
@@ -470,6 +637,9 @@ public class AdminDAO {
                     """;
             return executeSingleIdUpdate(sql, status, auctionId);
         }
+        if ("CANCELED".equals(status)) {
+            return cancelAuction(auctionId).success;
+        }
         return executeSingleIdUpdate("UPDATE auctions SET status = ? WHERE auction_id = ?", status, auctionId);
     }
 
@@ -512,5 +682,20 @@ public class AdminDAO {
 
     private String timestampToString(Timestamp timestamp) {
         return timestamp == null ? "" : timestamp.toLocalDateTime().toString();
+    }
+
+    public static class CancelAuctionResult {
+        public boolean success;
+        public List<Long> releasedUserIds = new ArrayList<>();
+
+        public static CancelAuctionResult success() {
+            CancelAuctionResult result = new CancelAuctionResult();
+            result.success = true;
+            return result;
+        }
+
+        public static CancelAuctionResult fail() {
+            return new CancelAuctionResult();
+        }
     }
 }
