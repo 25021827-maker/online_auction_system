@@ -31,10 +31,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Backend-App
-        path: CLONEEEEEE_FIXED/backend/target/*.jar
+        path: main_system/backend/target/*.jar
 
     - name: Upload Frontend Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Frontend-App
-        path: CLONEEEEEE_FIXED/frontend/target/*.jar
+        path: main_system/frontend/target/*.jar
