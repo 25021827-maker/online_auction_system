@@ -245,39 +245,59 @@ public class MyProductsController {
         }
 
         private void buildUI() {
-            root.setSpacing(12);
-            root.setPrefWidth(230);
-            root.getStyleClass().add("auction-card");
+            root.setSpacing(8); // Khoảng cách giữa các dòng chữ vừa phải, không quá thưa
+            root.setPrefWidth(240); // Tăng nhẹ chiều rộng để layout thở hơn
+            root.setPrefHeight(380); // Đặt chiều cao tối thiểu cố định để card không bị bóp nghẹt
+            root.getStyleClass().add("product-card");
+            // Thêm padding cho ruột của card để chữ/nút không bị chạm sát mép viền
+            root.setPadding(new javafx.geometry.Insets(12));
 
-            imageView.setFitWidth(200);
+            // 1. Xử lý Image Container chống móp méo ảnh
+            imageView.setFitWidth(216);
             imageView.setFitHeight(140);
-            imageView.setPreserveRatio(true);
+            imageView.setPreserveRatio(false); // Hoặc true tùy bạn, nhưng nên cố định khung chứa
 
-            nameLabel.getStyleClass().add("product-title");
+            // Tạo một HBox hoặc Pane bọc ngoài ImageView nếu trong CSS `.image-container` là vùng chứa
+            javafx.scene.layout.StackPane imgContainer = new javafx.scene.layout.StackPane(imageView);
+            imgContainer.getStyleClass().add("image-container");
+            imgContainer.setPrefSize(216, 140);
+
+            // 2. Định dạng Style Class chuẩn theo file product-card.css
+            nameLabel.getStyleClass().add("product-name");
             priceLabel.getStyleClass().add("product-price");
-            statusLabel.getStyleClass().add("normal-label");
-            timerLabel.getStyleClass().add("normal-label");
-            categoryLabel.getStyleClass().add("normal-label");
-            conditionLabel.getStyleClass().add("normal-label");
+            statusLabel.getStyleClass().add("product-status");
+            timerLabel.getStyleClass().add("product-countdown");
 
-            editButton.getStyleClass().add("secondary-button");
+            // Các nhãn phụ dùng tạm class product-id để có màu xám tinh tế, không bị chìm
+            categoryLabel.getStyleClass().add("product-id");
+            conditionLabel.getStyleClass().add("product-id");
+
+            // 3. Xử lý các nút bấm (Edit / Delete)
+            editButton.getStyleClass().add("secondary-button"); // Hoặc dùng yellow-button tùy ý bạn
             deleteButton.getStyleClass().add("danger-button");
 
             editButton.setOnAction(e -> openEditForm());
             deleteButton.setOnAction(e -> deleteProduct());
 
-            FlowPane buttonPane = new FlowPane();
-            buttonPane.setHgap(10);
+            // Dùng HBox thay vì FlowPane để 2 nút nằm ngay ngắn trên một hàng
+            javafx.scene.layout.HBox buttonPane = new javafx.scene.layout.HBox(10);
+            buttonPane.setAlignment(javafx.geometry.Pos.CENTER);
             buttonPane.getChildren().addAll(editButton, deleteButton);
 
+            // MẸO QUAN TRỌNG: Tạo một vùng đệm co giãn để tự động đẩy buttonPane xuống đáy Card
+            javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+            javafx.scene.layout.VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+            // 4. Add các thành phần vào VBox theo thứ tự chuẩn
             root.getChildren().addAll(
-                    imageView,
+                    imgContainer,
                     nameLabel,
                     priceLabel,
                     statusLabel,
                     timerLabel,
                     categoryLabel,
                     conditionLabel,
+                    spacer, // Đẩy nút xuống
                     buttonPane
             );
         }

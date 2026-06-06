@@ -203,7 +203,7 @@ public class ProductCard {
         }
 
         if (priceLabel != null) {
-            priceLabel.setText(String.format("%,.1f VND", product.getCurrentPrice()));
+            priceLabel.setText(String.format("%,.1f $", product.getCurrentPrice()));
         }
 
         if (statusLabel != null) {

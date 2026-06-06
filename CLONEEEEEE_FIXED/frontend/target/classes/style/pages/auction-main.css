@@ -13,7 +13,7 @@
    TOP HEADER
 ========================= */
 .top-header {
-    -fx-background-color: linear-gradient(to bottom, #111111, #000000);
+    -fx-background-color: linear-gradient(to bottom right, #161616, #0d0d0d 70%, #1a0f00);
     -fx-border-color: #222222;
     -fx-border-width: 0 0 1.5 0;
     -fx-padding: 14 28 14 28;
@@ -25,7 +25,7 @@
    NAV BAR
 ========================= */
 .nav-bar {
-    -fx-background-color: linear-gradient(to bottom, #0d0d0d, #000000);
+    -fx-background-color: linear-gradient(to bottom, #14191f, #0b0c10);
     -fx-padding: 12 28 12 28;
     -fx-spacing: 18;
     -fx-alignment: center-left;
@@ -121,20 +121,41 @@
     -fx-border-color: #ffdd00;
 }
 .yellow-combo .combo-box-base-text, .yellow-combo .list-cell {
-    -fx-text-fill: #ffdd00; /* Chữ màu vàng đồng bộ nút nav của bạn */
+    -fx-text-fill: #ffdd00;
     -fx-font-weight: bold;
 }
 .yellow-combo .arrow-button .arrow {
-    -fx-background-color: #ffdd00; /* Mũi tên màu vàng */
+    -fx-background-color: #ffdd00;
 }
-.yellow-combo .context-menu {
+
+/* --- ĐÂY LÀ KHU VỰC ĐÃ ĐƯỢC CHỈNH SỬA VÀ THÊM MỚI --- */
+
+/* 1. Đổi nền tổng của danh sách xổ xuống thành màu đen */
+.yellow-combo .context-menu,
+.yellow-combo .combo-box-popup .list-view {
     -fx-background-color: #1a1a1a;
     -fx-border-color: #ffdd00;
     -fx-border-width: 1;
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
 }
-.yellow-combo .list-cell:filled:hover {
+
+/* 2. Ép tất cả các dòng text trong danh sách phải có nền đen */
+.yellow-combo .combo-box-popup .list-cell {
+    -fx-background-color: #1a1a1a;
+    -fx-text-fill: #ffdd00;
+}
+
+/* 3. Khi di chuột qua (hover) dòng nào thì dòng đó hóa vàng, chữ đen */
+.yellow-combo .combo-box-popup .list-cell:filled:hover {
     -fx-background-color: #ffdd00;
     -fx-text-fill: #000000;
+}
+
+/* 4. Khử màu xanh nước biển mặc định của dòng đang được chọn, đổi thành xám đen */
+.yellow-combo .combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffdd00;
 }
 
 /* Các nút chức năng màu vàng nổi bật (StyleClass: yellow-button) */
@@ -160,17 +181,17 @@
    PHẦN NỘI DUNG CHÍNH (Content & Title)
    ========================================================================== */
 .content-container {
-    -fx-background-color: transparent;
+    -fx-background-color : #686868;
 }
 
 /* Tiêu đề chính AUCTIONS (StyleClass: main-title) */
 .main-title {
-    -fx-text-fill: #ffffff;
+    -fx-text-fill: #ffd700;
     -fx-font-family: "Segoe UI", sans-serif;
     -fx-font-weight: 900;
     -fx-font-size: 28px;
     -fx-letter-spacing: 2px;
-    -fx-border-color: transparent transparent #ffdd00 transparent; /* Gạch chân màu vàng */
+    -fx-border-color: transparent transparent black transparent; /* Gạch chân màu vàng */
     -fx-border-width: 3;
     -fx-padding: 0 0 6 0;
 }
@@ -272,7 +293,7 @@
     -fx-min-width: 125;
     -fx-padding: 8 12 8 12;
     -fx-background-color: linear-gradient(to bottom, #1c1c1c, #090909);
-    -fx-border-color: #3a3a3a;
+    -fx-border-color: #ffdd00;
     -fx-border-width: 1;
     -fx-background-radius: 10;
     -fx-border-radius: 10;
@@ -287,7 +308,7 @@
 }
 
 .wallet-label {
-    -fx-text-fill: #8f8f8f;
+    -fx-text-fill: #ffdd00;
     -fx-font-size: 10px;
     -fx-font-weight: bold;
 }
@@ -299,9 +320,9 @@
 }
 
 .wallet-value-available {
-    -fx-text-fill: #5ef0a0;
+    -fx-text-fill: #66FF00;
 }
 
 .wallet-value-held {
-    -fx-text-fill: #ffdd00;
+    -fx-text-fill: red;
 }

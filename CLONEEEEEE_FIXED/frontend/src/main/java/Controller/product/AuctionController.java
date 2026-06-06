@@ -243,15 +243,15 @@ public class AuctionController {
         }
 
         if (statusBox != null) {
-            statusBox.setValue("All");
+            statusBox.setValue("STATUS");
         }
 
         if (categoryFilterBox != null) {
-            categoryFilterBox.setValue("All");
+            categoryFilterBox.setValue("CATEGORY");
         }
 
         if (conditionFilterBox != null) {
-            conditionFilterBox.setValue("All");
+            conditionFilterBox.setValue("CONDITION");
         }
     }
 

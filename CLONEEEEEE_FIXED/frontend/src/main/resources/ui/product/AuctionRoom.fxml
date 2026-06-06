@@ -42,7 +42,7 @@
                         </padding>
 
                         <StackPane>
-                            <ImageView fx:id="imageView" fitHeight="220" fitWidth="300" preserveRatio="true" />
+                            <ImageView fx:id="imageView" fitHeight="220" fitWidth="278.0" preserveRatio="true" />
                         </StackPane>
 
                         <Label fx:id="nameLabel" styleClass="product-detail-title" wrapText="true" />
@@ -62,7 +62,7 @@
                         <TextArea fx:id="descriptionArea" editable="false" styleClass="auction-description" wrapText="true" VBox.vgrow="ALWAYS" />
                     </VBox>
 
-                    <VBox alignment="TOP_CENTER" prefHeight="622.0" prefWidth="571.0" spacing="20" styleClass="auction-card hero-auction-panel">
+                    <VBox alignment="TOP_CENTER" prefHeight="646.0" prefWidth="574.0" spacing="20" styleClass="auction-card hero-auction-panel">
 
                         <padding>
                             <Insets bottom="24" left="24" right="24" top="24" />
@@ -121,7 +121,7 @@
                         <Button onAction="#goBack" prefWidth="180" styleClass="yellow-button" text="BACK" />
                     </VBox>
 
-                    <VBox maxWidth="420" minWidth="260" prefHeight="606.0" prefWidth="295.0" spacing="16" styleClass="auction-room-card">
+                    <VBox maxWidth="420.0" minWidth="260" prefHeight="606.0" prefWidth="295.0" spacing="16" styleClass="auction-room-card">
 
                         <padding>
                             <Insets bottom="18" left="18" right="18" top="18" />
