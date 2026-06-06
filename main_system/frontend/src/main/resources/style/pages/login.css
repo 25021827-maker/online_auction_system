@@ -1,0 +1,99 @@
+/* ==========================================================================
+   MAIN STYLE - LOGIN PAGE (Giữ nguyên style gốc của bạn + Bổ sung ô nhập liệu)
+   ========================================================================== */
+
+/* --- THÀNH PHẦN GỐC CỦA BẠN (Giữ nguyên cấu trúc & hiệu ứng) --- */
+
+.login-background {
+    -fx-background-image: url("../../images/loginbg.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
+}
+
+.login-logo {
+    -fx-text-fill: #ffdd00;
+    -fx-font-weight: bold;
+}
+
+.login-card {
+    -fx-background-color: rgba(15,15,15,0.92); /* Hiệu ứng kính mờ trong suốt */
+    -fx-background-radius: 20;
+    -fx-border-color: #ffdd00; /* Viền vàng thương hiệu bao quanh card */
+    -fx-border-width: 2;
+    -fx-border-radius: 20;
+    -fx-padding: 30;
+}
+
+.login-button {
+    -fx-background-color: #ffdd00;
+    -fx-text-fill: black;
+    -fx-font-weight: bold;
+    -fx-background-radius: 14;
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s; /* Thêm hiệu ứng chuyển mượt mà khi di chuột */
+}
+.login-button:hover {
+    -fx-background-color: #e6c600; /* Vàng sậm hơn một chút khi di chuột */
+}
+
+.login-link {
+    -fx-text-fill: #ffdd00;
+}
+.login-link:hover {
+    -fx-text-fill: white;
+}
+
+.login-text {
+    -fx-text-fill: #dddddd;
+}
+
+.login-message {
+    -fx-padding: 8 10 8 10;
+    -fx-background-radius: 8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+.login-message-error {
+    -fx-background-color: rgba(255, 68, 68, 0.14);
+    -fx-border-color: rgba(255, 68, 68, 0.65);
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-text-fill: #ff6262;
+}
+
+.login-message-info {
+    -fx-background-color: rgba(255, 221, 0, 0.12);
+    -fx-border-color: rgba(255, 221, 0, 0.6);
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-text-fill: #ffdd00;
+}
+
+
+/* --- THÀNH PHẦN BỔ SUNG (Làm đẹp cho các ô nhập liệu) --- */
+
+/* Trong FXML, các ô TextField/PasswordField của bạn đang gọi styleClass="login-input" */
+.login-input {
+    -fx-background-color: rgba(40, 40, 40, 0.7); /* Ô nhập liệu hơi trong suốt để ăn khớp với card */
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #aaaaaa;
+    -fx-background-radius: 10; /* Bo góc mượt mà đồng bộ với form chung */
+    -fx-border-radius: 10;
+    -fx-border-color: #444444;
+    -fx-border-width: 1;
+    -fx-padding: 0 15 0 15;
+}
+
+/* Khi người dùng click chọn vào ô nhập liệu để gõ chữ */
+.login-input:focused {
+    -fx-background-color: rgba(50, 50, 50, 0.9);
+    -fx-border-color: #ffdd00; /* Bừng sáng viền vàng rực rỡ */
+}
+
+/* Giữ lại class login-inputs gốc của bạn phòng trường hợp bạn gọi ở chỗ khác */
+.login-inputs {
+}

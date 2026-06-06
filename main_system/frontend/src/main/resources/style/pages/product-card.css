@@ -1,0 +1,108 @@
+/* ==========================================================================
+   PRODUCT CARD COMPONENT STYLE (Luxury Dark & Gold Theme)
+   ========================================================================== */
+
+.product-card {
+    -fx-background-color: linear-gradient(to bottom, #151515, #050505);
+    -fx-border-color: #2f2f2f;
+    -fx-border-width: 1px;
+    -fx-border-radius: 14px;
+    -fx-background-radius: 14px;
+    -fx-effect: dropshadow(two-pass-box, rgba(0, 0, 0, 0.4), 12, 0.0, 0, 5);
+    -fx-cursor: hand;
+    -fx-transition: all 0.2s;
+}
+
+/* Hiệu ứng Sáng viền và nổi lên nhẹ khi di chuột vào Card */
+.product-card:hover {
+    -fx-border-color: #ffdd00;
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+    -fx-effect: dropshadow(two-pass-box, rgba(255, 221, 0, 0.12), 15, 0.0, 0, 0);
+}
+
+/* Khung chứa ảnh nền đen sâu giúp nổi bật các loại ảnh sản phẩm */
+.image-container {
+    -fx-background-color: #020202;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-border-color: #1a1a1a;
+    -fx-border-width: 1px;
+}
+
+/* Mã số định danh sản phẩm (Màu xám tinh tế) */
+.product-id {
+    -fx-text-fill: #777777;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Tên sản phẩm hiển thị màu trắng sáng rõ nét, không bị chìm */
+.product-name {
+    -fx-text-fill: #ffffff;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+/* Giá tiền sản phẩm màu vàng đặc trưng */
+.product-price {
+    -fx-text-fill: #ffdd00;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 15px;
+    -fx-font-weight: 900;
+}
+
+/* Nhãn trạng thái cuộc đấu giá */
+.product-status {
+    -fx-text-fill: #e67e22; /* Màu cam hổ phách cho trạng thái */
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Đồng hồ đếm ngược thời gian chạy ngầm */
+.product-countdown {
+    -fx-text-fill: #aaaaaa;
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 13px;
+}
+
+/* 1. NÚT WATCH (Trạng thái chưa bấm theo dõi) */
+.watch-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffdd00;
+    -fx-border-color: #ffdd00;
+    -fx-border-width: 1.2px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+    -fx-transition: all 0.15s;
+}
+.watch-button:hover {
+    -fx-background-color: rgba(255, 221, 0, 0.12);
+    -fx-text-fill: #ffffff;
+}
+
+/* 2. NÚT WATCHING ACTIVE (Trạng thái ĐÃ bấm theo dõi) */
+.watching-active-button {
+    -fx-background-color: #ff3b30;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #ff3b30;
+    -fx-border-width: 1.2px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-cursor: hand;
+    -fx-transition: all 0.15s;
+}
+.watching-active-button:hover {
+    -fx-background-color: #ff453a;
+    -fx-border-color: #ff453a;
+}

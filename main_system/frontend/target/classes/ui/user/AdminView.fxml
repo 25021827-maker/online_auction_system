@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane prefHeight="760.0" prefWidth="1280.0"
+            styleClass="admin-root"
+            stylesheets="@../../style/pages/admin.css"
+            xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="Controller.user.AdminController">
+    <left>
+        <VBox prefWidth="260.0" spacing="12.0" styleClass="admin-sidebar">
+            <Label styleClass="admin-brand" text="BVBID ADMIN">
+                <font>
+                    <Font name="System Bold" size="22.0" />
+                </font>
+            </Label>
+            <Label styleClass="admin-subtitle" text="Review, approve, control" />
+            <Separator styleClass="admin-separator" />
+            <Button maxWidth="Infinity" onAction="#switchDashboard" styleClass="admin-nav-button" text="Dashboard" />
+            <Button maxWidth="Infinity" onAction="#switchDeposits" styleClass="admin-nav-button" text="Approve Deposits" />
+            <Button maxWidth="Infinity" onAction="#switchProducts" styleClass="admin-nav-button" text="Approve Products" />
+            <Button maxWidth="Infinity" onAction="#switchUsers" styleClass="admin-nav-button" text="Manage Users" />
+            <Button maxWidth="Infinity" onAction="#switchAuctions" styleClass="admin-nav-button" text="Manage Auctions" />
+            <Button maxWidth="Infinity" onAction="#switchWinners" styleClass="admin-nav-button" text="Auction Winners" />
+            <Separator styleClass="admin-separator" />
+            <Button maxWidth="Infinity" onAction="#handleLogout" styleClass="admin-secondary-button" text="Log Out" />
+        </VBox>
+    </left>
+    <center>
+        <VBox spacing="16" styleClass="admin-main">
+            <Label fx:id="lblTitle" styleClass="admin-title" text="Admin Dashboard">
+                <font>
+                    <Font name="System Bold" size="26.0" />
+                </font>
+            </Label>
+            <StackPane fx:id="contentArea" styleClass="admin-content" VBox.vgrow="ALWAYS" />
+        </VBox>
+    </center>
+    <padding>
+        <Insets bottom="0" left="0" right="0" top="0" />
+    </padding>
+</BorderPane>
