@@ -623,4 +623,4 @@ Dự án thể hiện rõ các nội dung trọng tâm của lập trình nâng 
 
 ## Link PDF và video demo
 -PDF : https://drive.google.com/file/d/1sb3SUCrQPz2g3dNTDcIsHUsiH_c4t0O3/view?usp=sharing
--video demo :
+-video demo : https://drive.google.com/file/d/16WrNzzuvWI8BYh6NbCHYTQe24D7deZPc/view?usp=sharing
