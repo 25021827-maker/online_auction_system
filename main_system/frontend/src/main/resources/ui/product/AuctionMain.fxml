@@ -23,167 +23,153 @@
         <StackPane alignment="CENTER" style="-fx-background-color: transparent;">
 
             <VBox maxWidth="1280.0" prefHeight="720.0" prefWidth="1280.0" styleClass="root-container">
-
                 <children>
 
                     <VBox styleClass="header-container">
+                        <children>
+                            <HBox alignment="CENTER_LEFT" spacing="30.0" styleClass="top-header">
+                                <padding>
+                                    <Insets bottom="15" left="30" right="30" top="15" />
+                                </padding>
+                                <children>
+                                    <ImageView fitHeight="150.0" fitWidth="140.0" preserveRatio="true">
+                                        <image>
+                                            <Image url="@../../images/logo1.png" />
+                                        </image>
+                                    </ImageView>
 
-                        <HBox alignment="CENTER_LEFT" spacing="30.0" styleClass="top-header">
+                                    <HBox alignment="CENTER_LEFT" spacing="20" HBox.hgrow="ALWAYS">
+                                        <children>
+                                            <TextField fx:id="searchField" prefHeight="46.0" prefWidth="245.0" promptText="Search auctions..." styleClass="search-field" />
 
-                            <padding>
-                                <Insets bottom="15" left="30" right="30" top="15" />
-                            </padding>
+                                            <ComboBox fx:id="statusBox" prefHeight="46.0" prefWidth="114.0" promptText="STATUS" styleClass="yellow-combo">
+                                                <items>
+                                                    <FXCollections fx:factory="observableArrayList">
+                                                        <String fx:value="STATUS" />
+                                                        <String fx:value="OPEN" />
+                                                        <String fx:value="RUNNING" />
+                                                        <String fx:value="SCHEDULED" />
+                                                        <String fx:value="FINISHED" />
+                                                    </FXCollections>
+                                                </items>
+                                            </ComboBox>
 
-                            <children>
+                                            <ComboBox fx:id="categoryFilterBox" prefHeight="46.0" prefWidth="128.0" promptText="CATEGORY" styleClass="yellow-combo">
+                                                <items>
+                                                    <FXCollections fx:factory="observableArrayList">
+                                                        <String fx:value="CATEGORY" />
+                                                        <String fx:value="ELECTRONICS" />
+                                                        <String fx:value="ART" />
+                                                        <String fx:value="VEHICLE" />
+                                                        <String fx:value="OTHER" />
+                                                    </FXCollections>
+                                                </items>
+                                            </ComboBox>
 
-                                <ImageView fitHeight="150.0" fitWidth="140.0" preserveRatio="true">
-                                    <image>
-                                        <Image url="@../../images/logo1.png" />
-                                    </image>
-                                </ImageView>
+                                            <ComboBox fx:id="conditionFilterBox" prefHeight="46.0" prefWidth="132.0" promptText="CONDITION" styleClass="yellow-combo">
+                                                <items>
+                                                    <FXCollections fx:factory="observableArrayList">
+                                                        <String fx:value="CONDITION" />
+                                                        <String fx:value="New" />
+                                                        <String fx:value="Like New" />
+                                                        <String fx:value="Good" />
+                                                        <String fx:value="Used" />
+                                                        <String fx:value="For Parts" />
+                                                    </FXCollections>
+                                                </items>
+                                            </ComboBox>
 
-                                <HBox alignment="CENTER_LEFT" spacing="20" HBox.hgrow="ALWAYS">
+                                            <ComboBox fx:id="sortBox" prefHeight="46.0" prefWidth="85.0" promptText="SORT" styleClass="yellow-combo">
+                                                <items>
+                                                    <FXCollections fx:factory="observableArrayList">
+                                                        <String fx:value="SORT" />
+                                                        <String fx:value="Price: Low to High" />
+                                                        <String fx:value="Price: High to Low" />
+                                                        <String fx:value="Ending Soon" />
+                                                        <String fx:value="Newest" />
+                                                    </FXCollections>
+                                                </items>
+                                            </ComboBox>
 
-                                    <children>
+                                            <TextField fx:id="minPriceField" prefHeight="46.0" prefWidth="88.0" promptText="Min Price" styleClass="search-field" />
+                                            <TextField fx:id="maxPriceField" prefHeight="46.0" prefWidth="85.0" promptText="Max Price" styleClass="search-field" />
+                                        </children>
+                                    </HBox>
 
-                                        <TextField fx:id="searchField" prefHeight="46.0" prefWidth="245.0" promptText="Search auctions..." styleClass="search-field" />
+                                    <HBox alignment="CENTER" spacing="12">
+                                        <children>
+                                            <Button onAction="#handleViewProfile" styleClass="avatar-button">
+                                                <graphic>
+                                                    <ImageView fx:id="imgAvatarHeader" fitHeight="45.0" fitWidth="45.0" pickOnBounds="true" preserveRatio="true" />
+                                                </graphic>
+                                            </Button>
+                                        </children>
+                                    </HBox>
+                                </children>
+                            </HBox>
 
-                                        <ComboBox fx:id="statusBox" prefHeight="46.0" prefWidth="114.0" promptText="STATUS" styleClass="yellow-combo">
-                                            <items>
-                                                <FXCollections fx:factory="observableArrayList">
-                                                    <String fx:value="STATUS" />
-                                                    <String fx:value="OPEN" />
-                                                    <String fx:value="RUNNING" />
-                                                    <String fx:value="SCHEDULED" />
-                                                    <String fx:value="FINISHED" />
-                                                </FXCollections>
-                                            </items>
-                                        </ComboBox>
+                            <HBox alignment="CENTER_LEFT" spacing="20" styleClass="nav-bar">
+                                <padding>
+                                    <Insets bottom="20" left="30" right="30" top="10" />
+                                </padding>
+                                <children>
+                                    <Button fx:id="btnPostProduct" onAction="#handlePostProduct" styleClass="yellow-button" text="CREATE AUCTION" />
+                                    <Button fx:id="btnMyProducts" onAction="#handleMyProducts" styleClass="yellow-button" text="MY PRODUCTS" />
+                                    <Button onAction="#handleWatchlist" styleClass="yellow-button" text="WATCHLIST" />
+                                    <Button onAction="#handleLogout" styleClass="yellow-button" text="LOG OUT" />
 
-                                        <ComboBox fx:id="categoryFilterBox" prefHeight="46.0" prefWidth="128.0" promptText="CATEGORY" styleClass="yellow-combo">
-                                            <items>
-                                                <FXCollections fx:factory="observableArrayList">
-                                                    <String fx:value="CATEGORY" />
-                                                    <String fx:value="ELECTRONICS" />
-                                                    <String fx:value="ART" />
-                                                    <String fx:value="VEHICLE" />
-                                                    <String fx:value="OTHER" />
-                                                </FXCollections>
-                                            </items>
-                                        </ComboBox>
+                                    <Region HBox.hgrow="ALWAYS" />
 
-                                        <ComboBox fx:id="conditionFilterBox" prefHeight="46.0" prefWidth="132.0" promptText="CONDITION" styleClass="yellow-combo">
-                                            <items>
-                                                <FXCollections fx:factory="observableArrayList">
-                                                    <String fx:value="CONDITION" />
-                                                    <String fx:value="New" />
-                                                    <String fx:value="Like New" />
-                                                    <String fx:value="Good" />
-                                                    <String fx:value="Used" />
-                                                    <String fx:value="For Parts" />
-                                                </FXCollections>
-                                            </items>
-                                        </ComboBox>
+                                    <HBox alignment="CENTER_RIGHT" prefHeight="54.0" prefWidth="316.0" spacing="10" styleClass="wallet-strip">
+                                        <children>
+                                            <VBox alignment="CENTER_LEFT" prefHeight="54.0" prefWidth="156.0" styleClass="wallet-card">
+                                                <children>
+                                                    <Label styleClass="wallet-label" text="BALANCE" />
+                                                    <Label fx:id="lblHeaderBalance" styleClass="wallet-value" text="\$0.00">
+                                                        <font>
+                                                            <Font name="System Bold Italic" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
 
-                                        <ComboBox fx:id="sortBox" prefHeight="46.0" prefWidth="85.0" promptText="SORT" styleClass="yellow-combo">
-                                            <items>
-                                                <FXCollections fx:factory="observableArrayList">
-                                                    <String fx:value="SORT" />
-                                                    <String fx:value="Price: Low to High" />
-                                                    <String fx:value="Price: High to Low" />
-                                                    <String fx:value="Ending Soon" />
-                                                    <String fx:value="Newest" />
-                                                </FXCollections>
-                                            </items>
-                                        </ComboBox>
+                                            <VBox alignment="CENTER_LEFT" styleClass="wallet-card wallet-card-available">
+                                                <children>
+                                                    <Label styleClass="wallet-label" text="AVAILABLE" />
+                                                    <Label fx:id="lblHeaderAvailableBalance" prefHeight="19.0" prefWidth="63.0" styleClass="wallet-value-available" text="\$0.00">
+                                                        <font>
+                                                            <Font name="System Bold Italic" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
 
-                                        <TextField fx:id="minPriceField" prefHeight="46.0" prefWidth="88.0" promptText="Min Price" styleClass="search-field" />
-
-                                        <TextField fx:id="maxPriceField" prefHeight="46.0" prefWidth="85.0" promptText="Max Price" styleClass="search-field" />
-
-                                    </children>
-                                </HBox>
-
-                                <HBox alignment="CENTER" spacing="12">
-                                    <children>
-                                        <Button onAction="#handleViewProfile" styleClass="avatar-button">
-                                            <graphic>
-                                                <ImageView fx:id="imgAvatarHeader" fitHeight="45.0" fitWidth="45.0" pickOnBounds="true" preserveRatio="true" styleClass="avatar-circle" />
-                                            </graphic>
-                                        </Button>
-                                    </children>
-                                </HBox>
-
-                            </children>
-                        </HBox>
-
-                        <HBox alignment="CENTER_LEFT" spacing="20" styleClass="nav-bar">
-
-                            <padding>
-                                <Insets bottom="20" left="30" right="30" top="10" />
-                            </padding>
-
-                            <children>
-
-                                <Button fx:id="btnPostProduct" onAction="#handlePostProduct" styleClass="yellow-button" text="CREATE AUCTION" />
-
-                                <Button fx:id="btnMyProducts" onAction="#handleMyProducts" styleClass="yellow-button" text="MY PRODUCTS" />
-
-                                <Button onAction="#handleWatchlist" styleClass="yellow-button" text="WATCHLIST" />
-
-                                <Button onAction="#handleLogout" styleClass="yellow-button" text="LOG OUT" />
-
-                                <Region HBox.hgrow="ALWAYS" />
-
-                                <HBox alignment="CENTER_RIGHT" prefHeight="54.0" prefWidth="316.0" spacing="10" styleClass="wallet-strip">
-                                    <children>
-                                        <VBox alignment="CENTER_LEFT" prefHeight="54.0" prefWidth="156.0" styleClass="wallet-card">
-                                            <children>
-                                                <Label styleClass="wallet-label" text="BALANCE" />
-                                                <Label fx:id="lblHeaderBalance" styleClass="wallet-value" text="\$0.00">
-                                       <font>
-                                          <Font name="System Bold Italic" size="12.0" />
-                                       </font></Label>
-                                            </children>
-                                        </VBox>
-
-                                        <VBox alignment="CENTER_LEFT" styleClass="wallet-card wallet-card-available">
-                                            <children>
-                                                <Label styleClass="wallet-label" text="AVAILABLE" />
-                                                <Label fx:id="lblHeaderAvailableBalance" prefHeight="19.0" prefWidth="63.0" styleClass="wallet-value-available" text="\$0.00">
-                                       <font>
-                                          <Font name="System Bold Italic" size="12.0" />
-                                       </font></Label>
-                                            </children>
-                                        </VBox>
-
-                                        <VBox alignment="CENTER_LEFT" styleClass="wallet-card wallet-card-held">
-                                            <children>
-                                                <Label styleClass="wallet-label" text="HELD" />
-                                                <Label fx:id="lblHeaderHeldBalance" prefHeight="18.0" prefWidth="70.0" styleClass="wallet-value-held" text="\$0.00">
-                                       <font>
-                                          <Font name="System Bold Italic" size="12.0" />
-                                       </font></Label>
-                                            </children>
-                                        </VBox>
-                                    </children>
-                                </HBox>
-
-                            </children>
-                        </HBox>
-
+                                            <VBox alignment="CENTER_LEFT" styleClass="wallet-card wallet-card-held">
+                                                <children>
+                                                    <Label styleClass="wallet-label" text="HELD" />
+                                                    <Label fx:id="lblHeaderHeldBalance" prefHeight="18.0" prefWidth="70.0" styleClass="wallet-value-held" text="\$0.00">
+                                                        <font>
+                                                            <Font name="System Bold Italic" size="12.0" />
+                                                        </font>
+                                                    </Label>
+                                                </children>
+                                            </VBox>
+                                        </children>
+                                    </HBox>
+                                </children>
+                            </HBox>
+                        </children>
                     </VBox>
 
                     <VBox spacing="25" styleClass="content-container" VBox.vgrow="ALWAYS">
-
                         <padding>
                             <Insets bottom="30" left="30" right="30" top="30" />
                         </padding>
-
-                        <Label styleClass="main-title" text="AUCTIONS" />
-                        <Label fx:id="lblResultCount" style="-fx-text-fill: #ffdd00; -fx-font-size: 14px; -fx-font-weight: bold;" text="0 products found" />
-                        <FlowPane fx:id="productsContainer" hgap="25" vgap="25" />
-
+                        <children>
+                            <Label styleClass="main-title" text="AUCTIONS" />
+                            <Label fx:id="lblResultCount" style="-fx-text-fill: #ffdd00; -fx-font-size: 14px; -fx-font-weight: bold;" text="0 products found" />
+                            <FlowPane fx:id="productsContainer" hgap="25" vgap="25" />
+                        </children>
                     </VBox>
 
                 </children>
