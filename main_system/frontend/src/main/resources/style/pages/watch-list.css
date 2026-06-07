@@ -1,6 +1,6 @@
 /* Gốc của trang (Nền đen thẳm) */
 .watchlist-root {
-    -fx-background-color: #121212;
+    -fx-background-color: linear-gradient(to bottom, #0a0a0a 0%, #2b1f05 45%, #b38f00 100%);
 }
 
 /* Tiêu đề chữ màu trắng, nhấn chữ bold */

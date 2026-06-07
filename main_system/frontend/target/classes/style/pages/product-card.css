@@ -32,7 +32,7 @@
 
 /* Mã số định danh sản phẩm (Màu xám tinh tế) */
 .product-id {
-    -fx-text-fill: #777777;
+    -fx-text-fill: red;
     -fx-font-family: "Segoe UI", sans-serif;
     -fx-font-size: 12px;
     -fx-font-weight: bold;
@@ -64,7 +64,7 @@
 
 /* Đồng hồ đếm ngược thời gian chạy ngầm */
 .product-countdown {
-    -fx-text-fill: #aaaaaa;
+    -fx-text-fill: #66FF00;
     -fx-font-family: "Consolas", "Courier New", monospace;
     -fx-font-size: 13px;
 }

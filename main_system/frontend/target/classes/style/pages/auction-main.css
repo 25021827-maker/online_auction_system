@@ -181,7 +181,8 @@
    PHẦN NỘI DUNG CHÍNH (Content & Title)
    ========================================================================== */
 .content-container {
-    -fx-background-color : #686868;
+    -fx-background-image : url("../../images/auction-bg1.png");
+    -fx-background-attachment: fixed;
 }
 
 /* Tiêu đề chính AUCTIONS (StyleClass: main-title) */
@@ -191,7 +192,7 @@
     -fx-font-weight: 900;
     -fx-font-size: 28px;
     -fx-letter-spacing: 2px;
-    -fx-border-color: transparent transparent black transparent; /* Gạch chân màu vàng */
+    -fx-border-color: transparent transparent red transparent; /* Gạch chân màu vàng */
     -fx-border-width: 3;
     -fx-padding: 0 0 6 0;
 }

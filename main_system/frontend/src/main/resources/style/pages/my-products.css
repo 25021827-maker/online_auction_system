@@ -31,7 +31,7 @@
    2. CONTAINERS (Khung chứa nội dung)
    ========================================================================== */
 .content-container {
-    -fx-background-color: #121212;
+    -fx-background-color: linear-gradient(to bottom, #0a0a0a 0%, #2b1f05 45%, #b38f00 100%);
 }
 
 /* Định dạng cho vùng chứa các item sản phẩm */

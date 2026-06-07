@@ -11,11 +11,6 @@
     -fx-background-repeat: no-repeat;
 }
 
-.login-logo {
-    -fx-text-fill: #ffdd00;
-    -fx-font-weight: bold;
-}
-
 .login-card {
     -fx-background-color: rgba(15,15,15,0.92); /* Hiệu ứng kính mờ trong suốt */
     -fx-background-radius: 20;
@@ -23,6 +18,8 @@
     -fx-border-width: 2;
     -fx-border-radius: 20;
     -fx-padding: 30;
+    -fx-alignment: center; /* Khung chứa sẽ tự động đẩy ImageView vào giữa */
+    -fx-spacing: 15;       /* Khoảng cách giữa logo và các ô nhập liệu */
 }
 
 .login-button {

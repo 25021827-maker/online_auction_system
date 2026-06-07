@@ -13,18 +13,14 @@
 
 <VBox alignment="CENTER" prefHeight="529.0" prefWidth="816.0" spacing="20.0" styleClass="login-background" stylesheets="@../../style/pages/login.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller.auth.LoginController">
     <ImageView fitHeight="53.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
-        <Image url="@../../images/loginlabel.png"/>
+        <Image url="@../../images/loginlabel.png" />
     </ImageView>
 
     <!-- LOGIN CARD -->
     <VBox maxWidth="320" spacing="15" styleClass="login-card">
-        <Label prefHeight="59.0" prefWidth="252.0" styleClass="login-logo" text="   BVBID">
-
-            <font>
-                <Font name="System Bold" size="52" />
-            </font>
-
-        </Label>
+      <ImageView fitHeight="196.0" fitWidth="218.0" pickOnBounds="true" preserveRatio="true">
+            <Image url="@../../images/logo1.png" />
+      </ImageView>
 
         <!-- USERNAME -->
         <TextField fx:id="txtUser" prefHeight="42" promptText="Username" styleClass="login-input">
@@ -44,13 +40,7 @@
 
         </PasswordField>
 
-        <Label fx:id="lblMessage"
-               managed="false"
-               maxWidth="260"
-               minHeight="24"
-               styleClass="login-message"
-               visible="false"
-               wrapText="true" />
+        <Label fx:id="lblMessage" managed="false" maxWidth="260" minHeight="24" styleClass="login-message" visible="false" wrapText="true" />
 
         <!-- LOGIN BUTTON -->
         <Button fx:id="btnLogin" defaultButton="true" maxWidth="Infinity" onAction="#handleLogin" prefHeight="34.0" prefWidth="256.0" styleClass="login-button" text="LOG IN">
@@ -64,9 +54,9 @@
         <!-- REGISTER -->
         <HBox alignment="CENTER" spacing="5">
 
-            <Label styleClass="login-text" text="Don't have an account ?"/>
+            <Label styleClass="login-text" text="Don't have an account ?" />
 
-            <Hyperlink onAction="#handleRegister" styleClass="login-link" text="Create one"/>
+            <Hyperlink onAction="#handleRegister" styleClass="login-link" text="Create one" />
 
         </HBox>
 

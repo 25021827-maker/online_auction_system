@@ -14,7 +14,7 @@
 }
 
 .main-background {
-    -fx-background-color: linear-gradient(to bottom, #050505, #101010);
+    -fx-background-color: linear-gradient(to bottom, #0a0a0a 0%, #2b1f05 45%, #b38f00 100%);
 }
 
 /* Khung Card bọc ngoài form */
